@@ -15,6 +15,7 @@
  */
 package nl.knaw.dans.easy.fedora2vault.fixture
 
+import better.files.File
 import org.scalatest._
 
 trait TestSupportFixture extends FlatSpec
@@ -22,4 +23,8 @@ trait TestSupportFixture extends FlatSpec
   with Inside
   with OptionValues
   with EitherValues
-  with Inspectors
+  with Inspectors {
+  val nameSpaceRegExp = """ xmlns:[a-z]+="[^"]*"""" // these attributes have a variable order
+  val samples = File("src/test/resources/sample-foxml")
+
+}

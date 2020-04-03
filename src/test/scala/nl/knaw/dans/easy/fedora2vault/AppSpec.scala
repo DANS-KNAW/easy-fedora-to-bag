@@ -36,9 +36,6 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
     testDir.createDirectories()
   }
 
-  private val nameSpaceRegExp = """ xmlns:[a-z]+="[^"]*"""" // these attributes have a variable order
-  private val samples = File("src/test/resources/sample-foxml")
-
   private class MockedLdapContext extends InitialLdapContext(new java.util.Hashtable[String, String](), null)
 
   private class MockedApp() extends EasyFedora2vaultApp(null) {

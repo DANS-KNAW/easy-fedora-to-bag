@@ -15,11 +15,10 @@
  */
 package nl.knaw.dans.easy.fedora2vault
 
-import java.text.SimpleDateFormat
-
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import nl.knaw.dans.pf.language.emd.EasyMetadataImpl
 import nl.knaw.dans.pf.language.emd.binding.EmdUnmarshaller
+import nl.knaw.dans.pf.language.emd.types.EmdConstants.DateScheme
 import nl.knaw.dans.pf.language.emd.types.{ BasicDate, IsoDate }
 
 import scala.collection.JavaConverters._
@@ -29,7 +28,6 @@ import scala.xml._
 object DDM extends DebugEnhancedLogging {
   val schemaNameSpace: String = "http://easy.dans.knaw.nl/schemas/md/ddm/"
   val schemaLocation: String = "https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd"
-  private val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
 
   def apply(emdNode: Node): Try[Elem] = Try {
     new EmdUnmarshaller(classOf[EasyMetadataImpl]).unmarshal(emdNode.serialize)
@@ -40,16 +38,13 @@ object DDM extends DebugEnhancedLogging {
     val descriptions = emd.getEmdDescription.getDcDescription.asScala ++
       emd.getEmdDescription.getTermsAbstract.asScala ++
       emd.getEmdDescription.getTermsTableOfContents.asScala
-    val allDates: Map[DatasetId, Iterable[Elem]] = {
+    val dateMap: Map[String, Iterable[Elem]] = {
       val basicDates = emd.getEmdDate.getAllBasicDates.asScala.map { case (key, values) => key -> values.asScala.map(toXml) }
       val isoDates = emd.getEmdDate.getAllIsoDates.asScala.map { case (key, values) => key -> values.asScala.map(toXml) }
       (basicDates.toSeq ++ isoDates.toSeq)
-        .filter(kv => !Seq("created", "available").contains(kv._1))
         .groupBy(_._1)
-        .mapValues(_.toMap.values.flatten)
-        .map{case (key, values) => key -> values.map(_.withLabel(key))}
+        .mapValues(_.flatMap(_._2))
     }
-    val dateCreated = allDates.filterKeys(_ == "created").values.flatten
 
     <ddm:DDM
       xmlns:dc="http://purl.org/dc/elements/1.1/"
@@ -68,8 +63,8 @@ object DDM extends DebugEnhancedLogging {
         { descriptions.map(bs => <dcterms:description xml:lang={ lang }>{ bs.getValue }</dcterms:description>) }
         { /* TODO instructions for reuse */ }
         { /* TODO creators */ }
-        { dateCreated }
-        { allDates.filterKeys(_ == "available").values.flatten.headOption.getOrElse(dateCreated) }
+        { dateMap("created").map(_.withLabel("created")) }
+        { dateMap("available").headOption.getOrElse(dateMap("created").head).withLabel("available") }
         { emd.getEmdAudience.getDisciplines.asScala.map(bs => <ddm:audience>{ bs.getValue }</ddm:audience>) }
         <ddm:accessRights>{ emd.getEmdRights.getAccessCategory }</ddm:accessRights>
       </ddm:profile>
@@ -77,15 +72,24 @@ object DDM extends DebugEnhancedLogging {
         { emd.getEmdIdentifier.getDcIdentifier.asScala.map(bi => <dcterms:identifier xsi:type={ Option(bi.getScheme).orNull }>{ bi.getValue }</dcterms:identifier>) }
         { emd.getEmdTitle.getTermsAlternative.asScala.map(str => <dcterms:alternative xml:lang={ lang }>{ str }</dcterms:alternative>) }
         { /* TODO ... */ }
-        { allDates.filterKeys(!Seq("created", "available").contains(_)).values.flatten }
+        { dateMap.filter(isOtherDate).map { case (key, values) => values.map(_.withLabel(dateLabel(key))) } }
         { /* TODO ... */ }
       </ddm:dcmiMetadata>
     </ddm:DDM>
   }
 
-  private def toXml(value: IsoDate) = <label xsi:type={ value.getScheme.toString }>{ value.getValueAsString }</label>
+  private def toXml(value: IsoDate) = <label xsi:type={ orNull(value.getScheme) }>{ value }</label>
 
-  private def toXml(value: BasicDate) = <label xsi:type={ value.getScheme.toString }>{ value.getDateTime.toString("yyyy-mm-dd") }</label>
+  private def toXml(value: BasicDate) = <label xsi:type={ orNull(value.getScheme) }>{ value }</label>
+
+  def orNull(dateScheme: DateScheme): String = Option(dateScheme).map(_.toString).orNull
+
+  private def isOtherDate(kv: (DatasetId, Iterable[Elem])) = !Seq("created", "available").contains(kv._1)
+
+  private def dateLabel(key: DatasetId) = {
+    if (key.isBlank) "date"
+    else key
+  }
 
   /** @param elem XML element to be adjusted */
   private implicit class RichElem(val elem: Elem) extends AnyVal {

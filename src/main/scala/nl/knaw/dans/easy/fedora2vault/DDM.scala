@@ -32,12 +32,10 @@ object DDM extends DebugEnhancedLogging {
   def apply(emdNode: Node): Try[Elem] = Try {
     new EmdUnmarshaller(classOf[EasyMetadataImpl]).unmarshal(emdNode.serialize)
   }.map { emd =>
+//    println(new EmdMarshaller(emd).getXmlString)
 
     // a null value skips rendering the attribute
     val lang: String = emd.getEmdLanguage.getDcLanguage.asScala.headOption.map(_.getValue).orNull
-    val descriptions = emd.getEmdDescription.getDcDescription.asScala ++
-      emd.getEmdDescription.getTermsAbstract.asScala ++
-      emd.getEmdDescription.getTermsTableOfContents.asScala
     val dateMap: Map[String, Iterable[Elem]] = {
       val basicDates = emd.getEmdDate.getAllBasicDates.asScala.map { case (key, values) => key -> values.asScala.map(toXml) }
       val isoDates = emd.getEmdDate.getAllIsoDates.asScala.map { case (key, values) => key -> values.asScala.map(toXml) }
@@ -60,7 +58,9 @@ object DDM extends DebugEnhancedLogging {
     >
       <ddm:profile>
         { emd.getEmdTitle.getDcTitle.asScala.map(bs => <dc:title xml:lang={ lang }>{ bs.getValue }</dc:title>) }
-        { descriptions.map(bs => <dcterms:description xml:lang={ lang }>{ bs.getValue }</dcterms:description>) }
+        { emd.getEmdDescription.getDcDescription.asScala.map(bs => <dcterms:description xml:lang={ lang }>{ bs.getValue }</dcterms:description>) }
+        { emd.getEmdDescription.getTermsAbstract.asScala.map(bs => <dcterms:description xml:lang={ lang } descriptionType='Abstract'>{ bs.getValue }</dcterms:description>) }
+        { emd.getEmdDescription.getTermsTableOfContents.asScala.map(bs => <dcterms:description xml:lang={ lang } descriptionType='TableOfContent'>{ bs.getValue }</dcterms:description>) }
         { /* TODO instructions for reuse */ }
         { /* TODO creators */ }
         { dateMap("created").map(_.withLabel("created")) }

@@ -2,7 +2,7 @@ package nl.knaw.dans.easy.fedora2vault
 
 import nl.knaw.dans.easy.fedora2vault.fixture.TestSupportFixture
 
-import scala.util.Success
+import scala.util.{ Failure, Success }
 import scala.xml.{ Elem, XML }
 
 class DdmSpec extends TestSupportFixture {
@@ -48,7 +48,43 @@ class DdmSpec extends TestSupportFixture {
         |</ddm:DDM>
         |""".stripMargin)
   }
-  
+
+  "descriptions" should "..." in {
+    // more than easy-ddm/src/test/resources/ddm2emdCrosswalk/ddmDescriptionWithRequiredDescriptionType.input.xml
+    // TODO EMD:remarks to <ddm:description descriptionType="TechnicalInfo">
+    val triedString = DDM(
+      <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
+        <emd:description>
+          <dc:description>abstract</dc:description>
+          <dc:description>Suggestions for data usage: remark1</dc:description>
+          <dc:description>beschrijving</dc:description>
+          <dct:tableOfContents>rabar</dct:tableOfContents>
+          <dct:abstract>blabl</dct:abstract>
+        </emd:description>
+        <emd:date>
+          <dct:created>03-2013</dct:created>
+        </emd:date>
+        { other }
+      </emd:easymetadata>
+    ).map(toString)
+    triedString shouldBe Success(
+      """<ddm:DDM
+        |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
+        |  <ddm:profile>
+        |    <dcterms:description>abstract</dcterms:description>
+        |    <dcterms:description>Suggestions for data usage: remark1</dcterms:description>
+        |    <dcterms:description>beschrijving</dcterms:description>
+        |    <dcterms:description descriptionType="Abstract">blabl</dcterms:description>
+        |    <dcterms:description descriptionType="TableOfContent">rabar</dcterms:description>
+        |    <created>03-2013</created>
+        |    <available>03-2013</available>
+        |    <ddm:accessRights/>
+        |  </ddm:profile>
+        |  <ddm:dcmiMetadata/>
+        |</ddm:DDM>
+        |""".stripMargin)
+  }
+
   "dates" should "use created for available" in {
     DDM(
       <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
@@ -68,6 +104,14 @@ class DdmSpec extends TestSupportFixture {
         |  <ddm:dcmiMetadata/>
         |</ddm:DDM>
         |""".stripMargin)
+  }
+
+  it should "fail without a date created" in {
+    DDM(
+      <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
+        { other }
+      </emd:easymetadata>
+    ).map(toString) shouldBe a[Failure[_]]
   }
 
   it should "render only the first available" in {

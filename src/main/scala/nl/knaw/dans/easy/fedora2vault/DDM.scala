@@ -19,7 +19,8 @@ import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import nl.knaw.dans.pf.language.emd.EasyMetadataImpl
 import nl.knaw.dans.pf.language.emd.binding.EmdUnmarshaller
 import nl.knaw.dans.pf.language.emd.types.EmdConstants.DateScheme
-import nl.knaw.dans.pf.language.emd.types.{ BasicDate, IsoDate }
+import nl.knaw.dans.pf.language.emd.types.{ Author, BasicDate, IsoDate }
+import nl.knaw.dans.lib.string._
 
 import scala.collection.JavaConverters._
 import scala.util.Try
@@ -67,8 +68,9 @@ object DDM extends DebugEnhancedLogging {
         { emd.getEmdDescription.getDcDescription.asScala.map(bs => <dcterms:description xml:lang={ lang }>{ bs.getValue }</dcterms:description>) }
         { emd.getEmdDescription.getTermsAbstract.asScala.map(bs => <dcterms:description xml:lang={ lang } descriptionType='Abstract'>{ bs.getValue }</dcterms:description>) }
         { emd.getEmdDescription.getTermsTableOfContents.asScala.map(bs => <dcterms:description xml:lang={ lang } descriptionType='TableOfContent'>{ bs.getValue }</dcterms:description>) }
-        { /* TODO instructions for reuse */ }
-        { /* TODO creators */ }
+        { /* instructions for reuse not specified as such in EMD */ }
+        { emd.getEmdCreator.getDcCreator.asScala.map(bs => ???) }
+        { emd.getEmdCreator.getEasCreator.asScala.map(author => <dcx-dai:creatorDetails>{ toXml(author, lang)} </dcx-dai:creatorDetails>) }
         { created.map(_.withLabel("created")) }
         { available.map(_.withLabel("available")) }
         { emd.getEmdAudience.getDisciplines.asScala.map(bs => <ddm:audience>{ bs.getValue }</ddm:audience>) }
@@ -96,6 +98,30 @@ object DDM extends DebugEnhancedLogging {
     if (key.isBlank) "date"
     else key
   }
+
+  private def toXml(author: Author, lang: String): Seq[Node] = {
+    if (author.getSurname.isBlank)
+      Option(author.getOrganization).toSeq.map(toXml(_, lang, Option(author.getRole)))
+    else
+      <dcx-dai:author>
+        { seq(author.getTitle).map(str => <dcx-dai:titles xml:lang={ lang }>{ str }</dcx-dai:titles>) }
+        { seq(author.getInitials).map(str => <dcx-dai:initials>{ str }</dcx-dai:initials>) }
+        { seq(author.getPrefix).map(str => <dcx-dai:insertions>{ str }</dcx-dai:insertions>) }
+        { seq(author.getSurname).map(str => <dcx-dai:surname>{ str }</dcx-dai:surname>) }
+        { /* TODO  author.getEntityId.map(src => { <label>{ src.value.orEmpty }</label>.withLabel(daiLabel(src.scheme)) })*/ }
+        { Option(author.getRole).toSeq.map(role =>  <dcx-dai:role>{ role.getRole /* TODO scheme? */ }</dcx-dai:role>) }
+        { Option(author.getOrganization).toSeq.map(toXml(_, lang, maybeRole = None)) }
+      </dcx-dai:author>
+  }
+
+  /** @return an empty Seq for a null or blank String */
+  private def seq(s: String): Seq[String] = Option(s).flatMap(_.trim.toOption).toSeq
+
+  private def toXml(organization: String, lang: String, maybeRole: Option[Author.Role]): Elem =
+      <dcx-dai:organization>
+        { <dcx-dai:name xml:lang={ lang }>{ organization }</dcx-dai:name> }
+        { maybeRole.toSeq.map(role => <dcx-dai:role>{ role.getRole }</dcx-dai:role> ) }
+      </dcx-dai:organization>
 
   /** @param elem XML element to be adjusted */
   private implicit class RichElem(val elem: Elem) extends AnyVal {

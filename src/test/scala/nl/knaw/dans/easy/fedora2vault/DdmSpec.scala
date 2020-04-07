@@ -35,6 +35,57 @@ class DdmSpec extends TestSupportFixture {
         |    <dcterms:description xml:lang="eng">
         |      The Talk of Europe (TOE) project has curated the proceedings of the European Parliament (EP) from 1999 onwards, including all available translations in other EU languages, and converted these to RDF. Moreover, the data are enriched with biographical and political information on the speakers. Since the data are available in multilingual form, this dataset lends itself to be linked with resources in other European countries, such as parliamentary records or news reports.
         |    </dcterms:description>
+        |    <dcx-dai:creatorDetails>
+        |      <dcx-dai:author>
+        |        <dcx-dai:titles xml:lang="eng">Dr</dcx-dai:titles>
+        |        <dcx-dai:initials>L.H.</dcx-dai:initials>
+        |        <dcx-dai:surname>Hollink</dcx-dai:surname>
+        |        <dcx-dai:organization>
+        |          <dcx-dai:name xml:lang="eng">CWI</dcx-dai:name>
+        |        </dcx-dai:organization>
+        |      </dcx-dai:author>
+        |    </dcx-dai:creatorDetails>
+        |    <dcx-dai:creatorDetails>
+        |      <dcx-dai:author>
+        |        <dcx-dai:titles xml:lang="eng">MSc</dcx-dai:titles>
+        |        <dcx-dai:initials>A.V.A.</dcx-dai:initials>
+        |        <dcx-dai:insertions>van</dcx-dai:insertions>
+        |        <dcx-dai:surname>Aggelen</dcx-dai:surname>
+        |        <dcx-dai:organization>
+        |          <dcx-dai:name xml:lang="eng">VU University Amsterdam</dcx-dai:name>
+        |        </dcx-dai:organization>
+        |      </dcx-dai:author>
+        |    </dcx-dai:creatorDetails>
+        |    <dcx-dai:creatorDetails>
+        |      <dcx-dai:author>
+        |        <dcx-dai:titles xml:lang="eng">Prof</dcx-dai:titles>
+        |        <dcx-dai:initials>H.B.</dcx-dai:initials>
+        |        <dcx-dai:surname>Beunders</dcx-dai:surname>
+        |        <dcx-dai:organization>
+        |          <dcx-dai:name xml:lang="eng">Erasmus University Rotterdam</dcx-dai:name>
+        |        </dcx-dai:organization>
+        |      </dcx-dai:author>
+        |    </dcx-dai:creatorDetails>
+        |    <dcx-dai:creatorDetails>
+        |      <dcx-dai:author>
+        |        <dcx-dai:titles xml:lang="eng">Dr</dcx-dai:titles>
+        |        <dcx-dai:initials>M.K.</dcx-dai:initials>
+        |        <dcx-dai:surname>Kleppe</dcx-dai:surname>
+        |        <dcx-dai:organization>
+        |          <dcx-dai:name xml:lang="eng">VU University Amsterdam</dcx-dai:name>
+        |        </dcx-dai:organization>
+        |      </dcx-dai:author>
+        |    </dcx-dai:creatorDetails>
+        |    <dcx-dai:creatorDetails>
+        |      <dcx-dai:author>
+        |        <dcx-dai:titles xml:lang="eng">MSc</dcx-dai:titles>
+        |        <dcx-dai:initials>M.K.</dcx-dai:initials>
+        |        <dcx-dai:surname>Kemman</dcx-dai:surname>
+        |        <dcx-dai:organization>
+        |          <dcx-dai:name xml:lang="eng">University of Luxembourg</dcx-dai:name>
+        |        </dcx-dai:organization>
+        |      </dcx-dai:author>
+        |    </dcx-dai:creatorDetails>
         |    <created xsi:type="W3CDTF">2015-12-31</created>
         |    <available xsi:type="W3CDTF">2015-12-31</available>
         |    <ddm:audience>easy-discipline:42</ddm:audience>

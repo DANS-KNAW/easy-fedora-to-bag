@@ -1,9 +1,16 @@
 package nl.knaw.dans.easy.fedora2vault
 
+import java.net.UnknownHostException
+
+import better.files.StringExtensions
+import javax.xml.XMLConstants
+import javax.xml.transform.Source
+import javax.xml.transform.stream.StreamSource
+import javax.xml.validation.SchemaFactory
 import nl.knaw.dans.easy.fedora2vault.fixture.TestSupportFixture
 
-import scala.util.{ Failure, Success }
-import scala.xml.{ Elem, XML }
+import scala.util.{ Failure, Success, Try }
+import scala.xml.{ Elem, SAXParseException, Utility, XML }
 
 class DdmSpec extends TestSupportFixture {
 
@@ -11,18 +18,16 @@ class DdmSpec extends TestSupportFixture {
   private val easNS = "http://easy.dans.knaw.nl/easy/easymetadata/eas/"
   private val dctNS = "http://purl.org/dc/terms/"
   private val dcNS = "http://purl.org/dc/elements/1.1/"
-  private val other =
-          <emd:other>
-              <eas:application-specific>
-                  <eas:metadataformat>ANY_DISCIPLINE</eas:metadataformat>
-                  <eas:pakbon-status>NOT_IMPORTED</eas:pakbon-status>
-              </eas:application-specific>
-              <eas:etc/>
-          </emd:other>
+  private lazy val triedSchema = Try(SchemaFactory
+    .newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
+    .newSchema(Array(new StreamSource("https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd")).toArray[Source])
+  )
 
   "TalkOfEurope" should "get a DDM out of its EMD" in {
-    FoXml.getEmd(XML.loadFile((samples / "TalkOfEurope.xml").toJava))
-      .flatMap(DDM(_).map(toString)) shouldBe Success(
+    val triedString = FoXml
+      .getEmd(XML.loadFile((samples / "TalkOfEurope.xml").toJava))
+      .flatMap(DDM(_).map(toS))
+    triedString.map(strip) shouldBe Success(
       """<ddm:DDM
         |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
         |  <ddm:profile>
@@ -47,6 +52,8 @@ class DdmSpec extends TestSupportFixture {
         |  </ddm:dcmiMetadata>
         |</ddm:DDM>
         |""".stripMargin)
+    assume(schemaIsAvailable)
+    triedString.flatMap(validate) shouldBe a[Success[_]]
   }
 
   "descriptions" should "..." in {
@@ -64,9 +71,8 @@ class DdmSpec extends TestSupportFixture {
         <emd:date>
           <dct:created>03-2013</dct:created>
         </emd:date>
-        { other }
       </emd:easymetadata>
-    ).map(toString)
+    ).map(toStripped)
     triedString shouldBe Success(
       """<ddm:DDM
         |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
@@ -91,9 +97,8 @@ class DdmSpec extends TestSupportFixture {
           <emd:date>
               <dct:created>03-2013</dct:created>
           </emd:date>
-        { other }
       </emd:easymetadata>
-    ).map(toString) shouldBe Success(
+    ).map(toStripped) shouldBe Success(
       """<ddm:DDM
         |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
         |  <ddm:profile>
@@ -106,12 +111,19 @@ class DdmSpec extends TestSupportFixture {
         |""".stripMargin)
   }
 
-  it should "fail without a date created" in {
+  it should "tolerate an empty EMD" in {
     DDM(
       <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
-        { other }
       </emd:easymetadata>
-    ).map(toString) shouldBe a[Failure[_]]
+    ).map(toStripped) shouldBe Success(
+      """<ddm:DDM
+        |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
+        |  <ddm:profile>
+        |    <ddm:accessRights/>
+        |  </ddm:profile>
+        |  <ddm:dcmiMetadata/>
+        |</ddm:DDM>
+        |""".stripMargin)
   }
 
   it should "render only the first available" in {
@@ -140,15 +152,16 @@ class DdmSpec extends TestSupportFixture {
               <eas:dateCopyrighted eas:scheme="W3CDTF" eas:format="MONTH">1907-04-01T00:00:00.000+00:19:32</eas:dateCopyrighted>
               <eas:dateSubmitted eas:scheme="W3CDTF" eas:format="MONTH">1908-04-01T00:00:00.000+00:19:32</eas:dateSubmitted>
           </emd:date>
-        { other }
       </emd:easymetadata>
-    ).map(toString) shouldBe Success(
+    ).map(toStripped) shouldBe Success(
       """<ddm:DDM
         |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
         |  <ddm:profile>
         |    <created>03-2013</created>
         |    <created xsi:type="W3CDTF">1901-04</created>
         |    <available>04-2013</available>
+        |    <available xsi:type="W3CDTF">1900</available>
+        |    <available xsi:type="W3CDTF">1902-04</available>
         |    <ddm:accessRights/>
         |  </ddm:profile>
         |  <ddm:dcmiMetadata>
@@ -173,10 +186,28 @@ class DdmSpec extends TestSupportFixture {
         |""".stripMargin)
   }
 
-  private def toString(elem: Elem) = {
-    elem.serialize
-      .replaceAll(nameSpaceRegExp, "")
-      .replaceAll(" \n", "\n")
-      .replaceAll(".*[?]>\n", "")
+  private def toStripped(elem: Elem) = strip(toS(elem))
+
+  private def toS(elem: Elem) = printer.format(Utility.trim(elem))
+
+  private def strip(s: String) = s
+    .replaceAll(nameSpaceRegExp, "")
+    .replaceAll(" \n", "\n")
+
+  private def validate(serialized: String) = {
+    triedSchema.flatMap { schema =>
+      val source = new StreamSource(serialized.inputStream)
+      Try(schema.newValidator().validate(source))
+    }
+  }
+
+  private def schemaIsAvailable = {
+    triedSchema match {
+      case Failure(e: SAXParseException) if e.getCause.isInstanceOf[UnknownHostException] => false
+      case Failure(e: SAXParseException) if e.getMessage.contains("Cannot resolve") =>
+        println("Probably an offline third party schema: " + e.getMessage)
+        false
+      case _ => true
+    }
   }
 }

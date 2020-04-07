@@ -33,13 +33,12 @@ package object fedora2vault {
   def now: String = DateTime.now(DateTimeZone.UTC).toString(dateTimeFormatter)
 
   val prologue = """<?xml version='1.0' encoding='UTF-8'?>"""
+  val printer = new PrettyPrinter(160, 2)
 
   implicit class XmlExtensions(val elem: Node) extends AnyVal {
 
     def serialize: String = {
-      val printer = new PrettyPrinter(160, 2)
-      val trimmed = Utility.trim(elem)
-      prologue + "\n" + printer.format(trimmed)
+      prologue + "\n" + printer.format(Utility.trim(elem))
     }
   }
 

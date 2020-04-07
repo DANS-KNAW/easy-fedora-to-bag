@@ -32,7 +32,7 @@ object DDM extends DebugEnhancedLogging {
   def apply(emdNode: Node): Try[Elem] = Try {
     new EmdUnmarshaller(classOf[EasyMetadataImpl]).unmarshal(emdNode.serialize)
   }.map { emd =>
-//    println(new EmdMarshaller(emd).getXmlString)
+    //    println(new EmdMarshaller(emd).getXmlString)
 
     // a null value skips rendering the attribute
     val lang: String = emd.getEmdLanguage.getDcLanguage.asScala.headOption.map(_.getValue).orNull
@@ -42,6 +42,12 @@ object DDM extends DebugEnhancedLogging {
       (basicDates.toSeq ++ isoDates.toSeq)
         .groupBy(_._1)
         .mapValues(_.flatMap(_._2))
+    }
+    val created = dateMap("created")
+    val available = {
+      val elems = dateMap("available")
+      if (elems.isEmpty) created
+      else elems
     }
 
     <ddm:DDM
@@ -63,8 +69,8 @@ object DDM extends DebugEnhancedLogging {
         { emd.getEmdDescription.getTermsTableOfContents.asScala.map(bs => <dcterms:description xml:lang={ lang } descriptionType='TableOfContent'>{ bs.getValue }</dcterms:description>) }
         { /* TODO instructions for reuse */ }
         { /* TODO creators */ }
-        { dateMap("created").map(_.withLabel("created")) }
-        { dateMap("available").headOption.getOrElse(dateMap("created").head).withLabel("available") }
+        { created.map(_.withLabel("created")) }
+        { available.map(_.withLabel("available")) }
         { emd.getEmdAudience.getDisciplines.asScala.map(bs => <ddm:audience>{ bs.getValue }</ddm:audience>) }
         <ddm:accessRights>{ emd.getEmdRights.getAccessCategory }</ddm:accessRights>
       </ddm:profile>

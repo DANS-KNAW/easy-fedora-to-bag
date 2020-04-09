@@ -2,7 +2,7 @@ package nl.knaw.dans.easy.fedora2vault
 
 import java.net.UnknownHostException
 
-import better.files.StringExtensions
+import better.files.{ File, StringExtensions }
 import javax.xml.XMLConstants
 import javax.xml.transform.Source
 import javax.xml.transform.stream.StreamSource
@@ -24,93 +24,17 @@ class DdmSpec extends TestSupportFixture {
   )
 
   "TalkOfEurope" should "get a DDM out of its EMD" in {
-    val triedString = FoXml
+    val expected = File("src/test/resources/expected-ddm/TalkOfEurope.xml")
+      .contentAsString.replaceAll(" +"," ")
+    FoXml
       .getEmd(XML.loadFile((samples / "TalkOfEurope.xml").toJava))
-      .flatMap(DDM(_).map(toS))
-    triedString.map(strip) shouldBe Success(
-      """<ddm:DDM
-        |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
-        |  <ddm:profile>
-        |    <dc:title xml:lang="eng">Talk of Europe - The debates of the European Parliament as Linked Open Data</dc:title>
-        |    <dcterms:description xml:lang="eng">
-        |      The Talk of Europe (TOE) project has curated the proceedings of the European Parliament (EP) from 1999 onwards, including all available translations in other EU languages, and converted these to RDF. Moreover, the data are enriched with biographical and political information on the speakers. Since the data are available in multilingual form, this dataset lends itself to be linked with resources in other European countries, such as parliamentary records or news reports.
-        |    </dcterms:description>
-        |    <dcx-dai:creatorDetails>
-        |      <dcx-dai:author>
-        |        <dcx-dai:titles xml:lang="eng">Dr</dcx-dai:titles>
-        |        <dcx-dai:initials>L.H.</dcx-dai:initials>
-        |        <dcx-dai:surname>Hollink</dcx-dai:surname>
-        |        <dcx-dai:organization>
-        |          <dcx-dai:name xml:lang="eng">CWI</dcx-dai:name>
-        |        </dcx-dai:organization>
-        |      </dcx-dai:author>
-        |    </dcx-dai:creatorDetails>
-        |    <dcx-dai:creatorDetails>
-        |      <dcx-dai:author>
-        |        <dcx-dai:titles xml:lang="eng">MSc</dcx-dai:titles>
-        |        <dcx-dai:initials>A.V.A.</dcx-dai:initials>
-        |        <dcx-dai:insertions>van</dcx-dai:insertions>
-        |        <dcx-dai:surname>Aggelen</dcx-dai:surname>
-        |        <dcx-dai:organization>
-        |          <dcx-dai:name xml:lang="eng">VU University Amsterdam</dcx-dai:name>
-        |        </dcx-dai:organization>
-        |      </dcx-dai:author>
-        |    </dcx-dai:creatorDetails>
-        |    <dcx-dai:creatorDetails>
-        |      <dcx-dai:author>
-        |        <dcx-dai:titles xml:lang="eng">Prof</dcx-dai:titles>
-        |        <dcx-dai:initials>H.B.</dcx-dai:initials>
-        |        <dcx-dai:surname>Beunders</dcx-dai:surname>
-        |        <dcx-dai:organization>
-        |          <dcx-dai:name xml:lang="eng">Erasmus University Rotterdam</dcx-dai:name>
-        |        </dcx-dai:organization>
-        |      </dcx-dai:author>
-        |    </dcx-dai:creatorDetails>
-        |    <dcx-dai:creatorDetails>
-        |      <dcx-dai:author>
-        |        <dcx-dai:titles xml:lang="eng">Dr</dcx-dai:titles>
-        |        <dcx-dai:initials>M.K.</dcx-dai:initials>
-        |        <dcx-dai:surname>Kleppe</dcx-dai:surname>
-        |        <dcx-dai:organization>
-        |          <dcx-dai:name xml:lang="eng">VU University Amsterdam</dcx-dai:name>
-        |        </dcx-dai:organization>
-        |      </dcx-dai:author>
-        |    </dcx-dai:creatorDetails>
-        |    <dcx-dai:creatorDetails>
-        |      <dcx-dai:author>
-        |        <dcx-dai:titles xml:lang="eng">MSc</dcx-dai:titles>
-        |        <dcx-dai:initials>M.K.</dcx-dai:initials>
-        |        <dcx-dai:surname>Kemman</dcx-dai:surname>
-        |        <dcx-dai:organization>
-        |          <dcx-dai:name xml:lang="eng">University of Luxembourg</dcx-dai:name>
-        |        </dcx-dai:organization>
-        |      </dcx-dai:author>
-        |    </dcx-dai:creatorDetails>
-        |    <created xsi:type="W3CDTF">2015-12-31</created>
-        |    <available xsi:type="W3CDTF">2015-12-31</available>
-        |    <ddm:audience>easy-discipline:42</ddm:audience>
-        |    <ddm:audience>easy-discipline:11</ddm:audience>
-        |    <ddm:audience>easy-discipline:14</ddm:audience>
-        |    <ddm:audience>easy-discipline:6</ddm:audience>
-        |    <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
-        |  </ddm:profile>
-        |  <ddm:dcmiMetadata>
-        |    <dcterms:identifier xsi:type="PID">urn:nbn:nl:ui:13-3ax2-te</dcterms:identifier>
-        |    <dcterms:identifier xsi:type="DOI">10.17026/test-dans-2xg-umq8</dcterms:identifier>
-        |    <dcterms:identifier>TalkOfEurope</dcterms:identifier>
-        |    <dcterms:identifier xsi:type="DMO_ID"></dcterms:identifier>
-        |    <dateSubmitted xsi:type="W3CDTF">2015-10-14</dateSubmitted>
-        |  </ddm:dcmiMetadata>
-        |</ddm:DDM>
-        |""".stripMargin)
+      .flatMap(DDM(_).map(toS(_).replaceAll(nameSpaceRegExp, "").replaceAll(" +\n?"," "))) shouldBe Success(expected)
     assume(schemaIsAvailable)
-    triedString.flatMap(validate) shouldBe a[Success[_]]
+    validate(expected) shouldBe a[Success[_]]
   }
 
   "descriptions" should "..." in {
-    // more than easy-ddm/src/test/resources/ddm2emdCrosswalk/ddmDescriptionWithRequiredDescriptionType.input.xml
-    // TODO EMD:remarks to <ddm:description descriptionType="TechnicalInfo">
-    val triedString = DDM(
+    DDM(
       <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
         <emd:description>
           <dc:description>abstract</dc:description>
@@ -123,8 +47,7 @@ class DdmSpec extends TestSupportFixture {
           <dct:created>03-2013</dct:created>
         </emd:date>
       </emd:easymetadata>
-    ).map(toStripped)
-    triedString shouldBe Success(
+    ).map(toStripped) shouldBe Success(
       """<ddm:DDM
         |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
         |  <ddm:profile>
@@ -237,13 +160,11 @@ class DdmSpec extends TestSupportFixture {
         |""".stripMargin)
   }
 
-  private def toStripped(elem: Elem) = strip(toS(elem))
-
-  private def toS(elem: Elem) = printer.format(Utility.trim(elem))
-
-  private def strip(s: String) = s
+  private def toStripped(elem: Elem) = toS(elem)
     .replaceAll(nameSpaceRegExp, "")
     .replaceAll(" \n", "\n")
+
+  private def toS(elem: Elem) = printer.format(Utility.trim(elem))
 
   private def validate(serialized: String) = {
     triedSchema.flatMap { schema =>

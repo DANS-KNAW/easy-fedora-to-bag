@@ -23,7 +23,6 @@ import javax.xml.transform.Source
 import javax.xml.transform.stream.StreamSource
 import javax.xml.validation.SchemaFactory
 import nl.knaw.dans.easy.fedora2vault.fixture.{ AudienceSupport, TestSupportFixture }
-import org.scalatest.Assertion
 
 import scala.util.{ Failure, Success, Try }
 import scala.xml.{ Elem, SAXParseException, Utility, XML }
@@ -55,7 +54,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
     ))
     val triedString = execute(file)
     triedString.map(normalize) shouldBe Success(expectedDDM(file))
-    validate(triedString)
+    validate(triedString) shouldBe a[Success[_]]
   }
 
   "streaming" should "get a DDM out of its EMD" in {
@@ -70,7 +69,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
     ))
     val triedString = execute(file)
     triedString.map(normalize) shouldBe Success(expectedDDM(file))
-    validate(triedString)
+    validate(triedString) shouldBe a[Success[_]]
   }
 
   "descriptions" should "..." in {
@@ -205,9 +204,9 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
 
   private def toS(elem: Elem) = printer.format(Utility.trim(elem))
 
-  private def validate(triedString: Try[String]): Assertion = {
+  private def validate(triedString: Try[String]): Try[Unit] = {
     assume(schemaIsAvailable)
-    triedString.flatMap(validate) shouldBe a[Success[_]]
+    triedString.flatMap(validate)
   }
 
   private def validate(serialized: String): Try[Unit] = {

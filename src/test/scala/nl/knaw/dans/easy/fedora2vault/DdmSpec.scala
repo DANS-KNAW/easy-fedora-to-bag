@@ -61,12 +61,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
     val file = "streaming.xml"
 
     implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
-    expectedAudiences(Map(
-      "easy-discipline:6" -> "D35400",
-      "easy-discipline:11" -> "D34300",
-      "easy-discipline:14" -> "D36000",
-      "easy-discipline:42" -> "D60000",
-    ))
+    expectedAudiences(Map("easy-discipline:6" -> "D35400"))
     val triedString = execute(file)
     triedString.map(normalize) shouldBe Success(expectedDDM(file))
     validate(triedString) shouldBe a[Success[_]]

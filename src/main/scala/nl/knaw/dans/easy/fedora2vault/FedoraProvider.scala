@@ -49,7 +49,7 @@ class FedoraProvider(fedoraClient: FedoraClient) {
       }
   }
 
-  def getObject(datasetId: DatasetId): ManagedResource[InputStream] = {
+  def getObject(datasetId: String): ManagedResource[InputStream] = {
     managed(FedoraClient.getObjectXML(datasetId).execute(fedoraClient))
       .flatMap(response => managed(response.getEntityInputStream))
   }
@@ -59,7 +59,7 @@ class FedoraProvider(fedoraClient: FedoraClient) {
       .flatMap(response => managed(response.getEntityInputStream))
   }
 
-  def loadFoXml(fedoraId: DatasetId): Try[Elem] = {
+  def loadFoXml(fedoraId: String): Try[Elem] = {
     getObject(fedoraId).map(XML.load).tried
   }
 }

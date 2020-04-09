@@ -23,6 +23,7 @@ import javax.xml.transform.Source
 import javax.xml.transform.stream.StreamSource
 import javax.xml.validation.SchemaFactory
 import nl.knaw.dans.easy.fedora2vault.fixture.{ AudienceSupport, TestSupportFixture }
+import org.scalatest.Assertion
 
 import scala.util.{ Failure, Success, Try }
 import scala.xml.{ Elem, SAXParseException, Utility, XML }
@@ -38,7 +39,13 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
     .newSchema(Array(new StreamSource("https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd")).toArray[Source])
   )
 
+  private def execute(file: DatasetId)(implicit fedoraProvider: FedoraProvider) = {
+    FoXml.getEmd(XML.loadFile((samples / file).toJava)).flatMap(DDM(_).map(toS))
+  }
+
   "TalkOfEurope" should "get a DDM out of its EMD" in {
+    val file = "TalkOfEurope.xml"
+
     implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
     expectedAudiences(Map(
       "easy-discipline:6" -> "D35400",
@@ -46,16 +53,24 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
       "easy-discipline:14" -> "D36000",
       "easy-discipline:42" -> "D60000",
     ))
+    val triedString = execute(file)
+    triedString.map(normalize) shouldBe Success(expectedDDM(file))
+    validate(triedString)
+  }
 
-    val expected = File("src/test/resources/expected-ddm/TalkOfEurope.xml")
-      .contentAsString.replaceAll(" +", " ")
+  "streaming" should "get a DDM out of its EMD" in {
+    val file = "streaming.xml"
 
-    val triedString = FoXml.getEmd(XML.loadFile((samples / "TalkOfEurope.xml").toJava))
-      .flatMap(DDM(_).map(toS))
-    triedString.map(_.replaceAll(nameSpaceRegExp, "").replaceAll(" +\n?", " ")) shouldBe Success(expected)
-
-    assume(schemaIsAvailable)
-    triedString.flatMap(validate) shouldBe a[Success[_]]
+    implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
+    expectedAudiences(Map(
+      "easy-discipline:6" -> "D35400",
+      "easy-discipline:11" -> "D34300",
+      "easy-discipline:14" -> "D36000",
+      "easy-discipline:42" -> "D60000",
+    ))
+    val triedString = execute(file)
+    triedString.map(normalize) shouldBe Success(expectedDDM(file))
+    validate(triedString)
   }
 
   "descriptions" should "..." in {
@@ -190,7 +205,12 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
 
   private def toS(elem: Elem) = printer.format(Utility.trim(elem))
 
-  private def validate(serialized: String) = {
+  private def validate(triedString: Try[String]): Assertion = {
+    assume(schemaIsAvailable)
+    triedString.flatMap(validate) shouldBe a[Success[_]]
+  }
+
+  private def validate(serialized: String): Try[Unit] = {
     triedSchema.flatMap { schema =>
       val source = new StreamSource(serialized.inputStream)
       Try(schema.newValidator().validate(source))
@@ -205,5 +225,13 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
         false
       case _ => true
     }
+  }
+
+  /** @return a stripped XML compatible with expectedDDM */
+  private def normalize(xml: String) = xml.replaceAll(nameSpaceRegExp, "").replaceAll(" +\n?", " ")
+
+  private def expectedDDM(file: String) = {
+    (File("src/test/resources/expected-ddm/") / file)
+      .contentAsString.replaceAll(" +", " ")
   }
 }

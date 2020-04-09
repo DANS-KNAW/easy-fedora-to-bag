@@ -107,9 +107,9 @@ object DDM extends DebugEnhancedLogging {
 
   def orNull(dateScheme: DateScheme): String = Option(dateScheme).map(_.toString).orNull
 
-  private def isOtherDate(kv: (DatasetId, Iterable[Elem])) = !Seq("created", "available").contains(kv._1)
+  private def isOtherDate(kv: (String, Iterable[Elem])) = !Seq("created", "available").contains(kv._1)
 
-  private def dateLabel(key: DatasetId) = {
+  private def dateLabel(key: String) = {
     if (key.isBlank) "date"
     else key
   }
@@ -122,7 +122,7 @@ object DDM extends DebugEnhancedLogging {
       .mapValues(_.flatMap(_._2))
   }
 
-  private def getAudience(id: DatasetId)(implicit fedoraProvider: FedoraProvider) = {
+  private def getAudience(id: String)(implicit fedoraProvider: FedoraProvider) = {
     fedoraProvider.loadFoXml(id).map(foXml =>
       (foXml \\ "discipline-md" \ "OICode").text
     )

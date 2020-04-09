@@ -1,3 +1,18 @@
+/**
+ * Copyright (C) 2020 DANS - Data Archiving and Networked Services (info@dans.knaw.nl)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package nl.knaw.dans.easy.fedora2vault
 
 import java.net.UnknownHostException
@@ -33,11 +48,11 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
     ))
 
     val expected = File("src/test/resources/expected-ddm/TalkOfEurope.xml")
-      .contentAsString.replaceAll(" +"," ")
+      .contentAsString.replaceAll(" +", " ")
 
     val triedString = FoXml.getEmd(XML.loadFile((samples / "TalkOfEurope.xml").toJava))
       .flatMap(DDM(_).map(toS))
-    triedString.map(_.replaceAll(nameSpaceRegExp, "").replaceAll(" +\n?"," ")) shouldBe Success(expected)
+    triedString.map(_.replaceAll(nameSpaceRegExp, "").replaceAll(" +\n?", " ")) shouldBe Success(expected)
 
     assume(schemaIsAvailable)
     triedString.flatMap(validate) shouldBe a[Success[_]]

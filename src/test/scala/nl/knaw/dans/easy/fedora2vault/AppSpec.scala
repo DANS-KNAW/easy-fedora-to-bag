@@ -55,8 +55,8 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
     expectAUser(app.ldapContext)
     expectedSubordinates(app.fedoraProvider, "easy-file:35")
     expectedFoXmls(app.fedoraProvider,
-        testDir / "fo.xml",
-        samples / "easy-file-35.xml",
+      testDir / "fo.xml",
+      samples / "easy-file-35.xml",
     )
     expectedManagedStreams(app.fedoraProvider,
       (testDir / "EASY_FILE").write("lalala"),

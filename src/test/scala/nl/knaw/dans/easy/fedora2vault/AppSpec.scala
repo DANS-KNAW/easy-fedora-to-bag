@@ -151,7 +151,7 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
     (ldapContext.search(_: String, _: String, _: SearchControls)) expects(*, *, *) returning result
   }
 
-  private def createFoXml(emd: Elem, owner: DatasetId) = {
+  private def createFoXml(emd: Elem, owner: String) = {
     // reduced variant of http://deasy.dans.knaw.nl:8080/fedora/objects/easy-dataset:1/objectXML
     <foxml:digitalObject VERSION="1.1" PID="easy-dataset:1"
                    xmlns:foxml="info:fedora/fedora-system:def/foxml#"

@@ -57,10 +57,10 @@
         </dcx-dai:creatorDetails>
         <ddm:created>2015-12-31</ddm:created>
         <ddm:available>2015-12-31</ddm:available>
-        <ddm:audience>easy-discipline:42</ddm:audience>
-        <ddm:audience>easy-discipline:11</ddm:audience>
-        <ddm:audience>easy-discipline:14</ddm:audience>
-        <ddm:audience>easy-discipline:6</ddm:audience>
+        <ddm:audience>D60000</ddm:audience>
+        <ddm:audience>D34300</ddm:audience>
+        <ddm:audience>D36000</ddm:audience>
+        <ddm:audience>D35400</ddm:audience>
         <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
     </ddm:profile>
     <ddm:dcmiMetadata>

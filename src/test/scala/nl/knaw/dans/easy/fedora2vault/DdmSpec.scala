@@ -7,13 +7,12 @@ import javax.xml.XMLConstants
 import javax.xml.transform.Source
 import javax.xml.transform.stream.StreamSource
 import javax.xml.validation.SchemaFactory
-import nl.knaw.dans.easy.fedora2vault.fixture.TestSupportFixture
-import org.scalamock.scalatest.MockFactory
+import nl.knaw.dans.easy.fedora2vault.fixture.{ AudienceSupport, TestSupportFixture }
 
 import scala.util.{ Failure, Success, Try }
 import scala.xml.{ Elem, SAXParseException, Utility, XML }
 
-class DdmSpec extends TestSupportFixture with MockFactory {
+class DdmSpec extends TestSupportFixture with AudienceSupport {
 
   private val emdNS = "http://easy.dans.knaw.nl/easy/easymetadata/"
   private val easNS = "http://easy.dans.knaw.nl/easy/easymetadata/eas/"
@@ -23,19 +22,29 @@ class DdmSpec extends TestSupportFixture with MockFactory {
     .newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
     .newSchema(Array(new StreamSource("https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd")).toArray[Source])
   )
-  implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
 
   "TalkOfEurope" should "get a DDM out of its EMD" in {
+    implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
+    expectedAudiences(Map(
+      "easy-discipline:6" -> "D35400",
+      "easy-discipline:11" -> "D34300",
+      "easy-discipline:14" -> "D36000",
+      "easy-discipline:42" -> "D60000",
+    ))
+
     val expected = File("src/test/resources/expected-ddm/TalkOfEurope.xml")
       .contentAsString.replaceAll(" +"," ")
+
     val triedString = FoXml.getEmd(XML.loadFile((samples / "TalkOfEurope.xml").toJava))
       .flatMap(DDM(_).map(toS))
     triedString.map(_.replaceAll(nameSpaceRegExp, "").replaceAll(" +\n?"," ")) shouldBe Success(expected)
+
     assume(schemaIsAvailable)
     triedString.flatMap(validate) shouldBe a[Success[_]]
   }
 
   "descriptions" should "..." in {
+    implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
     DDM(
       <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
         <emd:description>
@@ -63,6 +72,7 @@ class DdmSpec extends TestSupportFixture with MockFactory {
   }
 
   "dates" should "use created for available" in {
+    implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
     DDM(
       <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
           <emd:date>
@@ -83,6 +93,7 @@ class DdmSpec extends TestSupportFixture with MockFactory {
   }
 
   it should "tolerate an empty EMD" in {
+    implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
     DDM(
       <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
       </emd:easymetadata>
@@ -98,6 +109,7 @@ class DdmSpec extends TestSupportFixture with MockFactory {
   }
 
   it should "render only the first available" in {
+    implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
     DDM(
       <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
           <emd:date>

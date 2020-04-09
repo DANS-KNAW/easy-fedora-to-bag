@@ -15,6 +15,7 @@
  */
 package nl.knaw.dans.easy.fedora2vault
 
+import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import nl.knaw.dans.lib.string._
 import nl.knaw.dans.pf.language.emd.EasyMetadataImpl
@@ -30,26 +31,23 @@ object DDM extends DebugEnhancedLogging {
   val schemaNameSpace: String = "http://easy.dans.knaw.nl/schemas/md/ddm/"
   val schemaLocation: String = "https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd"
 
-  def apply(emdNode: Node)(implicit fedoraProvider: FedoraProvider): Try[Elem] = Try {
-    new EmdUnmarshaller(classOf[EasyMetadataImpl]).unmarshal(emdNode.serialize)
-  }.map { emd =>
-    //    println(new EmdMarshaller(emd).getXmlString)
+  def apply(emdNode: Node)(implicit fedoraProvider: FedoraProvider): Try[Elem] = {
+    for {
+      emd <- Try(new EmdUnmarshaller(classOf[EasyMetadataImpl]).unmarshal(emdNode.serialize))
+      fedoraIDs = emd.getEmdAudience.getDisciplines.asScala.map(_.getValue)
+      disciplines <- fedoraIDs.map(getAudience).collectResults
+    } yield {
+      //    println(new EmdMarshaller(emd).getXmlString)
 
-    // a null value skips rendering the attribute
-    val lang: String = emd.getEmdLanguage.getDcLanguage.asScala.headOption.map(_.getValue).orNull
-    val dateMap: Map[String, Iterable[Elem]] = {
-      val basicDates = emd.getEmdDate.getAllBasicDates.asScala.map { case (key, values) => key -> values.asScala.map(toXml) }
-      val isoDates = emd.getEmdDate.getAllIsoDates.asScala.map { case (key, values) => key -> values.asScala.map(toXml) }
-      (basicDates.toSeq ++ isoDates.toSeq)
-        .groupBy(_._1)
-        .mapValues(_.flatMap(_._2))
-    }
-    val created = dateMap("created")
-    val available = {
-      val elems = dateMap("available")
-      if (elems.isEmpty) created
-      else elems
-    }
+      // a null value skips rendering the attribute
+      val lang: String = emd.getEmdLanguage.getDcLanguage.asScala.headOption.map(_.getValue).orNull
+      val dateMap: Map[String, Iterable[Elem]] = getDateMap(emd)
+      val created = dateMap("created")
+      val available = {
+        val elems = dateMap("available")
+        if (elems.isEmpty) created
+        else elems
+      }
 
     <ddm:DDM
       xmlns:dc="http://purl.org/dc/elements/1.1/"
@@ -73,7 +71,8 @@ object DDM extends DebugEnhancedLogging {
         { emd.getEmdCreator.getEasCreator.asScala.map(author => <dcx-dai:creatorDetails>{ toXml(author, lang)} </dcx-dai:creatorDetails>) }
         { created.map(node =>  <ddm:created>{ node.text }</ddm:created>) }
         { available.map(node =>  <ddm:available>{ node.text }</ddm:available>) }
-        { emd.getEmdAudience.getDisciplines.asScala.map(bs => <ddm:audience>{ bs.getValue }</ddm:audience>) }
+        { disciplines.map(code =>
+        <ddm:audience>{ code }</ddm:audience>) }
         <ddm:accessRights>{ emd.getEmdRights.getAccessCategory }</ddm:accessRights>
       </ddm:profile>
       <ddm:dcmiMetadata>
@@ -84,20 +83,12 @@ object DDM extends DebugEnhancedLogging {
         { /* TODO ... */ }
       </ddm:dcmiMetadata>
     </ddm:DDM>
+    }
   }
 
   private def toXml(value: IsoDate) = <label xsi:type={ orNull(value.getScheme) }>{ value }</label>
 
   private def toXml(value: BasicDate) = <label xsi:type={ orNull(value.getScheme) }>{ value }</label>
-
-  def orNull(dateScheme: DateScheme): String = Option(dateScheme).map(_.toString).orNull
-
-  private def isOtherDate(kv: (DatasetId, Iterable[Elem])) = !Seq("created", "available").contains(kv._1)
-
-  private def dateLabel(key: DatasetId) = {
-    if (key.isBlank) "date"
-    else key
-  }
 
   private def toXml(author: Author, lang: String): Seq[Node] = {
     if (author.getSurname.isBlank)
@@ -112,6 +103,29 @@ object DDM extends DebugEnhancedLogging {
         { Option(author.getRole).toSeq.map(role =>  <dcx-dai:role>{ role.getRole /* TODO scheme? */ }</dcx-dai:role>) }
         { Option(author.getOrganization).toSeq.map(toXml(_, lang, maybeRole = None)) }
       </dcx-dai:author>
+  }
+
+  def orNull(dateScheme: DateScheme): String = Option(dateScheme).map(_.toString).orNull
+
+  private def isOtherDate(kv: (DatasetId, Iterable[Elem])) = !Seq("created", "available").contains(kv._1)
+
+  private def dateLabel(key: DatasetId) = {
+    if (key.isBlank) "date"
+    else key
+  }
+
+  private def getDateMap(emd: EasyMetadataImpl) = {
+    val basicDates = emd.getEmdDate.getAllBasicDates.asScala.map { case (key, values) => key -> values.asScala.map(toXml) }
+    val isoDates = emd.getEmdDate.getAllIsoDates.asScala.map { case (key, values) => key -> values.asScala.map(toXml) }
+    (basicDates.toSeq ++ isoDates.toSeq)
+      .groupBy(_._1)
+      .mapValues(_.flatMap(_._2))
+  }
+
+  private def getAudience(id: DatasetId)(implicit fedoraProvider: FedoraProvider) = {
+    fedoraProvider.loadFoXml(id).map(foXml =>
+      (foXml \\ "discipline-md" \ "OICode").text
+    )
   }
 
   /** @return an empty Seq for a null or blank String */

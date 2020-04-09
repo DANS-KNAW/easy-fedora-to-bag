@@ -1,0 +1,21 @@
+<ddm:DDM xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
+    <ddm:profile>
+        <dc:title>as</dc:title>
+        <dcterms:description>as</dcterms:description>
+        <dcx-dai:creatorDetails>
+            <dcx-dai:organization>
+                <dcx-dai:name>as</dcx-dai:name>
+            </dcx-dai:organization>
+        </dcx-dai:creatorDetails>
+        <ddm:created>2020-03-17</ddm:created>
+        <ddm:available>2020-03-17</ddm:available>
+        <ddm:audience>D13200</ddm:audience>
+        <ddm:accessRights>REQUEST_PERMISSION</ddm:accessRights>
+    </ddm:profile>
+    <ddm:dcmiMetadata>
+        <dcterms:identifier xsi:type="PID">urn:nbn:nl:ui:13-00-1haq</dcterms:identifier>
+        <dcterms:identifier xsi:type="DOI">10.17026/test-Iiib-z9p-4ywa</dcterms:identifier>
+        <dcterms:identifier xsi:type="DMO_ID">easy-dataset:17</dcterms:identifier>
+        <dateSubmitted xsi:type="W3CDTF">2020-03-17</dateSubmitted>
+    </ddm:dcmiMetadata>
+</ddm:DDM>

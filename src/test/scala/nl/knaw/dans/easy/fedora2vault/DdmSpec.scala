@@ -38,11 +38,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
     .newSchema(Array(new StreamSource("https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd")).toArray[Source])
   )
 
-  private def execute(file: DatasetId)(implicit fedoraProvider: FedoraProvider) = {
-    FoXml.getEmd(XML.loadFile((samples / file).toJava)).flatMap(DDM(_).map(toS))
-  }
-
-  "TalkOfEurope" should "get a DDM out of its EMD" in {
+  "TalkOfEurope" should "get a valid DDM out of its EMD" in {
     val file = "TalkOfEurope.xml"
 
     implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
@@ -52,22 +48,36 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
       "easy-discipline:14" -> "D36000",
       "easy-discipline:42" -> "D60000",
     ))
-    val triedString = execute(file)
+    val triedString = FoXml.getEmd(XML.loadFile((samples / file).toJava))
+      .flatMap(DDM(_).map(toS))
     triedString.map(normalize) shouldBe Success(expectedDDM(file))
     validate(triedString) shouldBe a[Success[_]]
   }
 
-  "streaming" should "get a DDM out of its EMD" in {
+  "streaming" should "get a valid DDM out of its EMD" in {
     val file = "streaming.xml"
 
     implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
     expectedAudiences(Map("easy-discipline:6" -> "D35400"))
-    val triedString = execute(file)
+    val triedString = FoXml.getEmd(XML.loadFile((samples / file).toJava))
+      .flatMap(DDM(_).map(toS))
     triedString.map(normalize) shouldBe Success(expectedDDM(file))
     validate(triedString) shouldBe a[Success[_]]
   }
 
-  "descriptions" should "..." in {
+  "depositApi" should "get a valid DDM out of its EMD" in {
+    val file = "depositApi.xml"
+
+    implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
+    expectedAudiences(Map("easy-discipline:77" -> "D13200"))
+    val triedFoXml = FoXml.getEmd(XML.loadFile((samples / file).toJava))
+    val triedDdm = triedFoXml.flatMap(DDM(_).map(toS))
+    triedDdm shouldBe a[Success[_]]
+    // TODO compare with DDM in foXml
+    validate(triedDdm) shouldBe a[Success[_]]
+  }
+
+  "descriptions" should "all appear" in {
     implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
     DDM(
       <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">

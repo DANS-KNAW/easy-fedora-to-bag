@@ -91,7 +91,7 @@ object DDM extends DebugEnhancedLogging {
   private def toXml(value: BasicDate) = <label xsi:type={ orNull(value.getScheme) }>{ value }</label>
 
   private def toXml(author: Author, lang: String): Seq[Node] = {
-    if (author.getSurname.isBlank)
+    if (Option(author.getSurname).toSeq.filter(!_.isBlank).isEmpty)
       Option(author.getOrganization).toSeq.map(toXml(_, lang, Option(author.getRole)))
     else
       <dcx-dai:author>

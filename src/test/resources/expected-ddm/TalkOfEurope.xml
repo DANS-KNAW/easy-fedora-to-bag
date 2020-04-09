@@ -55,8 +55,8 @@
                 </dcx-dai:organization>
             </dcx-dai:author>
         </dcx-dai:creatorDetails>
-        <created xsi:type="W3CDTF">2015-12-31</created>
-        <available xsi:type="W3CDTF">2015-12-31</available>
+        <ddm:created>2015-12-31</ddm:created>
+        <ddm:available>2015-12-31</ddm:available>
         <ddm:audience>easy-discipline:42</ddm:audience>
         <ddm:audience>easy-discipline:11</ddm:audience>
         <ddm:audience>easy-discipline:14</ddm:audience>

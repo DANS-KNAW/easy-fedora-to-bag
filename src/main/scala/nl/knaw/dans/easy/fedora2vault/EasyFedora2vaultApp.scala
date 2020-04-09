@@ -18,17 +18,16 @@ package nl.knaw.dans.easy.fedora2vault
 import java.io.InputStream
 import java.nio.file.Paths
 
-import better.files.File
+import better.files.{ File, StringExtensions }
 import com.yourmediashelf.fedora.client.FedoraClient
 import javax.naming.ldap.InitialLdapContext
 import nl.knaw.dans.bag.v0.DansV0Bag
 import nl.knaw.dans.easy.fedora2vault.Command.FeedBackMessage
 import nl.knaw.dans.easy.fedora2vault.FoXml.{ getEmd, _ }
-import better.files.StringExtensions
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.util.{ Success, Try }
-import scala.xml.{ Elem, Node, XML }
+import scala.xml.{ Elem, Node }
 
 class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLogging {
   lazy val fedoraProvider: FedoraProvider = new FedoraProvider(new FedoraClient(configuration.fedoraCredentials))
@@ -57,7 +56,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
     }
 
     for {
-      foXml <- loadFoXml(datasetId)
+      foXml <- fedoraProvider.loadFoXml(datasetId)
       depositor <- getOwner(foXml)
       bag <- DansV0Bag.empty(outputDir).map(_.withEasyUserAccount(depositor))
       _ <- getEmd(foXml)
@@ -105,15 +104,11 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
   }
 
   private def addPayloadFileTo(bag: DansV0Bag)(fedoraFileId: String): Try[DansV0Bag] = {
-    loadFoXml(fedoraFileId)
+    fedoraProvider.loadFoXml(fedoraFileId)
       .flatMap(foXml => fedoraProvider
         .disseminateDatastream(fedoraFileId, "EASY_FILE")
         .map(bag.addPayloadFile(_, Paths.get((foXml \\ "file-item-md" \\ "path").text)))
         .tried.flatten
       )
-  }
-
-  private def loadFoXml(fedoraId: DatasetId) = {
-    fedoraProvider.getObject(fedoraId).map(XML.load).tried
   }
 }

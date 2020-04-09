@@ -8,11 +8,12 @@ import javax.xml.transform.Source
 import javax.xml.transform.stream.StreamSource
 import javax.xml.validation.SchemaFactory
 import nl.knaw.dans.easy.fedora2vault.fixture.TestSupportFixture
+import org.scalamock.scalatest.MockFactory
 
 import scala.util.{ Failure, Success, Try }
 import scala.xml.{ Elem, SAXParseException, Utility, XML }
 
-class DdmSpec extends TestSupportFixture {
+class DdmSpec extends TestSupportFixture with MockFactory {
 
   private val emdNS = "http://easy.dans.knaw.nl/easy/easymetadata/"
   private val easNS = "http://easy.dans.knaw.nl/easy/easymetadata/eas/"
@@ -22,15 +23,16 @@ class DdmSpec extends TestSupportFixture {
     .newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
     .newSchema(Array(new StreamSource("https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd")).toArray[Source])
   )
+  implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
 
   "TalkOfEurope" should "get a DDM out of its EMD" in {
     val expected = File("src/test/resources/expected-ddm/TalkOfEurope.xml")
       .contentAsString.replaceAll(" +"," ")
-    FoXml
-      .getEmd(XML.loadFile((samples / "TalkOfEurope.xml").toJava))
-      .flatMap(DDM(_).map(toS(_).replaceAll(nameSpaceRegExp, "").replaceAll(" +\n?"," "))) shouldBe Success(expected)
+    val triedString = FoXml.getEmd(XML.loadFile((samples / "TalkOfEurope.xml").toJava))
+      .flatMap(DDM(_).map(toS))
+    triedString.map(_.replaceAll(nameSpaceRegExp, "").replaceAll(" +\n?"," ")) shouldBe Success(expected)
     assume(schemaIsAvailable)
-    validate(expected) shouldBe a[Success[_]]
+    triedString.flatMap(validate) shouldBe a[Success[_]]
   }
 
   "descriptions" should "..." in {
@@ -43,9 +45,6 @@ class DdmSpec extends TestSupportFixture {
           <dct:tableOfContents>rabar</dct:tableOfContents>
           <dct:abstract>blabl</dct:abstract>
         </emd:description>
-        <emd:date>
-          <dct:created>03-2013</dct:created>
-        </emd:date>
       </emd:easymetadata>
     ).map(toStripped) shouldBe Success(
       """<ddm:DDM
@@ -56,8 +55,6 @@ class DdmSpec extends TestSupportFixture {
         |    <dcterms:description>beschrijving</dcterms:description>
         |    <dcterms:description descriptionType="Abstract">blabl</dcterms:description>
         |    <dcterms:description descriptionType="TableOfContent">rabar</dcterms:description>
-        |    <created>03-2013</created>
-        |    <available>03-2013</available>
         |    <ddm:accessRights/>
         |  </ddm:profile>
         |  <ddm:dcmiMetadata/>
@@ -76,8 +73,8 @@ class DdmSpec extends TestSupportFixture {
       """<ddm:DDM
         |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
         |  <ddm:profile>
-        |    <created>03-2013</created>
-        |    <available>03-2013</available>
+        |    <ddm:created>03-2013</ddm:created>
+        |    <ddm:available>03-2013</ddm:available>
         |    <ddm:accessRights/>
         |  </ddm:profile>
         |  <ddm:dcmiMetadata/>
@@ -131,11 +128,11 @@ class DdmSpec extends TestSupportFixture {
       """<ddm:DDM
         |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
         |  <ddm:profile>
-        |    <created>03-2013</created>
-        |    <created xsi:type="W3CDTF">1901-04</created>
-        |    <available>04-2013</available>
-        |    <available xsi:type="W3CDTF">1900</available>
-        |    <available xsi:type="W3CDTF">1902-04</available>
+        |    <ddm:created>03-2013</ddm:created>
+        |    <ddm:created>1901-04</ddm:created>
+        |    <ddm:available>04-2013</ddm:available>
+        |    <ddm:available>1900</ddm:available>
+        |    <ddm:available>1902-04</ddm:available>
         |    <ddm:accessRights/>
         |  </ddm:profile>
         |  <ddm:dcmiMetadata>

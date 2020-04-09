@@ -23,6 +23,7 @@ import org.apache.commons.io.IOUtils
 import resource.{ ManagedResource, managed }
 
 import scala.util.{ Failure, Try }
+import scala.xml.{ Elem, XML }
 class FedoraProvider(fedoraClient: FedoraClient) {
   // copy of https://github.com/DANS-KNAW/easy-export-dataset/blob/6e656c6e6dad19bdea70694d63ce929ab7b0ad2b/src/main/scala/nl.knaw.dans.easy.export/FedoraProvider.scala
   // variant of https://github.com/DANS-KNAW/easy-deposit-agreement-creator/blob/e718655515ad5d597fd227bc29776c074a959f00/src/main/scala/nl/knaw/dans/easy/agreement/datafetch/Fedora.scala#L52
@@ -57,4 +58,7 @@ class FedoraProvider(fedoraClient: FedoraClient) {
       .flatMap(response => managed(response.getEntityInputStream))
   }
 
+  def loadFoXml(fedoraId: DatasetId): Try[Elem] = {
+    getObject(fedoraId).map(XML.load).tried
+  }
 }

@@ -16,11 +16,11 @@
 package nl.knaw.dans.easy.fedora2vault
 
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
+import nl.knaw.dans.lib.string._
 import nl.knaw.dans.pf.language.emd.EasyMetadataImpl
 import nl.knaw.dans.pf.language.emd.binding.EmdUnmarshaller
 import nl.knaw.dans.pf.language.emd.types.EmdConstants.DateScheme
 import nl.knaw.dans.pf.language.emd.types.{ Author, BasicDate, IsoDate }
-import nl.knaw.dans.lib.string._
 
 import scala.collection.JavaConverters._
 import scala.util.Try
@@ -30,7 +30,7 @@ object DDM extends DebugEnhancedLogging {
   val schemaNameSpace: String = "http://easy.dans.knaw.nl/schemas/md/ddm/"
   val schemaLocation: String = "https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd"
 
-  def apply(emdNode: Node): Try[Elem] = Try {
+  def apply(emdNode: Node)(implicit fedoraProvider: FedoraProvider): Try[Elem] = Try {
     new EmdUnmarshaller(classOf[EasyMetadataImpl]).unmarshal(emdNode.serialize)
   }.map { emd =>
     //    println(new EmdMarshaller(emd).getXmlString)
@@ -71,8 +71,8 @@ object DDM extends DebugEnhancedLogging {
         { /* instructions for reuse not specified as such in EMD */ }
         { emd.getEmdCreator.getDcCreator.asScala.map(bs => ???) }
         { emd.getEmdCreator.getEasCreator.asScala.map(author => <dcx-dai:creatorDetails>{ toXml(author, lang)} </dcx-dai:creatorDetails>) }
-        { created.map(_.withLabel("created")) }
-        { available.map(_.withLabel("available")) }
+        { created.map(node =>  <ddm:created>{ node.text }</ddm:created>) }
+        { available.map(node =>  <ddm:available>{ node.text }</ddm:available>) }
         { emd.getEmdAudience.getDisciplines.asScala.map(bs => <ddm:audience>{ bs.getValue }</ddm:audience>) }
         <ddm:accessRights>{ emd.getEmdRights.getAccessCategory }</ddm:accessRights>
       </ddm:profile>
@@ -120,7 +120,7 @@ object DDM extends DebugEnhancedLogging {
   private def toXml(organization: String, lang: String, maybeRole: Option[Author.Role]): Elem =
       <dcx-dai:organization>
         { <dcx-dai:name xml:lang={ lang }>{ organization }</dcx-dai:name> }
-        { maybeRole.toSeq.map(role => <dcx-dai:role>{ role.getRole }</dcx-dai:role> ) }
+        { maybeRole.toSeq.map(role => <dcx-dai:role>{ role.getRole }</dcx-dai:role>) }
       </dcx-dai:organization>
 
   /** @param elem XML element to be adjusted */

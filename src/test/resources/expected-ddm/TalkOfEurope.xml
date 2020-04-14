@@ -68,6 +68,41 @@
         <dcterms:identifier xsi:type="id-type:DOI">10.17026/test-dans-2xg-umq8</dcterms:identifier>
         <dcterms:identifier>TalkOfEurope</dcterms:identifier>
         <dcterms:identifier xsi:type="id-type:DMO_ID"></dcterms:identifier>
-        <dateSubmitted xsi:type="W3CDTF">2015-10-14</dateSubmitted>
+        <dcx-dai:contributorDetails>
+            <dcx-dai:author>
+                <dcx-dai:titles xml:lang="eng">Prof.</dcx-dai:titles>
+                <dcx-dai:initials>B.H.</dcx-dai:initials>
+                <dcx-dai:surname>H?yland</dcx-dai:surname>
+                <dcx-dai:organization>
+                    <dcx-dai:name xml:lang="eng">University of Oslo</dcx-dai:name>
+                </dcx-dai:organization>
+            </dcx-dai:author>
+        </dcx-dai:contributorDetails>
+        <dcx-dai:contributorDetails>
+            <dcx-dai:author>
+                <dcx-dai:titles xml:lang="eng">Dr.</dcx-dai:titles>
+                <dcx-dai:initials>M.</dcx-dai:initials>
+                <dcx-dai:surname>Marx</dcx-dai:surname>
+                <dcx-dai:organization>
+                    <dcx-dai:name xml:lang="eng">University of Amsterdam</dcx-dai:name>
+                </dcx-dai:organization>
+            </dcx-dai:author>
+        </dcx-dai:contributorDetails>
+        <dcx-dai:contributorDetails>
+            <dcx-dai:author>
+                <dcx-dai:titles xml:lang="eng">MSc</dcx-dai:titles>
+                <dcx-dai:initials>S.G.</dcx-dai:initials>
+                <dcx-dai:surname>Giannini</dcx-dai:surname>
+                <dcx-dai:organization>
+                    <dcx-dai:name xml:lang="eng">Universit? degli studi di Bari Aldo Moro</dcx-dai:name>
+                </dcx-dai:organization>
+            </dcx-dai:author>
+        </dcx-dai:contributorDetails>
+        <dcx-dai:contributorDetails>
+            <dcx-dai:organization>
+                <dcx-dai:name xml:lang="eng">Funding Agency: Clarin ERIC and Clarin-NL.</dcx-dai:name>
+            </dcx-dai:organization>
+        </dcx-dai:contributorDetails>
+        <dcterms:dateSubmitted xsi:type="dcterms:W3CDTF">2015-10-14</dcterms:dateSubmitted>
     </ddm:dcmiMetadata>
 </ddm:DDM>

@@ -87,6 +87,7 @@ object DDM extends DebugEnhancedLogging {
           { emd.getEmdContributor.getEasContributor.asScala.map(author => <dcx-dai:contributorDetails>{ toXml(author, emdLang)} </dcx-dai:contributorDetails>) }
           { /* TODO ... */ }
           { dateMap.filter(isOtherDate).map { case (key, values) => values.map(_.withLabel(dateLabel(key))) } }
+          { emd.getEmdRights.getTermsLicense.asScala.filter(_.getValue != "accept").map(bs => <dcterms:license xsi:type="dcterms:URI">{ bs.getValue }</dcterms:license>) }
           { /* TODO ... */ }
         </ddm:dcmiMetadata>
       </ddm:DDM>

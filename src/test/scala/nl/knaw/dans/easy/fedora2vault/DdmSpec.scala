@@ -77,7 +77,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
     // round trip test (foXml/EMD was created from the foXML/DDM by easy-ingest-flow)
     triedDdm.map(normalize).map(_.split("\n")
       .filterNot(_.matches(".*id-type:(PID|DMO_ID).*")) // added to EMD by easy-ingest-flow
-      .mkString("\n")
+      .mkString("\n") + "\n"
     )shouldBe triedFoXml.map(foXml =>
       normalize(toS((foXml \\ "DDM").head))
     )
@@ -112,6 +112,68 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
         |""".stripMargin)
   }
 
+  "license" should "be copied from <dct:license>" in { // as in DepositApi.xml
+    implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
+    DDM(
+      <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
+        <emd:rights>
+            <dct:accessRights eas:schemeId="common.dcterms.accessrights">OPEN_ACCESS</dct:accessRights>
+            <dct:license>http://dans.knaw.nl/en/about/organisation-and-policy/legal-information/DANSLicence.pdf</dct:license>
+            <dct:license eas:scheme="Easy2 version 1">accept</dct:license>
+        </emd:rights>
+      </emd:easymetadata>
+    ).map(toStripped) shouldBe Success(
+      """<ddm:DDM
+        |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
+        |  <ddm:profile>
+        |    <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
+        |  </ddm:profile>
+        |  <ddm:dcmiMetadata>
+        |    <dcterms:license xsi:type="dcterms:URI">http://dans.knaw.nl/en/about/organisation-and-policy/legal-information/DANSLicence.pdf</dcterms:license>
+        |  </ddm:dcmiMetadata>
+        |</ddm:DDM>
+        |""".stripMargin)
+  }
+
+  it should "..open access.." in { // as in streaming.xml
+    implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
+    DDM(
+      <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
+        <emd:rights>
+            <dct:accessRights eas:schemeId="common.dcterms.accessrights">OPEN_ACCESS</dct:accessRights>
+        </emd:rights>
+      </emd:easymetadata>
+    ).map(toStripped) shouldBe Success(
+      """<ddm:DDM
+        |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
+        |  <ddm:profile>
+        |    <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
+        |  </ddm:profile>
+        |  <ddm:dcmiMetadata/>
+        |</ddm:DDM>
+        |""".stripMargin)
+  }
+
+  it should "..accept.." in { // as in TalkOfEurope.xml
+    implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
+    DDM(
+      <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
+        <emd:rights>
+            <dct:accessRights eas:schemeId="common.dcterms.accessrights">OPEN_ACCESS</dct:accessRights>
+            <dct:license>accept</dct:license>
+        </emd:rights>
+      </emd:easymetadata>
+    ).map(toStripped) shouldBe Success(
+      """<ddm:DDM
+        |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
+        |  <ddm:profile>
+        |    <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
+        |  </ddm:profile>
+        |  <ddm:dcmiMetadata/>
+        |</ddm:DDM>
+        |""".stripMargin)
+  }
+
   "dates" should "use created for available" in {
     implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
     DDM(
@@ -126,22 +188,6 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
         |  <ddm:profile>
         |    <ddm:created>03-2013</ddm:created>
         |    <ddm:available>03-2013</ddm:available>
-        |    <ddm:accessRights/>
-        |  </ddm:profile>
-        |  <ddm:dcmiMetadata/>
-        |</ddm:DDM>
-        |""".stripMargin)
-  }
-
-  it should "tolerate an empty EMD" in {
-    implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
-    DDM(
-      <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
-      </emd:easymetadata>
-    ).map(toStripped) shouldBe Success(
-      """<ddm:DDM
-        |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
-        |  <ddm:profile>
         |    <ddm:accessRights/>
         |  </ddm:profile>
         |  <ddm:dcmiMetadata/>

@@ -94,14 +94,15 @@ object DDM extends DebugEnhancedLogging {
   }
 
   private def toXml(author: Author, lang: String): Seq[Node] = {
-    if (Option(author.getSurname).toSeq.filter(!_.isBlank).isEmpty)
+    val surname = author.getSurname
+    if (surname == null || surname.trim.isEmpty)
       Option(author.getOrganization).toSeq.map(toXml(_, lang, Option(author.getRole)))
     else
       <dcx-dai:author>
         { seq(author.getTitle).map(str => <dcx-dai:titles xml:lang={ lang }>{ str }</dcx-dai:titles>) }
         { seq(author.getInitials).map(str => <dcx-dai:initials>{ str }</dcx-dai:initials>) }
         { seq(author.getPrefix).map(str => <dcx-dai:insertions>{ str }</dcx-dai:insertions>) }
-        { seq(author.getSurname).map(str => <dcx-dai:surname>{ str }</dcx-dai:surname>) }
+        <dcx-dai:surname>{ surname }</dcx-dai:surname>
         { /* TODO  author.getEntityId.map(src => { <label>{ src.value.orEmpty }</label>.withLabel(daiLabel(src.scheme)) })*/ }
         { Option(author.getRole).toSeq.map(role =>  <dcx-dai:role>{ role.getRole /* TODO scheme? */ }</dcx-dai:role>) }
         { Option(author.getOrganization).toSeq.map(toXml(_, lang, maybeRole = None)) }

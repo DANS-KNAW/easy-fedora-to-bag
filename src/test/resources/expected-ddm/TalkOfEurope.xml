@@ -64,10 +64,8 @@
         <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
     </ddm:profile>
     <ddm:dcmiMetadata>
-        <dcterms:identifier xsi:type="id-type:PID">urn:nbn:nl:ui:13-3ax2-te</dcterms:identifier>
         <dcterms:identifier xsi:type="id-type:DOI">10.17026/test-dans-2xg-umq8</dcterms:identifier>
         <dcterms:identifier>TalkOfEurope</dcterms:identifier>
-        <dcterms:identifier xsi:type="id-type:DMO_ID"></dcterms:identifier>
         <dcx-dai:contributorDetails>
             <dcx-dai:author>
                 <dcx-dai:titles xml:lang="eng">Prof.</dcx-dai:titles>
@@ -104,5 +102,6 @@
             </dcx-dai:organization>
         </dcx-dai:contributorDetails>
         <dcterms:dateSubmitted xsi:type="dcterms:W3CDTF">2015-10-14</dcterms:dateSubmitted>
+        <dcterms:license xsi:type="dcterms:URI">http://dans.knaw.nl/en/about/organisation-and-policy/legal-information/DANSLicence.pdf</dcterms:license>
     </ddm:dcmiMetadata>
 </ddm:DDM>

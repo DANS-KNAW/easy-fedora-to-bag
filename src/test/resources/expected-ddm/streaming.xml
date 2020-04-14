@@ -13,6 +13,6 @@
         <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
     </ddm:profile>
     <ddm:dcmiMetadata>
-        <dcterms:identifier xsi:type="DMO_ID"></dcterms:identifier>
+        <dcterms:identifier xsi:type="id-type:DMO_ID"></dcterms:identifier>
     </ddm:dcmiMetadata>
 </ddm:DDM>

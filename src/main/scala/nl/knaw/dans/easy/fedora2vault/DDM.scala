@@ -21,7 +21,7 @@ import nl.knaw.dans.lib.string._
 import nl.knaw.dans.pf.language.emd.EasyMetadataImpl
 import nl.knaw.dans.pf.language.emd.binding.EmdUnmarshaller
 import nl.knaw.dans.pf.language.emd.types.EmdConstants.DateScheme
-import nl.knaw.dans.pf.language.emd.types.{ Author, BasicDate, IsoDate }
+import nl.knaw.dans.pf.language.emd.types.{ Author, BasicDate, BasicString, IsoDate }
 
 import scala.collection.JavaConverters._
 import scala.util.Try
@@ -39,56 +39,59 @@ object DDM extends DebugEnhancedLogging {
     } yield {
       //    println(new EmdMarshaller(emd).getXmlString)
 
-      // a null value skips rendering the attribute
-      val lang: String = emd.getEmdLanguage.getDcLanguage.asScala.headOption.map(_.getValue).orNull
       val dateMap: Map[String, Iterable[Elem]] = getDateMap(emd)
-      val created = dateMap("created")
-      val available = {
+      val dateCreated = dateMap("created")
+      val dateAvailable = {
         val elems = dateMap("available")
-        if (elems.isEmpty) created
+        if (elems.isEmpty) dateCreated
         else elems
       }
 
-    <ddm:DDM
-      xmlns:dc="http://purl.org/dc/elements/1.1/"
-      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      xmlns:dcterms="http://purl.org/dc/terms/"
-      xmlns:dcx-dai="http://easy.dans.knaw.nl/schemas/dcx/dai/"
-      xmlns:dcx-gml="http://easy.dans.knaw.nl/schemas/dcx/gml/"
-      xmlns:gml="http://www.opengis.net/gml"
-      xmlns:abr="http://www.den.nl/standaard/166/Archeologisch-Basisregister/"
-      xmlns:ddm={schemaNameSpace}
-      xmlns:id-type="http://easy.dans.knaw.nl/schemas/vocab/identifier-type/"
-      xsi:schemaLocation={s"$schemaNameSpace $schemaLocation"}
-    >
-      <ddm:profile>
-        { emd.getEmdTitle.getDcTitle.asScala.map(bs => <dc:title xml:lang={ lang }>{ bs.getValue }</dc:title>) }
-        { emd.getEmdDescription.getDcDescription.asScala.map(bs => <dcterms:description xml:lang={ lang }>{ bs.getValue }</dcterms:description>) }
-        { emd.getEmdDescription.getTermsAbstract.asScala.map(bs => <dcterms:description xml:lang={ lang } descriptionType='Abstract'>{ bs.getValue }</dcterms:description>) }
-        { emd.getEmdDescription.getTermsTableOfContents.asScala.map(bs => <dcterms:description xml:lang={ lang } descriptionType='TableOfContent'>{ bs.getValue }</dcterms:description>) }
-        { /* instructions for reuse not specified as such in EMD */ }
-        { emd.getEmdCreator.getDcCreator.asScala.map(bs => ???) }
-        { emd.getEmdCreator.getEasCreator.asScala.map(author => <dcx-dai:creatorDetails>{ toXml(author, lang)} </dcx-dai:creatorDetails>) }
-        { created.map(node =>  <ddm:created>{ node.text }</ddm:created>) }
-        { available.map(node =>  <ddm:available>{ node.text }</ddm:available>) }
-        { disciplines.map(code =>
-        <ddm:audience>{ code }</ddm:audience>) }
-        <ddm:accessRights>{ emd.getEmdRights.getAccessCategory }</ddm:accessRights>
-      </ddm:profile>
-      <ddm:dcmiMetadata>
-        { emd.getEmdIdentifier.getDcIdentifier.asScala.map(bi => <dcterms:identifier xsi:type={ Option(bi.getScheme).orNull }>{ bi.getValue }</dcterms:identifier>) }
-        { emd.getEmdTitle.getTermsAlternative.asScala.map(str => <dcterms:alternative xml:lang={ lang }>{ str }</dcterms:alternative>) }
-        { /* TODO ... */ }
-        { dateMap.filter(isOtherDate).map { case (key, values) => values.map(_.withLabel(dateLabel(key))) } }
-        { /* TODO ... */ }
-      </ddm:dcmiMetadata>
-    </ddm:DDM>
+      // a null value skips rendering the attribute
+      val emdLang: String = emd.getEmdLanguage.getDcLanguage.asScala.headOption.map(_.getValue).orNull // TODO getTerms
+      def lang(bs: BasicString) = Option(bs.getLanguage).getOrElse(emdLang)
+
+      <ddm:DDM
+        xmlns:dc="http://purl.org/dc/elements/1.1/"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:dcterms="http://purl.org/dc/terms/"
+        xmlns:dcx-dai="http://easy.dans.knaw.nl/schemas/dcx/dai/"
+        xmlns:dcx-gml="http://easy.dans.knaw.nl/schemas/dcx/gml/"
+        xmlns:gml="http://www.opengis.net/gml"
+        xmlns:abr="http://www.den.nl/standaard/166/Archeologisch-Basisregister/"
+        xmlns:ddm={schemaNameSpace}
+        xmlns:id-type="http://easy.dans.knaw.nl/schemas/vocab/identifier-type/"
+        xsi:schemaLocation={s"$schemaNameSpace $schemaLocation"}
+      >
+        <ddm:profile>
+          { emd.getEmdTitle.getDcTitle.asScala.map(bs => <dc:title xml:lang={ lang(bs) }>{ bs.getValue }</dc:title>) }
+          { emd.getEmdDescription.getDcDescription.asScala.map(bs => <dcterms:description xml:lang={ lang(bs) }>{ bs.getValue }</dcterms:description>) }
+          { emd.getEmdDescription.getTermsAbstract.asScala.map(bs => <dcterms:description xml:lang={ lang(bs) } descriptionType='Abstract'>{ bs.getValue }</dcterms:description>) }
+          { emd.getEmdDescription.getTermsTableOfContents.asScala.map(bs => <dcterms:description xml:lang={ lang(bs) } descriptionType='TableOfContent'>{ bs.getValue }</dcterms:description>) }
+          { /* instructions for reuse not specified as such in EMD */ }
+          { emd.getEmdCreator.getDAIAuthors.asScala.map(bs => ???) }
+          { emd.getEmdCreator.getDcCreator.asScala.map(bs => ???) }
+          { emd.getEmdCreator.getEasCreator.asScala.map(author => <dcx-dai:creatorDetails>{ toXml(author, emdLang)} </dcx-dai:creatorDetails>) }
+          { dateCreated.map(node =>  <ddm:created>{ node.text }</ddm:created>) }
+          { dateAvailable.map(node =>  <ddm:available>{ node.text }</ddm:available>) }
+          { disciplines.map(code =>
+          <ddm:audience>{ code }</ddm:audience>) }
+          <ddm:accessRights>{ emd.getEmdRights.getAccessCategory }</ddm:accessRights>
+        </ddm:profile>
+        <ddm:dcmiMetadata>
+          { emd.getEmdIdentifier.getDcIdentifier.asScala.map(bi => <dcterms:identifier xsi:type={ Option(bi.getScheme).map("id-type:" + _).orNull }>{ bi.getValue }</dcterms:identifier>) }
+          { emd.getEmdTitle.getTermsAlternative.asScala.map(str => <dcterms:alternative xml:lang={ emdLang }>{ str }</dcterms:alternative>) }
+          { /* TODO relations */ }
+          { emd.getEmdContributor.getDAIAuthors.asScala.map(bs => ???) }
+          { emd.getEmdContributor.getDcContributor.asScala.map(bs => ???) }
+          { emd.getEmdContributor.getEasContributor.asScala.map(author => <dcx-dai:contributorDetails>{ toXml(author, emdLang)} </dcx-dai:contributorDetails>) }
+          { /* TODO ... */ }
+          { dateMap.filter(isOtherDate).map { case (key, values) => values.map(_.withLabel(dateLabel(key))) } }
+          { /* TODO ... */ }
+        </ddm:dcmiMetadata>
+      </ddm:DDM>
     }
   }
-
-  private def toXml(value: IsoDate) = <label xsi:type={ orNull(value.getScheme) }>{ value }</label>
-
-  private def toXml(value: BasicDate) = <label xsi:type={ orNull(value.getScheme) }>{ value }</label>
 
   private def toXml(author: Author, lang: String): Seq[Node] = {
     if (Option(author.getSurname).toSeq.filter(!_.isBlank).isEmpty)
@@ -105,13 +108,17 @@ object DDM extends DebugEnhancedLogging {
       </dcx-dai:author>
   }
 
-  def orNull(dateScheme: DateScheme): String = Option(dateScheme).map(_.toString).orNull
+  private def toXml(value: IsoDate) = <label xsi:type={ orNull(value.getScheme) }>{ value }</label>
+
+  private def toXml(value: BasicDate) = <label xsi:type={ orNull(value.getScheme) }>{ value }</label>
+
+  def orNull(dateScheme: DateScheme): String = Option(dateScheme).map("dcterms:"+_.toString).orNull
 
   private def isOtherDate(kv: (String, Iterable[Elem])) = !Seq("created", "available").contains(kv._1)
 
   private def dateLabel(key: String) = {
-    if (key.isBlank) "date"
-    else key
+    if (key.isBlank) "dcterms:date"
+    else "dcterms:"+key
   }
 
   private def getDateMap(emd: EasyMetadataImpl) = {

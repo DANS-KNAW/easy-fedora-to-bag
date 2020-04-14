@@ -25,7 +25,7 @@ import javax.xml.validation.SchemaFactory
 import nl.knaw.dans.easy.fedora2vault.fixture.{ AudienceSupport, TestSupportFixture }
 
 import scala.util.{ Failure, Success, Try }
-import scala.xml.{ Elem, SAXParseException, Utility, XML }
+import scala.xml._
 
 class DdmSpec extends TestSupportFixture with AudienceSupport {
 
@@ -65,15 +65,22 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
     validate(triedString) shouldBe a[Success[_]]
   }
 
-  "depositApi" should "get a valid DDM out of its EMD" in {
-    val file = "depositApi.xml"
+  "depositApi" should "produce the DDM provided by easy-deposit-api" in {
+    val triedFoXml = Try(XML.loadFile((samples / "depositApi.xml").toJava))
 
     implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
     expectedAudiences(Map("easy-discipline:77" -> "D13200"))
-    val triedFoXml = FoXml.getEmd(XML.loadFile((samples / file).toJava))
-    val triedDdm = triedFoXml.flatMap(DDM(_).map(toS))
+
+    val triedDdm = triedFoXml.flatMap(FoXml.getEmd).flatMap(DDM(_).map(toS))
     triedDdm shouldBe a[Success[_]]
-    // TODO compare with DDM in foXml
+
+    // round trip test (foXml/EMD was created from the foXML/DDM by easy-ingest-flow)
+    triedDdm.map(normalize).map(_.split("\n")
+      .filterNot(_.matches(".*id-type:(PID|DMO_ID).*")) // added to EMD by easy-ingest-flow
+      .mkString("\n")
+    )shouldBe triedFoXml.map(foXml =>
+      normalize(toS((foXml \\ "DDM").head))
+    )
     validate(triedDdm) shouldBe a[Success[_]]
   }
 
@@ -182,22 +189,22 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
         |    <ddm:accessRights/>
         |  </ddm:profile>
         |  <ddm:dcmiMetadata>
-        |    <date>11-2013</date>
-        |    <date>12-2013</date>
-        |    <date xsi:type="W3CDTF">1909-04</date>
-        |    <date xsi:type="W3CDTF">1910-04</date>
-        |    <dateCopyrighted>09-2013</dateCopyrighted>
-        |    <dateCopyrighted xsi:type="W3CDTF">1907-04</dateCopyrighted>
-        |    <dateSubmitted>10-2013</dateSubmitted>
-        |    <dateSubmitted xsi:type="W3CDTF">1908-04</dateSubmitted>
-        |    <modified>08-2013</modified>
-        |    <modified xsi:type="W3CDTF">1906-04</modified>
-        |    <issued>07-2013</issued>
-        |    <issued xsi:type="W3CDTF">1905-04</issued>
-        |    <dateAccepted>05-2013</dateAccepted>
-        |    <dateAccepted xsi:type="W3CDTF">1903-04</dateAccepted>
-        |    <valid>06-2013</valid>
-        |    <valid xsi:type="W3CDTF">1904-04</valid>
+        |    <dcterms:date>11-2013</dcterms:date>
+        |    <dcterms:date>12-2013</dcterms:date>
+        |    <dcterms:date xsi:type="dcterms:W3CDTF">1909-04</dcterms:date>
+        |    <dcterms:date xsi:type="dcterms:W3CDTF">1910-04</dcterms:date>
+        |    <dcterms:dateCopyrighted>09-2013</dcterms:dateCopyrighted>
+        |    <dcterms:dateCopyrighted xsi:type="dcterms:W3CDTF">1907-04</dcterms:dateCopyrighted>
+        |    <dcterms:dateSubmitted>10-2013</dcterms:dateSubmitted>
+        |    <dcterms:dateSubmitted xsi:type="dcterms:W3CDTF">1908-04</dcterms:dateSubmitted>
+        |    <dcterms:modified>08-2013</dcterms:modified>
+        |    <dcterms:modified xsi:type="dcterms:W3CDTF">1906-04</dcterms:modified>
+        |    <dcterms:issued>07-2013</dcterms:issued>
+        |    <dcterms:issued xsi:type="dcterms:W3CDTF">1905-04</dcterms:issued>
+        |    <dcterms:dateAccepted>05-2013</dcterms:dateAccepted>
+        |    <dcterms:dateAccepted xsi:type="dcterms:W3CDTF">1903-04</dcterms:dateAccepted>
+        |    <dcterms:valid>06-2013</dcterms:valid>
+        |    <dcterms:valid xsi:type="dcterms:W3CDTF">1904-04</dcterms:valid>
         |  </ddm:dcmiMetadata>
         |</ddm:DDM>
         |""".stripMargin)
@@ -207,7 +214,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
     .replaceAll(nameSpaceRegExp, "")
     .replaceAll(" \n", "\n")
 
-  private def toS(elem: Elem) = printer.format(Utility.trim(elem))
+  private def toS(elem: Node) = printer.format(Utility.trim(elem))
 
   private def validate(triedString: Try[String]): Try[Unit] = {
     assume(schemaIsAvailable)

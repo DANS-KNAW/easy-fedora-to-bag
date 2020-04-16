@@ -25,8 +25,8 @@ import nl.knaw.dans.easy.fedora2vault.fixture.{ FileSystemSupport, TestSupportFi
 import org.scalamock.scalatest.MockFactory
 import resource.managed
 
-import scala.util.Success
-import scala.xml.Elem
+import scala.util.{ Success, Try }
+import scala.xml.{ Elem, XML }
 
 class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport {
 
@@ -135,8 +135,8 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
 
   private def expectedFoXmls(fedoraProvider: => FedoraProvider, expectedObjects: File*): Unit = {
     expectedObjects.foreach(file =>
-      (fedoraProvider.getObject(_: String)) expects * once() returning
-        managed(new FileInputStream(file.toJava))
+      (fedoraProvider.loadFoXml(_: String)) expects * once() returning
+        Try(XML.loadFile(file.toJava))
     )
   }
 

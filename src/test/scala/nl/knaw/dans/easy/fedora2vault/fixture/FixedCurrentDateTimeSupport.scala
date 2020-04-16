@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.easy.fedora2vault.fixture
 
-import org.joda.time.{ DateTime, DateTimeUtils, DateTimeZone }
+import org.joda.time.{ DateTime, DateTimeUtils }
 
 trait FixedCurrentDateTimeSupport {
 
@@ -23,5 +23,4 @@ trait FixedCurrentDateTimeSupport {
   val nowUTC = s"${ nowYMD }T20:20:02.000Z"
   /** Causes DateTime.now() to return a predefined value. */
   DateTimeUtils.setCurrentMillisFixed(new DateTime(nowUTC).getMillis)
-  DateTimeZone.setDefault(DateTimeZone.UTC)
 }

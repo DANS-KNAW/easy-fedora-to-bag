@@ -71,9 +71,9 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
       "easy-discipline:42" -> "D60000",
     ))
     val triedString = FoXml.getEmd(XML.loadFile((sampleFoXML / file).toJava))
-      .flatMap(DDM(_).map(toS))
-    triedString.map(normalize) shouldBe Success(expectedDDM(file))
-    validate(triedString) shouldBe a[Success[_]]
+      .flatMap(DDM(_))
+    triedString.map(toS).map(normalize) shouldBe Success(expectedDDM(file))
+    validate(triedString.map(toS)) shouldBe a[Success[_]]
   }
 
   "streaming" should "get a valid DDM out of its EMD" in {
@@ -131,6 +131,38 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
          |    <ddm:accessRights/>
          |  </ddm:profile>
          |  <ddm:dcmiMetadata>
+         |    <dcterms:license xsi:type="dcterms:URI">${ DDM.cc0 }</dcterms:license>
+         |  </ddm:dcmiMetadata>
+         |</ddm:DDM>
+         |""".stripMargin)
+  }
+
+  "relations" should "all appear" in {
+    implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
+    DDM(
+      <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
+        <emd:relation>
+        <dc:relation eas:scheme="STREAMING_SURROGATE_RELATION">/domain/dans/user/utest/collection/ctest/presentation/private_continuous</dc:relation>
+          <eas:relation eas:emphasis="true">
+              <eas:subject-title>zonder qualifier</eas:subject-title>
+              <eas:subject-link>https://github.com/DANS-KNAW/easy-dtap/pull/47</eas:subject-link>
+          </eas:relation>
+          <eas:references eas:emphasis="true">
+              <eas:subject-title>met qualifier</eas:subject-title>
+              <eas:subject-link>https://github.com/DANS-KNAW/easy-dtap/pull/48</eas:subject-link>
+          </eas:references>
+        </emd:relation>
+      </emd:easymetadata>
+    ).map(toStripped) shouldBe Success( // TODO implemented quick and dirty
+      s"""<ddm:DDM
+         |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
+         |  <ddm:profile>
+         |    <ddm:accessRights/>
+         |  </ddm:profile>
+         |  <ddm:dcmiMetadata>
+         |    <ddm:relation scheme="STREAMING_SURROGATE_RELATION">/domain/dans/user/utest/collection/ctest/presentation/private_continuous</ddm:relation>
+         |    <ddm:relation href="https://github.com/DANS-KNAW/easy-dtap/pull/47">zonder qualifier</ddm:relation>
+         |    <ddm:references href="https://github.com/DANS-KNAW/easy-dtap/pull/48">met qualifier</ddm:references>
          |    <dcterms:license xsi:type="dcterms:URI">${ DDM.cc0 }</dcterms:license>
          |  </ddm:dcmiMetadata>
          |</ddm:DDM>

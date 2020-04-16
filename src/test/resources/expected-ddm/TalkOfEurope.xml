@@ -66,6 +66,11 @@
     <ddm:dcmiMetadata>
         <dcterms:identifier xsi:type="id-type:DOI">10.17026/test-dans-2xg-umq8</dcterms:identifier>
         <dcterms:identifier>TalkOfEurope</dcterms:identifier>
+        <ddm:relation href="http://www.talkofeurope.eu">isReferencedBy: www.talkofeurope.eu</ddm:relation>
+        <ddm:relation href="http://www.purl.org/linkedpolitics">isReferencedBy: www.purl.org/linkedpolitics</ddm:relation>
+        <ddm:relation href="https://dx.doi.org/10.3233/SW-160227">
+            isReferencedBy: [Forthcoming in IOS Press] A. van Aggelen et al. / The debates of the European Parliament as Linked Open Data
+        </ddm:relation>
         <dcx-dai:contributorDetails>
             <dcx-dai:author>
                 <dcx-dai:titles xml:lang="eng">Prof.</dcx-dai:titles>

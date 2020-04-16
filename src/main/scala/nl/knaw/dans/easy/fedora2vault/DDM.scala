@@ -84,10 +84,13 @@ object DDM extends DebugEnhancedLogging {
         <ddm:dcmiMetadata>
           { emd.getEmdIdentifier.getDcIdentifier.asScala.filter(isDdmId).map(bi => <dcterms:identifier xsi:type={ Option(bi.getScheme).map("id-type:" + _).orNull }>{ bi.getValue }</dcterms:identifier>) }
           { emd.getEmdTitle.getTermsAlternative.asScala.map(str => <dcterms:alternative xml:lang={ emdLang }>{ str }</dcterms:alternative>) }
-          { /* TODO relations */ }
+          { emd.getEmdRelation.getDCRelationMap.asScala.map{case (key, values) => values.asScala.map(bs => <label scheme={ bs.getScheme }>{ bs.getValue }</label>.withLabel(relLabel(key)))} }
+          { emd.getEmdRelation.getRelationMap.asScala.map{ case (key, values) => values.asScala.map(rel => <label href={ rel.getSubjectLink.toURL.toString }>{ rel.getSubjectTitle }</label>.withLabel(relLabel(key)))} }
           { emd.getEmdContributor.getDAIAuthors.asScala.map(bs => ???) }
           { emd.getEmdContributor.getDcContributor.asScala.map(bs => ???) }
           { emd.getEmdContributor.getEasContributor.asScala.map(author => <dcx-dai:contributorDetails>{ toXml(author, emdLang)} </dcx-dai:contributorDetails>) }
+          { /* TODO author */ }
+          { emd.getEmdPublisher.getDcPublisher.asScala.map(bs => <dcterms:publisher xml:lang={ lang(bs) }>{ bs.getValue }</dcterms:publisher>) }
           { /* TODO ... */ }
           { dateMap.filter(isOtherDate).map { case (key, values) => values.map(_.withLabel(dateLabel(key))) } }
           <dcterms:license xsi:type="dcterms:URI">{ toUri(emd.getEmdRights) }</dcterms:license>
@@ -124,6 +127,11 @@ object DDM extends DebugEnhancedLogging {
   private def dateLabel(key: String) = {
     if (key.isBlank) "dcterms:date"
     else "dcterms:"+key
+  }
+
+  private def relLabel(key: String) = {
+    if (key.isBlank) "ddm:relation"
+    else "ddm:"+key // TODO when DDM/dcterms?
   }
 
   private def getDateMap(emd: EasyMetadataImpl) = {

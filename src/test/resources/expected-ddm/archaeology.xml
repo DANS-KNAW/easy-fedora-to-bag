@@ -20,11 +20,14 @@
         <dcterms:identifier xsi:type="id-type:Archis_onderzoek_m_nr"> 123 </dcterms:identifier>
         <dcterms:identifier xsi:type="id-type:eDNA-project">123</dcterms:identifier>
         <dcterms:alternative xml:lang="fre-fra">volledige EMD</dcterms:alternative>
+        <ddm:relation href="https://github.com/DANS-KNAW/easy-dtap/pull/47">zonder qualifier</ddm:relation>
+        <ddm:references href="https://github.com/DANS-KNAW/easy-dtap/pull/48">met qualifier</ddm:references>
         <dcx-dai:contributorDetails>
             <dcx-dai:organization>
                 <dcx-dai:name xml:lang="fre-fra">DANS</dcx-dai:name>
             </dcx-dai:organization>
         </dcx-dai:contributorDetails>
+        <dcterms:publisher xml:lang="fre-fra">uitgverij</dcterms:publisher>
         <dcterms:dateCopyrighted xsi:type="dcterms:W3CDTF">2016-10-10</dcterms:dateCopyrighted>
         <dcterms:valid>oktober van enig jaar</dcterms:valid>
         <dcterms:license xsi:type="dcterms:URI">http://dans.knaw.nl/en/about/organisation-and-policy/legal-information/DANSLicence.pdf</dcterms:license>

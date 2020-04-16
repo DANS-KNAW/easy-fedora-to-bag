@@ -13,6 +13,7 @@
         <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
     </ddm:profile>
     <ddm:dcmiMetadata>
+        <ddm:relation scheme="STREAMING_SURROGATE_RELATION">/domain/dans/user/utest/collection/ctest/presentation/private_continuous</ddm:relation>
         <dcterms:license xsi:type="dcterms:URI">http://dans.knaw.nl/en/about/organisation-and-policy/legal-information/DANSLicence.pdf</dcterms:license>
     </ddm:dcmiMetadata>
 </ddm:DDM>

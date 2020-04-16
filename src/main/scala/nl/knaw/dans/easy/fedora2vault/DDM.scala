@@ -78,8 +78,7 @@ object DDM extends DebugEnhancedLogging {
           { emd.getEmdCreator.getEasCreator.asScala.map(author => <dcx-dai:creatorDetails>{ toXml(author, emdLang)} </dcx-dai:creatorDetails>) }
           { dateCreated.map(node =>  <ddm:created>{ node.text }</ddm:created>) }
           { dateAvailable.map(node =>  <ddm:available>{ node.text }</ddm:available>) }
-          { disciplines.map(code =>
-          <ddm:audience>{ code }</ddm:audience>) }
+          { disciplines.map(code => <ddm:audience>{ code }</ddm:audience>) }
           <ddm:accessRights>{ emd.getEmdRights.getAccessCategory }</ddm:accessRights>
         </ddm:profile>
         <ddm:dcmiMetadata>

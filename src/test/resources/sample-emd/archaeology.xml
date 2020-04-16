@@ -1,0 +1,105 @@
+<emd:easymetadata emd:version="0.1" xmlns:emd="http://easy.dans.knaw.nl/easy/easymetadata/" xmlns:eas="http://easy.dans.knaw.nl/easy/easymetadata/eas/"
+                  xmlns:dct="http://purl.org/dc/terms/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <emd:title>
+        <dc:title>archeaologie</dc:title>
+        <dct:alternative>volledige EMD</dct:alternative>
+    </emd:title>
+    <emd:creator>
+        <eas:creator>
+            <eas:title>Mr</eas:title>
+            <eas:initials>I.N.</eas:initials>
+            <eas:prefix>de</eas:prefix>
+            <eas:surname>rechten</eas:surname>
+            <eas:entityId eas:scheme="DAI"/>
+        </eas:creator>
+    </emd:creator>
+    <emd:subject>
+        <dc:subject eas:schemeId="archaeology.dc.subject" eas:scheme="ABR">IX</dc:subject>
+        <dc:subject>vrij onderwerp</dc:subject>
+    </emd:subject>
+    <emd:description>
+        <dc:description>testgeval</dc:description>
+    </emd:description>
+    <emd:publisher>
+        <dc:publisher>uitgverij</dc:publisher>
+    </emd:publisher>
+    <emd:contributor>
+        <eas:contributor>
+            <eas:organization>DANS</eas:organization>
+            <eas:entityId eas:scheme="DAI"/>
+        </eas:contributor>
+    </emd:contributor>
+    <emd:date>
+        <dct:valid>oktober van enig jaar</dct:valid>
+        <eas:created eas:scheme="W3CDTF" eas:format="DAY">2016-10-31T00:00:00.000+01:00</eas:created>
+        <eas:available eas:scheme="W3CDTF" eas:format="DAY">2016-10-31T00:00:00.000+01:00</eas:available>
+        <eas:dateCopyrighted eas:scheme="W3CDTF" eas:format="DAY">2016-10-10T00:00:00.000+02:00</eas:dateCopyrighted>
+    </emd:date>
+    <emd:type>
+        <dc:type eas:schemeId="common.dc.type" eas:scheme="DCMI">Dataset</dc:type>
+        <dc:type>typical</dc:type>
+    </emd:type>
+    <emd:format>
+        <dc:format eas:schemeId="common.dc.format" eas:scheme="IMT">image/jpeg</dc:format>
+        <dc:format>plaatje</dc:format>
+    </emd:format>
+    <emd:identifier>
+        <dc:identifier eas:scheme="PID" eas:identification-system="http://www.persistent-identifier.nl">urn:nbn:nl:ui:13-emvk-iw</dc:identifier>
+        <dc:identifier eas:scheme="DOI" eas:identification-system="https://doi.org">10.17026/test-dans-xeh-dxup</dc:identifier>
+        <dc:identifier eas:schemeId="archaeology.dc.identifier" eas:scheme="Archis_onderzoek_m_nr" eas:identification-system="http://archis2.archis.nl">123</dc:identifier>
+        <dc:identifier eas:scheme="eDNA-project">123</dc:identifier>
+        <dc:identifier eas:scheme="DMO_ID"/>
+    </emd:identifier>
+    <emd:source>
+        <dc:source>bron lijkt bij taal te horen zonder extra tussenkopje</dc:source>
+    </emd:source>
+    <emd:language>
+        <dc:language eas:schemeId="common.dc.language" eas:scheme="ISO 639">fre/fra</dc:language>
+        <dc:language>koeterwaals</dc:language>
+    </emd:language>
+    <emd:relation>
+        <eas:relation eas:emphasis="true">
+            <eas:subject-title>zonder qualifier</eas:subject-title>
+            <eas:subject-link>https://github.com/DANS-KNAW/easy-dtap/pull/47</eas:subject-link>
+        </eas:relation>
+        <eas:references eas:emphasis="true">
+            <eas:subject-title>met qualifier</eas:subject-title>
+            <eas:subject-link>https://github.com/DANS-KNAW/easy-dtap/pull/48</eas:subject-link>
+        </eas:references>
+    </emd:relation>
+    <emd:coverage>
+        <dct:spatial>reuimtelijk</dct:spatial>
+        <dct:temporal eas:schemeId="archaeology.dcterms.temporal" eas:scheme="ABR">XME</dct:temporal>
+        <dct:temporal>vrije tijd</dct:temporal>
+        <eas:spatial>
+            <eas:point eas:scheme="degrees">
+                <eas:x>x</eas:x>
+                <eas:y>y</eas:y>
+            </eas:point>
+        </eas:spatial>
+        <eas:spatial>
+            <eas:box eas:scheme="locale">
+                <eas:north>1</eas:north>
+                <eas:east>3</eas:east>
+                <eas:south>4</eas:south>
+                <eas:west>2</eas:west>
+            </eas:box>
+        </eas:spatial>
+    </emd:coverage>
+    <emd:rights>
+        <dct:accessRights eas:schemeId="common.dcterms.accessrights">OPEN_ACCESS</dct:accessRights>
+        <dct:license>accept</dct:license>
+        <dct:rightsHolder>rechthebbende</dct:rightsHolder>
+    </emd:rights>
+    <emd:audience>
+        <dct:audience eas:schemeId="custom.disciplines">easy-discipline:2</dct:audience>
+    </emd:audience>
+    <emd:other>
+        <eas:remark>wederom lijkt de opmerking bij een andere groep te horen</eas:remark>
+        <eas:application-specific>
+            <eas:metadataformat>ARCHAEOLOGY</eas:metadataformat>
+            <eas:pakbon-status>NOT_IMPORTED</eas:pakbon-status>
+        </eas:application-specific>
+        <eas:etc/>
+    </emd:other>
+</emd:easymetadata>

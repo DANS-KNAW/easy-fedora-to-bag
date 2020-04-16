@@ -52,8 +52,8 @@ object DDM extends DebugEnhancedLogging {
       }
 
       // a null value skips rendering the attribute
-      val emdLang: String = emd.getEmdLanguage.getDcLanguage.asScala.headOption.map(_.getValue).orNull // TODO getTerms
-      def lang(bs: BasicString) = Option(bs.getLanguage).getOrElse(emdLang)
+      val emdLang: String = emd.getEmdLanguage.getDcLanguage.asScala.headOption.map(_.getValue.replace("/","-")).orNull // TODO getTerms
+      def lang(bs: BasicString) = Option(bs.getLanguage).map(_.replace("/","-")).getOrElse(emdLang)
 
       <ddm:DDM
         xmlns:dc="http://purl.org/dc/elements/1.1/"

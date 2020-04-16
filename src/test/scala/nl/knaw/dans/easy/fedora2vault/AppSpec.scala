@@ -56,7 +56,7 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
     expectedSubordinates(app.fedoraProvider, "easy-file:35")
     expectedFoXmls(app.fedoraProvider,
       testDir / "fo.xml",
-      samples / "easy-file-35.xml",
+      sampleFoXML / "easy-file-35.xml",
     )
     expectedManagedStreams(app.fedoraProvider,
       (testDir / "EASY_FILE").write("lalala"),
@@ -73,7 +73,7 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
   it should "process DepositApi" in {
     val app = new MockedApp()
     expectedSubordinates(app.fedoraProvider)
-    expectedFoXmls(app.fedoraProvider, samples / "DepositApi.xml")
+    expectedFoXmls(app.fedoraProvider, sampleFoXML / "DepositApi.xml")
     expectedManagedStreams(app.fedoraProvider,
       (testDir / "additional-license").write("lalala"),
       (testDir / "dataset-license").write("blablabla"),
@@ -93,7 +93,7 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
   it should "process TalkOfEurope" in {
     val app = new MockedApp()
     expectAUser(app.ldapContext)
-    expectedFoXmls(app.fedoraProvider, samples / "TalkOfEurope.xml")
+    expectedFoXmls(app.fedoraProvider, sampleFoXML / "TalkOfEurope.xml")
     expectedSubordinates(app.fedoraProvider)
     expectedManagedStreams(app.fedoraProvider,
       (testDir / "dataset-license").write("rabarbera"),
@@ -111,7 +111,7 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
   it should "process streaming" in {
     val app = new MockedApp()
     expectAUser(app.ldapContext)
-    expectedFoXmls(app.fedoraProvider, samples / "streaming.xml")
+    expectedFoXmls(app.fedoraProvider, sampleFoXML / "streaming.xml")
     expectedSubordinates(app.fedoraProvider)
 
     app.simpleTransform("easy-dataset:13", testDir / "bag") shouldBe Success("???")

@@ -25,5 +25,5 @@ trait TestSupportFixture extends FlatSpec
   with EitherValues
   with Inspectors {
   val nameSpaceRegExp = """ xmlns:[a-z-]+="[^"]*"""" // these attributes have a variable order
-  val samples = File("src/test/resources/sample-foxml")
+  val sampleFoXML = File("src/test/resources/sample-foxml")
 }

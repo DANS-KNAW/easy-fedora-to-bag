@@ -38,7 +38,23 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
     .newSchema(Array(new StreamSource("https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd")).toArray[Source])
   )
 
+  "sample-emd" should "produce the DDMs" in {
+    // from provisioning/roles/easy-test-datasets/files/sdoSets/
+    val file = "archaeology.xml"
+
+    val sampleEmd = File("src/test/resources/sample-emd") // TODO more samples
+    implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
+    expectedAudiences(Map(
+    "easy-discipline:2" -> "D37000",
+    ))
+    val triedString = Try(XML.loadFile((sampleEmd / file).toJava))
+      .flatMap(DDM(_).map(toS))
+    triedString.map(normalize) shouldBe Success(expectedDDM(file))
+    validate(triedString) shouldBe a[Success[_]]
+  }
+
   "TalkOfEurope" should "get a valid DDM out of its EMD" in {
+    // easy-dtap/provisioning/roles/easy-test-datasets/files/sdoSets/collectionClarin/easy_dataset_62227/fo.xml
     val file = "TalkOfEurope.xml"
 
     implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
@@ -48,7 +64,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
       "easy-discipline:14" -> "D36000",
       "easy-discipline:42" -> "D60000",
     ))
-    val triedString = FoXml.getEmd(XML.loadFile((samples / file).toJava))
+    val triedString = FoXml.getEmd(XML.loadFile((sampleFoXML / file).toJava))
       .flatMap(DDM(_).map(toS))
     triedString.map(normalize) shouldBe Success(expectedDDM(file))
     validate(triedString) shouldBe a[Success[_]]
@@ -59,14 +75,14 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
 
     implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
     expectedAudiences(Map("easy-discipline:6" -> "D35400"))
-    val triedString = FoXml.getEmd(XML.loadFile((samples / file).toJava))
+    val triedString = FoXml.getEmd(XML.loadFile((sampleFoXML / file).toJava))
       .flatMap(DDM(_).map(toS))
     triedString.map(normalize) shouldBe Success(expectedDDM(file))
     validate(triedString) shouldBe a[Success[_]]
   }
 
   "depositApi" should "produce the DDM provided by easy-deposit-api" in {
-    val triedFoXml = Try(XML.loadFile((samples / "depositApi.xml").toJava))
+    val triedFoXml = Try(XML.loadFile((sampleFoXML / "depositApi.xml").toJava))
 
     implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
     expectedAudiences(Map("easy-discipline:77" -> "D13200"))

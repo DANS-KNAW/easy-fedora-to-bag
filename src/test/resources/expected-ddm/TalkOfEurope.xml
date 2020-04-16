@@ -106,6 +106,12 @@
                 <dcx-dai:name xml:lang="eng">Funding Agency: Clarin ERIC and Clarin-NL.</dcx-dai:name>
             </dcx-dai:organization>
         </dcx-dai:contributorDetails>
+        <dc:source xml:lang="eng">
+            The verbatim reports of the plenary meetings of the EP, as found on the Europarl website via portal http://www.europarl.europa.eu/plenary/en/debates-video.html.
+        </dc:source>
+        <dcterms:type xsi:type="dcterms:DCMIType">Dataset</dcterms:type>
+        <dcterms:format>RDF (turtle)</dcterms:format>
+        <dcterms:format>application/x-cmdi+xml</dcterms:format>
         <dcterms:dateSubmitted xsi:type="dcterms:W3CDTF">2015-10-14</dcterms:dateSubmitted>
         <dcterms:license xsi:type="dcterms:URI">http://dans.knaw.nl/en/about/organisation-and-policy/legal-information/DANSLicence.pdf</dcterms:license>
     </ddm:dcmiMetadata>

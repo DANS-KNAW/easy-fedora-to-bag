@@ -14,6 +14,8 @@
     </ddm:profile>
     <ddm:dcmiMetadata>
         <ddm:relation scheme="STREAMING_SURROGATE_RELATION">/domain/dans/user/utest/collection/ctest/presentation/private_continuous</ddm:relation>
+        <dcterms:type xsi:type="dcterms:DCMIType">Dataset</dcterms:type>
+        <dcterms:format>video/mpeg</dcterms:format>
         <dcterms:license xsi:type="dcterms:URI">http://dans.knaw.nl/en/about/organisation-and-policy/legal-information/DANSLicence.pdf</dcterms:license>
     </ddm:dcmiMetadata>
 </ddm:DDM>

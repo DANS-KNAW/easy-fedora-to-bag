@@ -28,6 +28,11 @@
             </dcx-dai:organization>
         </dcx-dai:contributorDetails>
         <dcterms:publisher xml:lang="fre-fra">uitgverij</dcterms:publisher>
+        <dc:source xml:lang="fre-fra">bron lijkt bij taal te horen zonder extra tussenkopje</dc:source>
+        <dcterms:type xsi:type="dcterms:DCMIType">Dataset</dcterms:type>
+        <dcterms:type>typical</dcterms:type>
+        <dcterms:format xsi:type="id-type:IMT">image/jpeg</dcterms:format>
+        <dcterms:format>plaatje</dcterms:format>
         <dcterms:dateCopyrighted xsi:type="dcterms:W3CDTF">2016-10-10</dcterms:dateCopyrighted>
         <dcterms:valid>oktober van enig jaar</dcterms:valid>
         <dcterms:license xsi:type="dcterms:URI">http://dans.knaw.nl/en/about/organisation-and-policy/legal-information/DANSLicence.pdf</dcterms:license>

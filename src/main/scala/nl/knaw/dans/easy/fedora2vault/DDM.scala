@@ -82,7 +82,7 @@ object DDM extends DebugEnhancedLogging {
           <ddm:accessRights>{ emd.getEmdRights.getAccessCategory }</ddm:accessRights>
         </ddm:profile>
         <ddm:dcmiMetadata>
-          { emd.getEmdIdentifier.getDcIdentifier.asScala.filter(isDdmId).map(bi => <dcterms:identifier xsi:type={ Option(bi.getScheme).map("id-type:" + _).orNull }>{ bi.getValue }</dcterms:identifier>) }
+          { emd.getEmdIdentifier.getDcIdentifier.asScala.filter(isDdmId).map(bi => <dcterms:identifier xsi:type={ xsiType(bi.getScheme) }>{ bi.getValue }</dcterms:identifier>) }
           { emd.getEmdTitle.getTermsAlternative.asScala.map(str => <dcterms:alternative xml:lang={ emdLang }>{ str }</dcterms:alternative>) }
           { emd.getEmdRelation.getDCRelationMap.asScala.map{case (key, values) => values.asScala.map(bs => <label scheme={ bs.getScheme }>{ bs.getValue }</label>.withLabel(relLabel(key)))} }
           { emd.getEmdRelation.getRelationMap.asScala.map{ case (key, values) => values.asScala.map(rel => <label href={ rel.getSubjectLink.toURL.toString }>{ rel.getSubjectTitle }</label>.withLabel(relLabel(key)))} }
@@ -91,10 +91,16 @@ object DDM extends DebugEnhancedLogging {
           { emd.getEmdContributor.getEasContributor.asScala.map(author => <dcx-dai:contributorDetails>{ toXml(author, emdLang)} </dcx-dai:contributorDetails>) }
           { /* TODO author */ }
           { emd.getEmdPublisher.getDcPublisher.asScala.map(bs => <dcterms:publisher xml:lang={ lang(bs) }>{ bs.getValue }</dcterms:publisher>) }
-          { /* TODO ... */ }
+          { emd.getEmdSource.getDcSource.asScala.map(bs => <dc:source xml:lang={ lang(bs) }>{ bs.getValue }</dc:source>) }
+          { emd.getEmdType.getDcType.asScala.map(bs => <dcterms:type xsi:type={ xsiType(bs.getScheme) }>{ bs.getValue }</dcterms:type>) }
+          { emd.getEmdFormat.getDcFormat.asScala.map(bs => <dcterms:format xsi:type={ xsiType(bs.getScheme) }>{ bs.getValue }</dcterms:format>) }
+          { emd.getEmdFormat.getTermsExtent.asScala.map(bs => ???) }
+          { emd.getEmdFormat.getTermsMedium.asScala.map(bs => ???) }
+          { /* TODO subjects, temporal/spatial-coverages */ }
           { dateMap.filter(isOtherDate).map { case (key, values) => values.map(_.withLabel(dateLabel(key))) } }
+          { /* TODO points/boxes */ }
           <dcterms:license xsi:type="dcterms:URI">{ toUri(emd.getEmdRights) }</dcterms:license>
-          { /* TODO ... */ }
+          { /* TODO languagesOfFiles */ }
         </ddm:dcmiMetadata>
       </ddm:DDM>
     }
@@ -110,9 +116,9 @@ object DDM extends DebugEnhancedLogging {
         { seq(author.getInitials).map(str => <dcx-dai:initials>{ str }</dcx-dai:initials>) }
         { seq(author.getPrefix).map(str => <dcx-dai:insertions>{ str }</dcx-dai:insertions>) }
         <dcx-dai:surname>{ surname }</dcx-dai:surname>
-        { /* TODO  author.getEntityId.map(src => { <label>{ src.value.orEmpty }</label>.withLabel(daiLabel(src.scheme)) })*/ }
+        { seq(author.getEntityId).map(str => { <label>{ str }</label>.withLabel(???) }) }
         { Option(author.getRole).toSeq.map(role =>  <dcx-dai:role>{ role.getRole /* TODO scheme? */ }</dcx-dai:role>) }
-        { Option(author.getOrganization).toSeq.map(toXml(_, lang, maybeRole = None)) }
+        { seq(author.getOrganization).map(toXml(_, lang, maybeRole = None)) }
       </dcx-dai:author>
   }
 
@@ -129,11 +135,6 @@ object DDM extends DebugEnhancedLogging {
     else "dcterms:"+key
   }
 
-  private def relLabel(key: String) = {
-    if (key.isBlank) "ddm:relation"
-    else "ddm:"+key // TODO when DDM/dcterms?
-  }
-
   private def getDateMap(emd: EasyMetadataImpl) = {
     val basicDates = emd.getEmdDate.getAllBasicDates.asScala.map { case (key, values) => key -> values.asScala.map(toXml) }
     val isoDates = emd.getEmdDate.getAllIsoDates.asScala.map { case (key, values) => key -> values.asScala.map(toXml) }
@@ -146,6 +147,18 @@ object DDM extends DebugEnhancedLogging {
     fedoraProvider.loadFoXml(id).map(foXml =>
       (foXml \\ "discipline-md" \ "OICode").text
     )
+  }
+
+  private def relLabel(key: String) = {
+    if (key.isBlank) "ddm:relation"
+    else "ddm:"+key // TODO when DDM/dcterms?
+  }
+
+  private def xsiType(scheme: String) = {
+    Option(scheme).map {
+      case "DCMI" => "dcterms:DCMIType"
+      case s => "id-type:" + s
+    }.orNull
   }
 
   /** @return an empty Seq for a null or blank String */

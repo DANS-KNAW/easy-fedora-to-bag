@@ -25,6 +25,7 @@ import nl.knaw.dans.bag.v0.DansV0Bag
 import nl.knaw.dans.easy.fedora2vault.Command.FeedBackMessage
 import nl.knaw.dans.easy.fedora2vault.FoXml.{ getEmd, _ }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
+import org.joda.time.DateTime
 
 import scala.util.{ Success, Try }
 import scala.xml.{ Elem, Node }
@@ -58,7 +59,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
     for {
       foXml <- fedoraProvider.loadFoXml(datasetId)
       depositor <- getOwner(foXml)
-      bag <- DansV0Bag.empty(outputDir).map(_.withEasyUserAccount(depositor))
+      bag <- DansV0Bag.empty(outputDir).map(_.withEasyUserAccount(depositor).withCreated(DateTime.now()))
       _ <- getEmd(foXml)
         .flatMap(addMetadataXml(bag, "emd.xml"))
       _ <- getAmd(foXml)

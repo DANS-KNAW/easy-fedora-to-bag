@@ -19,10 +19,10 @@ import nl.knaw.dans.common.lang.dataset.AccessCategory._
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import nl.knaw.dans.lib.string._
-import nl.knaw.dans.pf.language.emd.{ EasyMetadataImpl, EmdRights }
 import nl.knaw.dans.pf.language.emd.binding.EmdUnmarshaller
 import nl.knaw.dans.pf.language.emd.types.EmdConstants.DateScheme
-import nl.knaw.dans.pf.language.emd.types.{ Author, BasicDate, BasicIdentifier, BasicString, IsoDate }
+import nl.knaw.dans.pf.language.emd.types._
+import nl.knaw.dans.pf.language.emd.{ EasyMetadataImpl, EmdRights }
 
 import scala.collection.JavaConverters._
 import scala.util.Try
@@ -52,8 +52,8 @@ object DDM extends DebugEnhancedLogging {
       }
 
       // a null value skips rendering the attribute
-      val emdLang: String = emd.getEmdLanguage.getDcLanguage.asScala.headOption.map(_.getValue.replace("/","-")).orNull // TODO getTerms
-      def lang(bs: BasicString) = Option(bs.getLanguage).map(_.replace("/","-")).getOrElse(emdLang)
+      val emdLang: String = emd.getEmdLanguage.getDcLanguage.asScala.headOption.map(_.getValue.replace("/", "-")).orNull // TODO getTerms
+      def lang(bs: BasicString) = Option(bs.getLanguage).map(_.replace("/", "-")).getOrElse(emdLang)
 
       <ddm:DDM
         xmlns:dc="http://purl.org/dc/elements/1.1/"
@@ -84,8 +84,8 @@ object DDM extends DebugEnhancedLogging {
         <ddm:dcmiMetadata>
           { emd.getEmdIdentifier.getDcIdentifier.asScala.filter(isDdmId).map(bi => <dcterms:identifier xsi:type={ xsiType(bi.getScheme) }>{ bi.getValue }</dcterms:identifier>) }
           { emd.getEmdTitle.getTermsAlternative.asScala.map(str => <dcterms:alternative xml:lang={ emdLang }>{ str }</dcterms:alternative>) }
-          { emd.getEmdRelation.getDCRelationMap.asScala.map{case (key, values) => values.asScala.map(bs => <label scheme={ bs.getScheme }>{ bs.getValue }</label>.withLabel(relLabel(key)))} }
-          { emd.getEmdRelation.getRelationMap.asScala.map{ case (key, values) => values.asScala.map(rel => <label href={ rel.getSubjectLink.toURL.toString }>{ rel.getSubjectTitle }</label>.withLabel(relLabel(key)))} }
+          { emd.getEmdRelation.getDCRelationMap.asScala.map { case (key, values) => values.asScala.map(toRelationXml(key, _)) } }
+          { emd.getEmdRelation.getRelationMap.asScala.map { case (key, values) => values.asScala.map(toRelationXml(key, _)) } }
           { emd.getEmdContributor.getDAIAuthors.asScala.map(bs => ???) }
           { emd.getEmdContributor.getDcContributor.asScala.map(bs => ???) }
           { emd.getEmdContributor.getEasContributor.asScala.map(author => <dcx-dai:contributorDetails>{ toXml(author, emdLang)} </dcx-dai:contributorDetails>) }
@@ -126,13 +126,13 @@ object DDM extends DebugEnhancedLogging {
 
   private def toXml(value: BasicDate) = <label xsi:type={ orNull(value.getScheme) }>{ value }</label>
 
-  def orNull(dateScheme: DateScheme): String = Option(dateScheme).map("dcterms:"+_.toString).orNull
+  def orNull(dateScheme: DateScheme): String = Option(dateScheme).map("dcterms:" + _.toString).orNull
 
   private def isOtherDate(kv: (String, Iterable[Elem])) = !Seq("created", "available").contains(kv._1)
 
   private def dateLabel(key: String) = {
     if (key.isBlank) "dcterms:date"
-    else "dcterms:"+key
+    else "dcterms:" + key
   }
 
   private def getDateMap(emd: EasyMetadataImpl) = {
@@ -149,9 +149,27 @@ object DDM extends DebugEnhancedLogging {
     )
   }
 
-  private def relLabel(key: String) = {
-    if (key.isBlank) "ddm:relation"
-    else "ddm:"+key // TODO when DDM/dcterms?
+  private def toRelationXml(key: String, rel: Relation) = {
+    val idType = rel.getSubjectLink.getAuthority match {
+      case "persistent-identifier.nl" => "id-type:URN"
+      case "doi.org" => "id-type:DOI"
+      case _ => null
+    }
+    <label scheme={ idType }
+           href={ rel.getSubjectLink.toURL.toString }
+           xml:lang={ rel.getSubjectTitle.getLanguage }
+    >{ rel.getSubjectTitle.getValue }</label>
+  }.withLabel(relationLabel("ddm:", key))
+
+  private def toRelationXml(key: String, bs: BasicString) = {
+    <label xsi:type={ xsiType(bs.getScheme) }
+           xml:lang={ bs.getLanguage }
+    >{ bs.getValue }</label>
+  }.withLabel(relationLabel("dcterms:", key))
+
+  private def relationLabel(prefix: String, key: String): String = prefix + {
+    if (key.isBlank) "relation"
+    else key
   }
 
   private def xsiType(scheme: String) = {

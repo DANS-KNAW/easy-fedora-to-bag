@@ -84,7 +84,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
     val triedString = FoXml.getEmd(XML.loadFile((sampleFoXML / file).toJava))
       .flatMap(DDM(_).map(toS))
     triedString.map(normalize) shouldBe Success(expectedDDM(file))
-    validate(triedString) shouldBe a[Success[_]]
+    validate(triedString) shouldBe a[Success[_]] // TODO fix invalid "id-type:STREAMING_SURROGATE_RELATION"
   }
 
   "depositApi" should "produce the DDM provided by easy-deposit-api" in {
@@ -142,15 +142,34 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
     DDM(
       <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
         <emd:relation>
-        <dc:relation eas:scheme="STREAMING_SURROGATE_RELATION">/domain/dans/user/utest/collection/ctest/presentation/private_continuous</dc:relation>
-          <eas:relation eas:emphasis="true">
-              <eas:subject-title>zonder qualifier</eas:subject-title>
-              <eas:subject-link>https://github.com/DANS-KNAW/easy-dtap/pull/47</eas:subject-link>
+          <dct:hasVersion eas:scheme="ISSN">my-issn-related-identifier</dct:hasVersion>
+          <dct:requires eas:scheme="ISBN">my-isbn-related-identifier</dct:requires>
+          <dct:isPartOf>my own related identifier</dct:isPartOf>
+          <dct:isFormatOf eas:scheme="NWO-PROJECTNR">my-nwo-related-identifier</dct:isFormatOf>
+          <dct:isFormatOf eas:scheme="ISBN">my-isbn-alternative-identifier</dct:isFormatOf>
+          <dct:isFormatOf eas:scheme="ISSN">my-issn-alternative-identifier</dct:isFormatOf>
+          <dct:isFormatOf eas:scheme="NWO-PROJECTNR">my-nwo-alternative-identifier</dct:isFormatOf>
+          <dct:isFormatOf>my own alternative identifier</dct:isFormatOf>
+          <eas:relation>
+              <eas:subject-title xml:lang="eng">Google</eas:subject-title>
+              <eas:subject-link>https://www.google.com</eas:subject-link>
           </eas:relation>
-          <eas:references eas:emphasis="true">
-              <eas:subject-title>met qualifier</eas:subject-title>
-              <eas:subject-link>https://github.com/DANS-KNAW/easy-dtap/pull/48</eas:subject-link>
+          <eas:replaces>
+              <eas:subject-title>urn:nbn:nl:ui:test-urn-related-identifier</eas:subject-title>
+              <eas:subject-link>http://persistent-identifier.nl/urn:nbn:nl:ui:test-urn-related-identifier</eas:subject-link>
+          </eas:replaces>
+          <eas:references>
+              <eas:subject-title>10.17026/test-doi-related-identifier</eas:subject-title>
+              <eas:subject-link>https://doi.org/10.17026/test-doi-related-identifier</eas:subject-link>
           </eas:references>
+          <eas:isFormatOf>
+              <eas:subject-title>10.17026/test-doi-alternative-identifier</eas:subject-title>
+              <eas:subject-link>https://doi.org/10.17026/test-doi-alternative-identifier</eas:subject-link>
+          </eas:isFormatOf>
+          <eas:isFormatOf>
+              <eas:subject-title>urn:nbn:nl:ui:test-urn-alternative-identifier</eas:subject-title>
+              <eas:subject-link>http://persistent-identifier.nl/urn:nbn:nl:ui:test-urn-alternative-identifier</eas:subject-link>
+          </eas:isFormatOf>
         </emd:relation>
       </emd:easymetadata>
     ).map(toStripped) shouldBe Success( // TODO implemented quick and dirty
@@ -160,9 +179,23 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
          |    <ddm:accessRights/>
          |  </ddm:profile>
          |  <ddm:dcmiMetadata>
-         |    <ddm:relation scheme="STREAMING_SURROGATE_RELATION">/domain/dans/user/utest/collection/ctest/presentation/private_continuous</ddm:relation>
-         |    <ddm:relation href="https://github.com/DANS-KNAW/easy-dtap/pull/47">zonder qualifier</ddm:relation>
-         |    <ddm:references href="https://github.com/DANS-KNAW/easy-dtap/pull/48">met qualifier</ddm:references>
+         |    <dcterms:isFormatOf xsi:type="id-type:NWO-PROJECTNR">my-nwo-related-identifier</dcterms:isFormatOf>
+         |    <dcterms:isFormatOf xsi:type="id-type:ISBN">my-isbn-alternative-identifier</dcterms:isFormatOf>
+         |    <dcterms:isFormatOf xsi:type="id-type:ISSN">my-issn-alternative-identifier</dcterms:isFormatOf>
+         |    <dcterms:isFormatOf xsi:type="id-type:NWO-PROJECTNR">my-nwo-alternative-identifier</dcterms:isFormatOf>
+         |    <dcterms:isFormatOf>my own alternative identifier</dcterms:isFormatOf>
+         |    <dcterms:hasVersion xsi:type="id-type:ISSN">my-issn-related-identifier</dcterms:hasVersion>
+         |    <dcterms:isPartOf>my own related identifier</dcterms:isPartOf>
+         |    <dcterms:requires xsi:type="id-type:ISBN">my-isbn-related-identifier</dcterms:requires>
+         |    <ddm:relation href="https://www.google.com" xml:lang="eng">Google</ddm:relation>
+         |    <ddm:isFormatOf scheme="id-type:DOI" href="https://doi.org/10.17026/test-doi-alternative-identifier">10.17026/test-doi-alternative-identifier</ddm:isFormatOf>
+         |    <ddm:isFormatOf scheme="id-type:URN" href="http://persistent-identifier.nl/urn:nbn:nl:ui:test-urn-alternative-identifier">
+         |      urn:nbn:nl:ui:test-urn-alternative-identifier
+         |    </ddm:isFormatOf>
+         |    <ddm:references scheme="id-type:DOI" href="https://doi.org/10.17026/test-doi-related-identifier">10.17026/test-doi-related-identifier</ddm:references>
+         |    <ddm:replaces scheme="id-type:URN" href="http://persistent-identifier.nl/urn:nbn:nl:ui:test-urn-related-identifier">
+         |      urn:nbn:nl:ui:test-urn-related-identifier
+         |    </ddm:replaces>
          |    <dcterms:license xsi:type="dcterms:URI">${ DDM.cc0 }</dcterms:license>
          |  </ddm:dcmiMetadata>
          |</ddm:DDM>

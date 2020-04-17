@@ -52,7 +52,7 @@ object DDM extends DebugEnhancedLogging {
       }
 
       // a null value skips rendering the attribute
-      val emdLang: String = emd.getEmdLanguage.getDcLanguage.asScala.headOption.map(_.getValue.replace("/", "-")).orNull // TODO getTerms
+      val emdLang: String = emd.getEmdLanguage.getDcLanguage.asScala.headOption.map(_.getValue.replace("/", "-")).orNull
       def lang(bs: BasicString) = Option(bs.getLanguage).map(_.replace("/", "-")).getOrElse(emdLang)
 
       <ddm:DDM
@@ -73,7 +73,7 @@ object DDM extends DebugEnhancedLogging {
           { emd.getEmdDescription.getTermsAbstract.asScala.map(bs => <dcterms:description xml:lang={ lang(bs) } descriptionType='Abstract'>{ bs.getValue }</dcterms:description>) }
           { emd.getEmdDescription.getTermsTableOfContents.asScala.map(bs => <dcterms:description xml:lang={ lang(bs) } descriptionType='TableOfContent'>{ bs.getValue }</dcterms:description>) }
           { /* instructions for reuse not specified as such in EMD */ }
-          { emd.getEmdCreator.getDAIAuthors.asScala.map(bs => ???) }
+          { emd.getEmdCreator.getDAIAuthors.asScala.map(bs => ??? /* TODO */) }
           { emd.getEmdCreator.getDcCreator.asScala.map(bs => ???) }
           { emd.getEmdCreator.getEasCreator.asScala.map(author => <dcx-dai:creatorDetails>{ toXml(author, emdLang)} </dcx-dai:creatorDetails>) }
           { dateCreated.map(node =>  <ddm:created>{ node.text }</ddm:created>) }
@@ -87,7 +87,7 @@ object DDM extends DebugEnhancedLogging {
           { emd.getEmdRelation.getDCRelationMap.asScala.map { case (key, values) => values.asScala.map(toRelationXml(key, _)) } }
           { emd.getEmdRelation.getRelationMap.asScala.map { case (key, values) => values.asScala.map(toRelationXml(key, _)) } }
           { emd.getEmdContributor.getDAIAuthors.asScala.map(bs => ???) }
-          { emd.getEmdContributor.getDcContributor.asScala.map(bs => ???) }
+          { emd.getEmdContributor.getDcContributor.asScala.map(bs => ??? /* TODO */) }
           { emd.getEmdContributor.getEasContributor.asScala.map(author => <dcx-dai:contributorDetails>{ toXml(author, emdLang)} </dcx-dai:contributorDetails>) }
           { /* TODO author */ }
           { emd.getEmdPublisher.getDcPublisher.asScala.map(bs => <dcterms:publisher xml:lang={ lang(bs) }>{ bs.getValue }</dcterms:publisher>) }
@@ -150,12 +150,7 @@ object DDM extends DebugEnhancedLogging {
   }
 
   private def toRelationXml(key: String, rel: Relation) = {
-    val idType = rel.getSubjectLink.getAuthority match {
-      case "persistent-identifier.nl" => "id-type:URN"
-      case "doi.org" => "id-type:DOI"
-      case _ => null
-    }
-    <label scheme={ idType }
+    <label scheme={ relationType(rel) }
            href={ rel.getSubjectLink.toURL.toString }
            xml:lang={ rel.getSubjectTitle.getLanguage }
     >{ rel.getSubjectTitle.getValue }</label>
@@ -166,6 +161,14 @@ object DDM extends DebugEnhancedLogging {
            xml:lang={ bs.getLanguage }
     >{ bs.getValue }</label>
   }.withLabel(relationLabel("dcterms:", key))
+
+  private def relationType(rel: Relation) = {
+    rel.getSubjectLink.getAuthority match {
+      case "persistent-identifier.nl" => "id-type:URN"
+      case "doi.org" => "id-type:DOI"
+      case _ => null
+    }
+  }
 
   private def relationLabel(prefix: String, key: String): String = prefix + {
     if (key.isBlank) "relation"

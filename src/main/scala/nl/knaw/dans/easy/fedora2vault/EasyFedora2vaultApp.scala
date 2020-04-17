@@ -16,7 +16,7 @@
 package nl.knaw.dans.easy.fedora2vault
 
 import java.io.InputStream
-import java.nio.file.Paths
+import java.nio.file.{ Path, Paths }
 
 import better.files.{ File, StringExtensions }
 import com.yourmediashelf.fedora.client.FedoraClient
@@ -59,14 +59,16 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
     for {
       foXml <- fedoraProvider.loadFoXml(datasetId)
       depositor <- getOwner(foXml)
+      msg = s"$outputDir from $datasetId with owner $depositor"
+      _ = logger.info("Created "+msg)
       bag <- DansV0Bag.empty(outputDir).map(_.withEasyUserAccount(depositor).withCreated(DateTime.now()))
-      _ <- getEmd(foXml)
-        .flatMap(addMetadataXml(bag, "emd.xml"))
-      _ <- getAmd(foXml)
-        .flatMap(addMetadataXml(bag, "amd.xml"))
-      _ <- getDdm(foXml)
-        .map(addMetadataXml(bag, "dataset.xml"))
-        .getOrElse(Success(())) // TODO EASY-2683 EMD -> DDM
+      emd <- getEmd(foXml)
+      _ <- addMetadataXml(bag, "emd.xml")(emd)
+      amd <- getAmd(foXml)
+      _ <- addMetadataXml(bag, "amd.xml")(amd)
+      //_ <- getDdm(foXml) // TODO where to store original?
+      ddm <- DDM(emd)(fedoraProvider)
+      _ <- addMetadataXml(bag, "dataset.xml")(ddm)
       _ <- getMessageFromDepositor(foXml)
         .map(addMetadataXml(bag, "depositor-info/message-from-depositor.txt"))
         .getOrElse(Success(())) // TODO EASY-2697: EMD/other/remark
@@ -77,7 +79,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
         .map(addAgreements(bag))
         .getOrElse(AgreementsXml(foXml, ldap)
           .map(addAgreements(bag)))
-      _ <- managedMetadataStream(foXml, "ADDITIONAL_LICENSE", bag, "license") // TODO EASY-2696 where to put?
+      _ <- managedMetadataStream(foXml, "ADDITIONAL_LICENSE", bag, "license") // TODO EASY-2696 where to store?
         .getOrElse(Success(()))
       _ <- managedMetadataStream(foXml, "DATASET_LICENSE", bag, "depositor-info/depositor-agreement") // TODO EASY-2697: older versions
         .getOrElse(Success(()))
@@ -89,7 +91,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       _ <- getManifest(foXml)
         .map(compareManifest(bag))
         .getOrElse(Success(())) // TODO check with sha's from fedora
-    } yield "???" // TODO what?
+    } yield "Created " + msg
   }
 
   private def addMetadataStream(bag: DansV0Bag, target: String)(content: InputStream): Try[Any] = {
@@ -104,12 +106,16 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
     bag.addTagFile(content.serialize.inputStream, Paths.get(s"metadata/depositor-info/agreements.xml"))
   }
 
-  private def addPayloadFileTo(bag: DansV0Bag)(fedoraFileId: String): Try[DansV0Bag] = {
+  private def addPayloadFileTo(bag: DansV0Bag)(fedoraFileId: String): Try[Path] = {
     fedoraProvider.loadFoXml(fedoraFileId)
-      .flatMap(foXml => fedoraProvider
-        .disseminateDatastream(fedoraFileId, "EASY_FILE")
-        .map(bag.addPayloadFile(_, Paths.get((foXml \\ "file-item-md" \\ "path").text)))
-        .tried.flatten
-      )
+      .flatMap { foXml =>
+        val path = Paths.get((foXml \\ "file-item-md" \\ "path").text)
+        logger.info(s"Adding $fedoraFileId to $path")
+        fedoraProvider
+          .disseminateDatastream(fedoraFileId, "EASY_FILE")
+          .map(bag.addPayloadFile(_, path))
+          .tried.flatten
+          .map(_ => path)
+      }
   }
 }

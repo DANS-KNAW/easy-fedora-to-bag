@@ -68,8 +68,8 @@ object DDM extends DebugEnhancedLogging {
           { emd.getEmdDescription.getTermsAbstract.asScala.map(bs => <dcterms:description xml:lang={ lang(bs) } descriptionType='Abstract'>{ bs.getValue }</dcterms:description>) }
           { emd.getEmdDescription.getTermsTableOfContents.asScala.map(bs => <dcterms:description xml:lang={ lang(bs) } descriptionType='TableOfContent'>{ bs.getValue }</dcterms:description>) }
           { /* instructions for reuse not specified as such in EMD */ }
-          { emd.getEmdCreator.getDAIAuthors.asScala.map(bs => ??? /* TODO */) }
-          { emd.getEmdCreator.getDcCreator.asScala.map(bs => ???) }
+          { emd.getEmdCreator.getDAIAuthors.asScala.map(bs => notImplemented("dai creator") /* TODO */) }
+          { emd.getEmdCreator.getDcCreator.asScala.map(bs => notImplemented("dc creator")) }
           { emd.getEmdCreator.getEasCreator.asScala.map(author => <dcx-dai:creatorDetails>{ toXml(author)} </dcx-dai:creatorDetails>) }
           { dateCreated.map(node =>  <ddm:created>{ node.text }</ddm:created>) }
           { dateAvailable.map(node =>  <ddm:available>{ node.text }</ddm:available>) }
@@ -81,25 +81,33 @@ object DDM extends DebugEnhancedLogging {
           { emd.getEmdTitle.getTermsAlternative.asScala.map(str => <dcterms:alternative>{ str }</dcterms:alternative>) }
           { emd.getEmdRelation.getDCRelationMap.asScala.map { case (key, values) => values.asScala.map(toRelationXml(key, _)) } }
           { emd.getEmdRelation.getRelationMap.asScala.map { case (key, values) => values.asScala.map(toRelationXml(key, _)) } }
-          { emd.getEmdContributor.getDAIAuthors.asScala.map(bs => ???) }
-          { emd.getEmdContributor.getDcContributor.asScala.map(bs => ??? /* TODO */) }
+          { emd.getEmdContributor.getDAIAuthors.asScala.map(bs => notImplemented("dai contributor")) }
+          { emd.getEmdContributor.getDcContributor.asScala.map(bs => notImplemented("dc contributor") /* TODO */) }
           { emd.getEmdContributor.getEasContributor.asScala.map(author => <dcx-dai:contributorDetails>{ toXml(author)} </dcx-dai:contributorDetails>) }
-          { /* easy-desposit-api creates authors twice */ }
+          { /* easy-desposit-api creates authors once more as rightsHolders TODO ? */ }
           { emd.getEmdPublisher.getDcPublisher.asScala.map(bs => <dcterms:publisher xml:lang={ lang(bs) }>{ bs.getValue }</dcterms:publisher>) }
           { emd.getEmdSource.getDcSource.asScala.map(bs => <dc:source xml:lang={ lang(bs) }>{ bs.getValue }</dc:source>) }
           { emd.getEmdType.getDcType.asScala.map(bs => <dcterms:type xsi:type={ xsiType(bs.getScheme) }>{ bs.getValue }</dcterms:type>) }
           { emd.getEmdFormat.getDcFormat.asScala.map(bs => <dcterms:format xsi:type={ xsiType(bs.getScheme) }>{ bs.getValue }</dcterms:format>) }
-          { emd.getEmdFormat.getTermsExtent.asScala.map(bs => ???) }
-          { emd.getEmdFormat.getTermsMedium.asScala.map(bs => ???) }
-          { /* TODO subjects, temporal/spatial-coverages */ }
+          { emd.getEmdFormat.getTermsExtent.asScala.map(bs => notImplemented("extent format")) }
+          { emd.getEmdFormat.getTermsMedium.asScala.map(bs => notImplemented("medium formt")) }
+          { emd.getEmdSubject.getDcSubject.asScala.map(bs => notImplemented("dc subjects")) }
+          { emd.getEmdCoverage.getDcCoverage.asScala.map(bs => notImplemented("dc coverage")) }
+          { emd.getEmdCoverage.getTermsSpatial.asScala.map(bs => notImplemented("spatial coverage")) }
+          { emd.getEmdCoverage.getTermsTemporal.asScala.map(bs => notImplemented("temporal coverage")) }
+          { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getPlace == null).map(spatial => notImplemented("places")) }
           { dateMap.filter(isOtherDate).map { case (key, values) => values.map(_.withLabel(dateLabel(key))) } }
-          { /* TODO points/boxes */ }
+          { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getBox == null).map(spatial => notImplemented("boxes")) }
+          { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getPoint == null).map(spatial => notImplemented("points")) }
+          { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getPolygons == null).map(spatial => notImplemented("polygons")) }
           <dcterms:license xsi:type="dcterms:URI">{ toUri(emd.getEmdRights) }</dcterms:license>
           { emd.getEmdLanguage.getDcLanguage.asScala.map(bs => <dcterms:language>{ bs.getValue }</dcterms:language>) }
         </ddm:dcmiMetadata>
       </ddm:DDM>
     }
   }
+
+  private def notImplemented(polygons: DatasetId) = throw new NotImplementedError(polygons)
 
   /** a null value skips rendering the attribute */
   private def lang(bs: BasicString) = Option(bs.getLanguage).map(_.replace("/", "-")).orNull
@@ -114,7 +122,7 @@ object DDM extends DebugEnhancedLogging {
         { seq(author.getInitials).map(str => <dcx-dai:initials>{ str }</dcx-dai:initials>) }
         { seq(author.getPrefix).map(str => <dcx-dai:insertions>{ str }</dcx-dai:insertions>) }
         <dcx-dai:surname>{ surname }</dcx-dai:surname>
-        { seq(author.getEntityId).map(str => { <label>{ str }</label>.withLabel(???) }) /* one by one getIsni/getOrcid/getDai */}
+        { seq(author.getEntityId).map(str => { <label>{ str }</label>.withLabel(???) }) /* TODO one by one getIsni/getOrcid/getDai */}
         { Option(author.getRole).toSeq.map(role =>  <dcx-dai:role>{ role.getRole /* TODO scheme? */ }</dcx-dai:role>) }
         { seq(author.getOrganization).map(toXml(_, maybeRole = None)) }
       </dcx-dai:author>

@@ -60,7 +60,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       foXml <- fedoraProvider.loadFoXml(datasetId)
       depositor <- getOwner(foXml)
       msg = s"$outputDir from $datasetId with owner $depositor"
-      _ = logger.info("Created "+msg)
+      _ = logger.info("Created " + msg)
       bag <- DansV0Bag.empty(outputDir).map(_.withEasyUserAccount(depositor).withCreated(DateTime.now()))
       emd <- getEmd(foXml)
       _ <- addMetadataXml(bag, "emd.xml")(emd)

@@ -96,32 +96,6 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
       Seq("agreements.xml", "depositor-agreement.pdf", "message-from-depositor.txt")
   }
 
-  it should "process TalkOfEurope" in {
-    val app = new MockedApp()
-    implicit val fedoraProvider: FedoraProvider = app.fedoraProvider
-    expectedAudiences(Map(
-      "easy-discipline:6" -> "D35400",
-      "easy-discipline:11" -> "D34300",
-      "easy-discipline:14" -> "D36000",
-      "easy-discipline:42" -> "D60000",
-    ))
-    expectAUser(app.ldapContext)
-    expectedFoXmls(app.fedoraProvider, sampleFoXML / "TalkOfEurope.xml")
-    expectedSubordinates(app.fedoraProvider)
-    expectedManagedStreams(app.fedoraProvider,
-      (testDir / "dataset-license").write("rabarbera"),
-    )
-
-    app.simpleTransform("easy-dataset:12", testDir / "bag") shouldBe
-      Success(s"Created $testDir/bag from easy-dataset:12 with owner user001")
-
-    (testDir / "bag" / "metadata" / "depositor-info/depositor-agreement.pdf").contentAsString shouldBe "rabarbera"
-    (testDir / "bag" / "metadata").list.toSeq.map(_.name).sortBy(identity) shouldBe
-      Seq("amd.xml", "dataset.xml", "depositor-info", "emd.xml")
-    (testDir / "bag" / "metadata" / "depositor-info").list.toSeq.map(_.name).sortBy(identity) shouldBe
-      Seq("agreements.xml", "depositor-agreement.pdf")
-  }
-
   it should "process streaming" in {
     val app = new MockedApp()
     implicit val fedoraProvider: FedoraProvider = app.fedoraProvider

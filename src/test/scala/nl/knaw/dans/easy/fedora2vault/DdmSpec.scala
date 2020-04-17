@@ -333,6 +333,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
          |    <ddm:accessRights/>
          |  </ddm:profile>
          |  <ddm:dcmiMetadata>
+         |    <dcterms:date>gisteren</dcterms:date>
          |    <dcterms:date>11-2013</dcterms:date>
          |    <dcterms:date>12-2013</dcterms:date>
          |    <dcterms:date xsi:type="dcterms:W3CDTF">1909-04</dcterms:date>

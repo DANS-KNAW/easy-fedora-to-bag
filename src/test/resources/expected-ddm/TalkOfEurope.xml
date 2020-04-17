@@ -1,57 +1,57 @@
 <ddm:DDM xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
     <ddm:profile>
-        <dc:title xml:lang="eng">Talk of Europe - The debates of the European Parliament as Linked Open Data</dc:title>
-        <dcterms:description xml:lang="eng">
+        <dc:title>Talk of Europe - The debates of the European Parliament as Linked Open Data</dc:title>
+        <dcterms:description>
             The Talk of Europe (TOE) project has curated the proceedings of the European Parliament (EP) from 1999 onwards, including all available translations in other EU languages, and converted these to RDF. Moreover, the data are enriched with biographical and political information on the speakers. Since the data are available in multilingual form, this dataset lends itself to be linked with resources in other European countries, such as parliamentary records or news reports.
         </dcterms:description>
         <dcx-dai:creatorDetails>
             <dcx-dai:author>
-                <dcx-dai:titles xml:lang="eng">Dr</dcx-dai:titles>
+                <dcx-dai:titles>Dr</dcx-dai:titles>
                 <dcx-dai:initials>L.H.</dcx-dai:initials>
                 <dcx-dai:surname>Hollink</dcx-dai:surname>
                 <dcx-dai:organization>
-                    <dcx-dai:name xml:lang="eng">CWI</dcx-dai:name>
+                    <dcx-dai:name>CWI</dcx-dai:name>
                 </dcx-dai:organization>
             </dcx-dai:author>
         </dcx-dai:creatorDetails>
         <dcx-dai:creatorDetails>
             <dcx-dai:author>
-                <dcx-dai:titles xml:lang="eng">MSc</dcx-dai:titles>
+                <dcx-dai:titles>MSc</dcx-dai:titles>
                 <dcx-dai:initials>A.V.A.</dcx-dai:initials>
                 <dcx-dai:insertions>van</dcx-dai:insertions>
                 <dcx-dai:surname>Aggelen</dcx-dai:surname>
                 <dcx-dai:organization>
-                    <dcx-dai:name xml:lang="eng">VU University Amsterdam</dcx-dai:name>
+                    <dcx-dai:name>VU University Amsterdam</dcx-dai:name>
                 </dcx-dai:organization>
             </dcx-dai:author>
         </dcx-dai:creatorDetails>
         <dcx-dai:creatorDetails>
             <dcx-dai:author>
-                <dcx-dai:titles xml:lang="eng">Prof</dcx-dai:titles>
+                <dcx-dai:titles>Prof</dcx-dai:titles>
                 <dcx-dai:initials>H.B.</dcx-dai:initials>
                 <dcx-dai:surname>Beunders</dcx-dai:surname>
                 <dcx-dai:organization>
-                    <dcx-dai:name xml:lang="eng">Erasmus University Rotterdam</dcx-dai:name>
+                    <dcx-dai:name>Erasmus University Rotterdam</dcx-dai:name>
                 </dcx-dai:organization>
             </dcx-dai:author>
         </dcx-dai:creatorDetails>
         <dcx-dai:creatorDetails>
             <dcx-dai:author>
-                <dcx-dai:titles xml:lang="eng">Dr</dcx-dai:titles>
+                <dcx-dai:titles>Dr</dcx-dai:titles>
                 <dcx-dai:initials>M.K.</dcx-dai:initials>
                 <dcx-dai:surname>Kleppe</dcx-dai:surname>
                 <dcx-dai:organization>
-                    <dcx-dai:name xml:lang="eng">VU University Amsterdam</dcx-dai:name>
+                    <dcx-dai:name>VU University Amsterdam</dcx-dai:name>
                 </dcx-dai:organization>
             </dcx-dai:author>
         </dcx-dai:creatorDetails>
         <dcx-dai:creatorDetails>
             <dcx-dai:author>
-                <dcx-dai:titles xml:lang="eng">MSc</dcx-dai:titles>
+                <dcx-dai:titles>MSc</dcx-dai:titles>
                 <dcx-dai:initials>M.K.</dcx-dai:initials>
                 <dcx-dai:surname>Kemman</dcx-dai:surname>
                 <dcx-dai:organization>
-                    <dcx-dai:name xml:lang="eng">University of Luxembourg</dcx-dai:name>
+                    <dcx-dai:name>University of Luxembourg</dcx-dai:name>
                 </dcx-dai:organization>
             </dcx-dai:author>
         </dcx-dai:creatorDetails>
@@ -73,40 +73,40 @@
         </ddm:relation>
         <dcx-dai:contributorDetails>
             <dcx-dai:author>
-                <dcx-dai:titles xml:lang="eng">Prof.</dcx-dai:titles>
+                <dcx-dai:titles>Prof.</dcx-dai:titles>
                 <dcx-dai:initials>B.H.</dcx-dai:initials>
                 <dcx-dai:surname>H?yland</dcx-dai:surname>
                 <dcx-dai:organization>
-                    <dcx-dai:name xml:lang="eng">University of Oslo</dcx-dai:name>
+                    <dcx-dai:name>University of Oslo</dcx-dai:name>
                 </dcx-dai:organization>
             </dcx-dai:author>
         </dcx-dai:contributorDetails>
         <dcx-dai:contributorDetails>
             <dcx-dai:author>
-                <dcx-dai:titles xml:lang="eng">Dr.</dcx-dai:titles>
+                <dcx-dai:titles>Dr.</dcx-dai:titles>
                 <dcx-dai:initials>M.</dcx-dai:initials>
                 <dcx-dai:surname>Marx</dcx-dai:surname>
                 <dcx-dai:organization>
-                    <dcx-dai:name xml:lang="eng">University of Amsterdam</dcx-dai:name>
+                    <dcx-dai:name>University of Amsterdam</dcx-dai:name>
                 </dcx-dai:organization>
             </dcx-dai:author>
         </dcx-dai:contributorDetails>
         <dcx-dai:contributorDetails>
             <dcx-dai:author>
-                <dcx-dai:titles xml:lang="eng">MSc</dcx-dai:titles>
+                <dcx-dai:titles>MSc</dcx-dai:titles>
                 <dcx-dai:initials>S.G.</dcx-dai:initials>
                 <dcx-dai:surname>Giannini</dcx-dai:surname>
                 <dcx-dai:organization>
-                    <dcx-dai:name xml:lang="eng">Universit? degli studi di Bari Aldo Moro</dcx-dai:name>
+                    <dcx-dai:name>Universit? degli studi di Bari Aldo Moro</dcx-dai:name>
                 </dcx-dai:organization>
             </dcx-dai:author>
         </dcx-dai:contributorDetails>
         <dcx-dai:contributorDetails>
             <dcx-dai:organization>
-                <dcx-dai:name xml:lang="eng">Funding Agency: Clarin ERIC and Clarin-NL.</dcx-dai:name>
+                <dcx-dai:name>Funding Agency: Clarin ERIC and Clarin-NL.</dcx-dai:name>
             </dcx-dai:organization>
         </dcx-dai:contributorDetails>
-        <dc:source xml:lang="eng">
+        <dc:source>
             The verbatim reports of the plenary meetings of the EP, as found on the Europarl website via portal http://www.europarl.europa.eu/plenary/en/debates-video.html.
         </dc:source>
         <dcterms:type xsi:type="dcterms:DCMIType">Dataset</dcterms:type>
@@ -114,5 +114,9 @@
         <dcterms:format>application/x-cmdi+xml</dcterms:format>
         <dcterms:dateSubmitted xsi:type="dcterms:W3CDTF">2015-10-14</dcterms:dateSubmitted>
         <dcterms:license xsi:type="dcterms:URI">http://dans.knaw.nl/en/about/organisation-and-policy/legal-information/DANSLicence.pdf</dcterms:license>
+        <dcterms:language>eng</dcterms:language>
+        <dcterms:language>dut/nld</dcterms:language>
+        <dcterms:language>ger/deu</dcterms:language>
+        <dcterms:language>fre/fra</dcterms:language>
     </ddm:dcmiMetadata>
 </ddm:DDM>

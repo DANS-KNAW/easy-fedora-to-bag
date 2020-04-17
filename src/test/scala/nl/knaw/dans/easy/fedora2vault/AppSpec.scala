@@ -21,14 +21,14 @@ import better.files.File
 import javax.naming.NamingEnumeration
 import javax.naming.directory.{ BasicAttributes, SearchControls, SearchResult }
 import javax.naming.ldap.InitialLdapContext
-import nl.knaw.dans.easy.fedora2vault.fixture.{ FileSystemSupport, TestSupportFixture }
+import nl.knaw.dans.easy.fedora2vault.fixture.{ AudienceSupport, FileSystemSupport, TestSupportFixture }
 import org.scalamock.scalatest.MockFactory
 import resource.managed
 
 import scala.util.{ Success, Try }
 import scala.xml.{ Elem, XML }
 
-class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport {
+class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport with AudienceSupport {
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -62,7 +62,8 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
       (testDir / "EASY_FILE").write("lalala"),
     )
 
-    app.simpleTransform("easy-dataset:17", testDir / "bag") shouldBe Success("???")
+    app.simpleTransform("easy-dataset:17", testDir / "bag") shouldBe
+      Success(s"Created $testDir/bag from easy-dataset:17 with owner easyadmin")
 
     (testDir / "bag" / "bag-info.txt").contentAsString should startWith("EASY-User-Account: easyadmin")
     (testDir / "bag" / "metadata" / "emd.xml").contentAsString.replaceAll(nameSpaceRegExp, "") shouldBe
@@ -72,6 +73,10 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
 
   it should "process DepositApi" in {
     val app = new MockedApp()
+    implicit val fedoraProvider: FedoraProvider = app.fedoraProvider
+    expectedAudiences(Map(
+      "easy-discipline:77" -> "D13200",
+    ))
     expectedSubordinates(app.fedoraProvider)
     expectedFoXmls(app.fedoraProvider, sampleFoXML / "DepositApi.xml")
     expectedManagedStreams(app.fedoraProvider,
@@ -80,7 +85,8 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
       (testDir / "manifest-sha1.txt").write("rabarbera"),
     )
 
-    app.simpleTransform("easy-dataset:17", testDir / "bag") shouldBe Success("???")
+    app.simpleTransform("easy-dataset:17", testDir / "bag") shouldBe
+      Success(s"Created $testDir/bag from easy-dataset:17 with owner user001")
 
     (testDir / "bag" / "metadata" / "depositor-info/depositor-agreement.pdf").contentAsString shouldBe "blablabla"
     (testDir / "bag" / "metadata" / "license.pdf").contentAsString shouldBe "lalala"
@@ -92,6 +98,13 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
 
   it should "process TalkOfEurope" in {
     val app = new MockedApp()
+    implicit val fedoraProvider: FedoraProvider = app.fedoraProvider
+    expectedAudiences(Map(
+      "easy-discipline:6" -> "D35400",
+      "easy-discipline:11" -> "D34300",
+      "easy-discipline:14" -> "D36000",
+      "easy-discipline:42" -> "D60000",
+    ))
     expectAUser(app.ldapContext)
     expectedFoXmls(app.fedoraProvider, sampleFoXML / "TalkOfEurope.xml")
     expectedSubordinates(app.fedoraProvider)
@@ -99,25 +112,31 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
       (testDir / "dataset-license").write("rabarbera"),
     )
 
-    app.simpleTransform("easy-dataset:12", testDir / "bag") shouldBe Success("???")
+    app.simpleTransform("easy-dataset:12", testDir / "bag") shouldBe
+      Success(s"Created $testDir/bag from easy-dataset:12 with owner user001")
 
     (testDir / "bag" / "metadata" / "depositor-info/depositor-agreement.pdf").contentAsString shouldBe "rabarbera"
     (testDir / "bag" / "metadata").list.toSeq.map(_.name).sortBy(identity) shouldBe
-      Seq("amd.xml", "depositor-info", "emd.xml")
+      Seq("amd.xml", "dataset.xml", "depositor-info", "emd.xml")
     (testDir / "bag" / "metadata" / "depositor-info").list.toSeq.map(_.name).sortBy(identity) shouldBe
       Seq("agreements.xml", "depositor-agreement.pdf")
   }
 
   it should "process streaming" in {
     val app = new MockedApp()
+    implicit val fedoraProvider: FedoraProvider = app.fedoraProvider
+    expectedAudiences(Map(
+      "easy-discipline:6" -> "D35400",
+    ))
     expectAUser(app.ldapContext)
     expectedFoXmls(app.fedoraProvider, sampleFoXML / "streaming.xml")
     expectedSubordinates(app.fedoraProvider)
 
-    app.simpleTransform("easy-dataset:13", testDir / "bag") shouldBe Success("???")
+    app.simpleTransform("easy-dataset:13", testDir / "bag") shouldBe
+      Success(s"Created $testDir/bag from easy-dataset:13 with owner user001")
 
     (testDir / "bag" / "metadata").list.toSeq.map(_.name)
-      .sortBy(identity) shouldBe Seq("amd.xml", "depositor-info", "emd.xml")
+      .sortBy(identity) shouldBe Seq("amd.xml", "dataset.xml", "depositor-info", "emd.xml")
     (testDir / "bag" / "metadata" / "depositor-info").list.toSeq.map(_.name).sortBy(identity) shouldBe
       Seq("agreements.xml")
   }

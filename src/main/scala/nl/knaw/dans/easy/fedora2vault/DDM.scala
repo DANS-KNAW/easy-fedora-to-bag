@@ -50,11 +50,6 @@ object DDM extends DebugEnhancedLogging {
         if (elems.isEmpty) dateCreated
         else elems
       }
-
-      // a null value skips rendering the attribute
-      val emdLang: String = emd.getEmdLanguage.getDcLanguage.asScala.headOption.map(_.getValue.replace("/", "-")).orNull
-      def lang(bs: BasicString) = Option(bs.getLanguage).map(_.replace("/", "-")).getOrElse(emdLang)
-
       <ddm:DDM
         xmlns:dc="http://purl.org/dc/elements/1.1/"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -75,7 +70,7 @@ object DDM extends DebugEnhancedLogging {
           { /* instructions for reuse not specified as such in EMD */ }
           { emd.getEmdCreator.getDAIAuthors.asScala.map(bs => ??? /* TODO */) }
           { emd.getEmdCreator.getDcCreator.asScala.map(bs => ???) }
-          { emd.getEmdCreator.getEasCreator.asScala.map(author => <dcx-dai:creatorDetails>{ toXml(author, emdLang)} </dcx-dai:creatorDetails>) }
+          { emd.getEmdCreator.getEasCreator.asScala.map(author => <dcx-dai:creatorDetails>{ toXml(author)} </dcx-dai:creatorDetails>) }
           { dateCreated.map(node =>  <ddm:created>{ node.text }</ddm:created>) }
           { dateAvailable.map(node =>  <ddm:available>{ node.text }</ddm:available>) }
           { disciplines.map(code => <ddm:audience>{ code }</ddm:audience>) }
@@ -83,13 +78,13 @@ object DDM extends DebugEnhancedLogging {
         </ddm:profile>
         <ddm:dcmiMetadata>
           { emd.getEmdIdentifier.getDcIdentifier.asScala.filter(isDdmId).map(bi => <dcterms:identifier xsi:type={ xsiType(bi.getScheme) }>{ bi.getValue }</dcterms:identifier>) }
-          { emd.getEmdTitle.getTermsAlternative.asScala.map(str => <dcterms:alternative xml:lang={ emdLang }>{ str }</dcterms:alternative>) }
+          { emd.getEmdTitle.getTermsAlternative.asScala.map(str => <dcterms:alternative>{ str }</dcterms:alternative>) }
           { emd.getEmdRelation.getDCRelationMap.asScala.map { case (key, values) => values.asScala.map(toRelationXml(key, _)) } }
           { emd.getEmdRelation.getRelationMap.asScala.map { case (key, values) => values.asScala.map(toRelationXml(key, _)) } }
           { emd.getEmdContributor.getDAIAuthors.asScala.map(bs => ???) }
           { emd.getEmdContributor.getDcContributor.asScala.map(bs => ??? /* TODO */) }
-          { emd.getEmdContributor.getEasContributor.asScala.map(author => <dcx-dai:contributorDetails>{ toXml(author, emdLang)} </dcx-dai:contributorDetails>) }
-          { /* TODO author */ }
+          { emd.getEmdContributor.getEasContributor.asScala.map(author => <dcx-dai:contributorDetails>{ toXml(author)} </dcx-dai:contributorDetails>) }
+          { /* easy-desposit-api creates authors twice */ }
           { emd.getEmdPublisher.getDcPublisher.asScala.map(bs => <dcterms:publisher xml:lang={ lang(bs) }>{ bs.getValue }</dcterms:publisher>) }
           { emd.getEmdSource.getDcSource.asScala.map(bs => <dc:source xml:lang={ lang(bs) }>{ bs.getValue }</dc:source>) }
           { emd.getEmdType.getDcType.asScala.map(bs => <dcterms:type xsi:type={ xsiType(bs.getScheme) }>{ bs.getValue }</dcterms:type>) }
@@ -100,25 +95,28 @@ object DDM extends DebugEnhancedLogging {
           { dateMap.filter(isOtherDate).map { case (key, values) => values.map(_.withLabel(dateLabel(key))) } }
           { /* TODO points/boxes */ }
           <dcterms:license xsi:type="dcterms:URI">{ toUri(emd.getEmdRights) }</dcterms:license>
-          { /* TODO languagesOfFiles */ }
+          { emd.getEmdLanguage.getDcLanguage.asScala.map(bs => <dcterms:language>{ bs.getValue }</dcterms:language>) }
         </ddm:dcmiMetadata>
       </ddm:DDM>
     }
   }
 
-  private def toXml(author: Author, lang: String): Seq[Node] = {
+  /** a null value skips rendering the attribute */
+  private def lang(bs: BasicString) = Option(bs.getLanguage).map(_.replace("/", "-")).orNull
+
+  private def toXml(author: Author): Seq[Node] = {
     val surname = author.getSurname
     if (surname == null || surname.trim.isEmpty)
-      Option(author.getOrganization).toSeq.map(toXml(_, lang, Option(author.getRole)))
+      Option(author.getOrganization).toSeq.map(toXml(_, Option(author.getRole)))
     else
       <dcx-dai:author>
-        { seq(author.getTitle).map(str => <dcx-dai:titles xml:lang={ lang }>{ str }</dcx-dai:titles>) }
+        { seq(author.getTitle).map(str => <dcx-dai:titles>{ str }</dcx-dai:titles>) }
         { seq(author.getInitials).map(str => <dcx-dai:initials>{ str }</dcx-dai:initials>) }
         { seq(author.getPrefix).map(str => <dcx-dai:insertions>{ str }</dcx-dai:insertions>) }
         <dcx-dai:surname>{ surname }</dcx-dai:surname>
-        { seq(author.getEntityId).map(str => { <label>{ str }</label>.withLabel(???) }) }
+        { seq(author.getEntityId).map(str => { <label>{ str }</label>.withLabel(???) }) /* one by one getIsni/getOrcid/getDai */}
         { Option(author.getRole).toSeq.map(role =>  <dcx-dai:role>{ role.getRole /* TODO scheme? */ }</dcx-dai:role>) }
-        { seq(author.getOrganization).map(toXml(_, lang, maybeRole = None)) }
+        { seq(author.getOrganization).map(toXml(_, maybeRole = None)) }
       </dcx-dai:author>
   }
 
@@ -185,9 +183,9 @@ object DDM extends DebugEnhancedLogging {
   /** @return an empty Seq for a null or blank String */
   private def seq(s: String): Seq[String] = Option(s).flatMap(_.trim.toOption).toSeq
 
-  private def toXml(organization: String, lang: String, maybeRole: Option[Author.Role]): Elem =
+  private def toXml(organization: String, maybeRole: Option[Author.Role]): Elem =
       <dcx-dai:organization>
-        { <dcx-dai:name xml:lang={ lang }>{ organization }</dcx-dai:name> }
+        { <dcx-dai:name>{ organization }</dcx-dai:name> }
         { maybeRole.toSeq.map(role => <dcx-dai:role>{ role.getRole }</dcx-dai:role>) }
       </dcx-dai:organization>
 

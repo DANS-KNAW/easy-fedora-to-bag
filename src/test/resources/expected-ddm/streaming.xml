@@ -1,7 +1,7 @@
 <ddm:DDM xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
     <ddm:profile>
         <dc:title>Streaming private/continuous</dc:title>
-        <dcterms:description>Example video</dcterms:description>
+        <dct:description>Example video</dct:description>
         <dcx-dai:creatorDetails>
             <dcx-dai:organization>
                 <dcx-dai:name>DANS</dcx-dai:name>
@@ -13,8 +13,8 @@
         <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
     </ddm:profile>
     <ddm:dcmiMetadata>
-        <dcterms:type xsi:type="dcterms:DCMIType">Dataset</dcterms:type>
-        <dcterms:format>video/mpeg</dcterms:format>
-        <dcterms:license xsi:type="dcterms:URI">http://dans.knaw.nl/en/about/organisation-and-policy/legal-information/DANSLicence.pdf</dcterms:license>
+        <dct:type xsi:type="dct:DCMIType">Dataset</dct:type>
+        <dct:format>video/mpeg</dct:format>
+        <dct:license xsi:type="dct:URI">http://dans.knaw.nl/en/about/organisation-and-policy/legal-information/DANSLicence.pdf</dct:license>
     </ddm:dcmiMetadata>
 </ddm:DDM>

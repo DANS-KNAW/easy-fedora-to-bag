@@ -53,7 +53,7 @@ object DDM extends DebugEnhancedLogging {
       <ddm:DDM
         xmlns:dc="http://purl.org/dc/elements/1.1/"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns:dcterms="http://purl.org/dc/terms/"
+        xmlns:dct="http://purl.org/dc/terms/"
         xmlns:dcx-dai="http://easy.dans.knaw.nl/schemas/dcx/dai/"
         xmlns:dcx-gml="http://easy.dans.knaw.nl/schemas/dcx/gml/"
         xmlns:gml="http://www.opengis.net/gml"
@@ -64,11 +64,11 @@ object DDM extends DebugEnhancedLogging {
       >
         <ddm:profile>
           { emd.getEmdTitle.getDcTitle.asScala.map(bs => <dc:title xml:lang={ lang(bs) }>{ bs.getValue }</dc:title>) }
-          { emd.getEmdDescription.getDcDescription.asScala.map(bs => <dcterms:description xml:lang={ lang(bs) }>{ bs.getValue }</dcterms:description>) }
-          { emd.getEmdDescription.getTermsAbstract.asScala.map(bs => <dcterms:description xml:lang={ lang(bs) } descriptionType='Abstract'>{ bs.getValue }</dcterms:description>) }
-          { emd.getEmdDescription.getTermsTableOfContents.asScala.map(bs => <dcterms:description xml:lang={ lang(bs) } descriptionType='TableOfContent'>{ bs.getValue }</dcterms:description>) }
+          { emd.getEmdDescription.getDcDescription.asScala.map(bs => <dct:description xml:lang={ lang(bs) }>{ bs.getValue }</dct:description>) }
+          { emd.getEmdDescription.getTermsAbstract.asScala.map(bs => <dct:description xml:lang={ lang(bs) } descriptionType='Abstract'>{ bs.getValue }</dct:description>) }
+          { emd.getEmdDescription.getTermsTableOfContents.asScala.map(bs => <dct:description xml:lang={ lang(bs) } descriptionType='TableOfContent'>{ bs.getValue }</dct:description>) }
           { /* instructions for reuse not specified as such in EMD */ }
-          { emd.getEmdCreator.getDcCreator.asScala.map(bs => notImplemented("dc creator")) }
+          { emd.getEmdCreator.getDcCreator.asScala.map(bs => <dc:creator eas:scheme={ bs.getScheme } eas:schemeId={ bs.getSchemeId } xml:lang={ lang(bs) }>{ bs.getValue }</dc:creator>) }
           { emd.getEmdCreator.getEasCreator.asScala.map(author => <dcx-dai:creatorDetails>{ toXml(author)} </dcx-dai:creatorDetails>) }
           { dateCreated.map(node =>  <ddm:created>{ node.text }</ddm:created>) }
           { dateAvailable.map(node =>  <ddm:available>{ node.text }</ddm:available>) }
@@ -76,36 +76,48 @@ object DDM extends DebugEnhancedLogging {
           <ddm:accessRights>{ emd.getEmdRights.getAccessCategory }</ddm:accessRights>
         </ddm:profile>
         <ddm:dcmiMetadata>
-          { emd.getEmdIdentifier.getDcIdentifier.asScala.filter(isDdmId).map(bi => <dcterms:identifier xsi:type={ xsiType(bi.getScheme) }>{ bi.getValue }</dcterms:identifier>) }
-          { emd.getEmdTitle.getTermsAlternative.asScala.map(str => <dcterms:alternative>{ str }</dcterms:alternative>) }
+          { emd.getEmdIdentifier.getDcIdentifier.asScala.filter(isDdmId).map(bi => <dct:identifier xsi:type={ xsiType(bi) }>{ bi.getValue }</dct:identifier>) }
+          { emd.getEmdTitle.getTermsAlternative.asScala.map(str => <dct:alternative>{ str }</dct:alternative>) }
           { emd.getEmdRelation.getDCRelationMap.asScala.map { case (key, values) => values.asScala.map(toRelationXml(key, _)) } }
           { emd.getEmdRelation.getRelationMap.asScala.map { case (key, values) => values.asScala.map(toRelationXml(key, _)) } }
-          { emd.getEmdContributor.getDcContributor.asScala.map(bs => notImplemented("dc contributor") /* TODO */) }
+          { emd.getEmdContributor.getDcContributor.asScala.map(bs => <dc:contributor eas:scheme={ bs.getScheme } eas:schemeId={ bs.getSchemeId } xml:lang={ lang(bs) }>{ bs.getValue }</dc:contributor>) }
           { emd.getEmdContributor.getEasContributor.asScala.map(author => <dcx-dai:contributorDetails>{ toXml(author)} </dcx-dai:contributorDetails>) }
           { /* easy-desposit-api creates authors once more as rightsHolders TODO ? */ }
-          { emd.getEmdPublisher.getDcPublisher.asScala.map(bs => <dcterms:publisher xml:lang={ lang(bs) }>{ bs.getValue }</dcterms:publisher>) }
+          { emd.getEmdPublisher.getDcPublisher.asScala.map(bs => <dct:publisher xml:lang={ lang(bs) }>{ bs.getValue }</dct:publisher>) }
           { emd.getEmdSource.getDcSource.asScala.map(bs => <dc:source xml:lang={ lang(bs) }>{ bs.getValue }</dc:source>) }
-          { emd.getEmdType.getDcType.asScala.map(bs => <dcterms:type xsi:type={ xsiType(bs.getScheme) }>{ bs.getValue }</dcterms:type>) }
-          { emd.getEmdFormat.getDcFormat.asScala.map(bs => <dcterms:format xsi:type={ xsiType(bs.getScheme) }>{ bs.getValue }</dcterms:format>) }
-          { emd.getEmdFormat.getTermsExtent.asScala.map(bs => notImplemented("extent format")) }
-          { emd.getEmdFormat.getTermsMedium.asScala.map(bs => notImplemented("medium formt")) }
-          { emd.getEmdSubject.getDcSubject.asScala.map(bs => notImplemented("dc subjects")) }
-          { emd.getEmdCoverage.getDcCoverage.asScala.map(bs => notImplemented("dc coverage")) }
-          { emd.getEmdCoverage.getTermsSpatial.asScala.map(bs => notImplemented("spatial coverage")) }
-          { emd.getEmdCoverage.getTermsTemporal.asScala.map(bs => notImplemented("temporal coverage")) }
-          { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getPlace == null).map(spatial => notImplemented("places")) }
+          { emd.getEmdType.getDcType.asScala.map(bs => <dct:type xsi:type={ xsiType(bs) }>{ bs.getValue }</dct:type>) }
+          { emd.getEmdFormat.getDcFormat.asScala.map(bs => <dct:format xsi:type={ xsiType(bs) }>{ bs.getValue }</dct:format>) }
+          { emd.getEmdFormat.getTermsExtent.asScala.map(notImplemented("extent format")) }
+          { emd.getEmdFormat.getTermsMedium.asScala.map(notImplemented("medium formt")) }
+          { emd.getEmdSubject.getDcSubject.asScala.map(bs => <dc:subject xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue }</dc:subject>) }
+          { emd.getEmdCoverage.getDcCoverage.asScala.map(bs => <dct:coverage eas:scheme={ bs.getScheme } eas:schemeId={ bs.getSchemeId } xml:lang={ lang(bs) }>{ bs.getValue }</dct:coverage>) }
+          { emd.getEmdCoverage.getTermsSpatial.asScala.map(bs => <dct:spatial xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue }</dct:spatial>) }
+          { emd.getEmdCoverage.getTermsTemporal.asScala.map(bs => <dct:temporal xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue }</dct:temporal>) }
+          { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getPlace == null).map(notImplemented("places")) }
           { dateMap.filter(isOtherDate).map { case (key, values) => values.map(_.withLabel(dateLabel(key))) } }
-          { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getBox == null).map(spatial => notImplemented("boxes")) }
-          { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getPoint == null).map(spatial => notImplemented("points")) }
-          { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getPolygons == null).map(spatial => notImplemented("polygons")) }
-          <dcterms:license xsi:type="dcterms:URI">{ toUri(emd.getEmdRights) }</dcterms:license>
-          { emd.getEmdLanguage.getDcLanguage.asScala.map(bs => <dcterms:language>{ bs.getValue }</dcterms:language>) }
+          { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getBox == null).map(notImplemented("boxes")) }
+          { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getPoint == null).map(notImplemented("points")) }
+          { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getPolygons == null).map(notImplemented("polygons")) }
+          <dct:license xsi:type="dct:URI">{ toUri(emd.getEmdRights) }</dct:license>
+          { emd.getEmdLanguage.getDcLanguage.asScala.map(bs => <dct:language>{ bs.getValue }</dct:language>) }
         </ddm:dcmiMetadata>
       </ddm:DDM>
     }
   }
 
-  private def notImplemented(polygons: DatasetId) = throw new NotImplementedError(polygons)
+  private def xsiType(bs: BasicString) = {
+    (bs.getScheme, bs.getSchemeId) match {
+      case ("DCMI", _) => "dct:DCMIType"
+      case ("ABR", "archaeology.dc.subject") => "abr:ABRcomplex"
+      case ("ABR", "archaeology.dc.temporal") => "abr:ABRperiode"
+      case (null,_) => null
+      case (s,_) => "id-type:" + s
+    }
+  }
+
+  private def notImplemented(polygons: String)(data: Any): Unit = {
+    logger.error(s"not implemented $polygons [$data]")
+  }
 
   /** a null value skips rendering the attribute */
   private def lang(bs: BasicString) = Option(bs.getLanguage).map(_.replace("/", "-")).orNull
@@ -130,20 +142,20 @@ object DDM extends DebugEnhancedLogging {
 
   private def toURI(id: EntityId) = {
     val uri = id.getIdentificationSystem.toString.replaceAll("/*$", "")
-    s"$uri/${id.getEntityId}"
+    s"$uri/${ id.getEntityId }"
   }
 
   private def toXml(value: IsoDate) = <label xsi:type={ orNull(value.getScheme) }>{ value }</label>
 
   private def toXml(value: BasicDate) = <label xsi:type={ orNull(value.getScheme) }>{ value }</label>
 
-  def orNull(dateScheme: DateScheme): String = Option(dateScheme).map("dcterms:" + _.toString).orNull
+  def orNull(dateScheme: DateScheme): String = Option(dateScheme).map("dct:" + _.toString).orNull
 
   private def isOtherDate(kv: (String, Iterable[Elem])) = !Seq("created", "available").contains(kv._1)
 
   private def dateLabel(key: String) = {
-    if (key.isBlank) "dcterms:date"
-    else "dcterms:" + key
+    if (key.isBlank) "dct:date"
+    else "dct:" + key
   }
 
   private def getDateMap(emd: EasyMetadataImpl) = {
@@ -168,10 +180,10 @@ object DDM extends DebugEnhancedLogging {
   }.withLabel(relationLabel("ddm:", key))
 
   private def toRelationXml(key: String, bs: BasicString) = {
-    <label xsi:type={ xsiType(bs.getScheme) }
+    <label xsi:type={ xsiType(bs) }
            xml:lang={ bs.getLanguage }
     >{ bs.getValue }</label>
-  }.withLabel(relationLabel("dcterms:", key))
+  }.withLabel(relationLabel("dct:", key))
 
   private def relationType(rel: Relation) = {
     rel.getSubjectLink.getAuthority match {
@@ -184,13 +196,6 @@ object DDM extends DebugEnhancedLogging {
   private def relationLabel(prefix: String, key: String): String = prefix + {
     if (key.isBlank) "relation"
     else key
-  }
-
-  private def xsiType(scheme: String) = {
-    Option(scheme).map {
-      case "DCMI" => "dcterms:DCMIType"
-      case s => "id-type:" + s
-    }.orNull
   }
 
   /** @return an empty Seq for a null or blank String */

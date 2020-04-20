@@ -68,7 +68,6 @@ object DDM extends DebugEnhancedLogging {
           { emd.getEmdDescription.getTermsAbstract.asScala.map(bs => <dcterms:description xml:lang={ lang(bs) } descriptionType='Abstract'>{ bs.getValue }</dcterms:description>) }
           { emd.getEmdDescription.getTermsTableOfContents.asScala.map(bs => <dcterms:description xml:lang={ lang(bs) } descriptionType='TableOfContent'>{ bs.getValue }</dcterms:description>) }
           { /* instructions for reuse not specified as such in EMD */ }
-          { emd.getEmdCreator.getDAIAuthors.asScala.map(bs => notImplemented("dai creator") /* TODO */) }
           { emd.getEmdCreator.getDcCreator.asScala.map(bs => notImplemented("dc creator")) }
           { emd.getEmdCreator.getEasCreator.asScala.map(author => <dcx-dai:creatorDetails>{ toXml(author)} </dcx-dai:creatorDetails>) }
           { dateCreated.map(node =>  <ddm:created>{ node.text }</ddm:created>) }
@@ -81,7 +80,6 @@ object DDM extends DebugEnhancedLogging {
           { emd.getEmdTitle.getTermsAlternative.asScala.map(str => <dcterms:alternative>{ str }</dcterms:alternative>) }
           { emd.getEmdRelation.getDCRelationMap.asScala.map { case (key, values) => values.asScala.map(toRelationXml(key, _)) } }
           { emd.getEmdRelation.getRelationMap.asScala.map { case (key, values) => values.asScala.map(toRelationXml(key, _)) } }
-          { emd.getEmdContributor.getDAIAuthors.asScala.map(bs => notImplemented("dai contributor")) }
           { emd.getEmdContributor.getDcContributor.asScala.map(bs => notImplemented("dc contributor") /* TODO */) }
           { emd.getEmdContributor.getEasContributor.asScala.map(author => <dcx-dai:contributorDetails>{ toXml(author)} </dcx-dai:contributorDetails>) }
           { /* easy-desposit-api creates authors once more as rightsHolders TODO ? */ }
@@ -122,10 +120,17 @@ object DDM extends DebugEnhancedLogging {
         { seq(author.getInitials).map(str => <dcx-dai:initials>{ str }</dcx-dai:initials>) }
         { seq(author.getPrefix).map(str => <dcx-dai:insertions>{ str }</dcx-dai:insertions>) }
         <dcx-dai:surname>{ surname }</dcx-dai:surname>
-        { seq(author.getEntityId).map(str => { <label>{ str }</label>.withLabel(???) }) /* TODO one by one getIsni/getOrcid/getDai */}
+        { Option(author.getOrcid).toSeq.map(id => { <dcx-dai:ORCID>{ toURI(id) }</dcx-dai:ORCID> }) }
+        { Option(author.getIsni).toSeq.map(id => { <dcx-dai:ISNI>{ toURI(id) }</dcx-dai:ISNI> }) }
+        { Option(author.getDigitalAuthorId).toSeq.map(dai => { <dcx-dai:DAI>{ dai.getURI }</dcx-dai:DAI> }) }
         { Option(author.getRole).toSeq.map(role =>  <dcx-dai:role>{ role.getRole /* TODO scheme? */ }</dcx-dai:role>) }
         { seq(author.getOrganization).map(toXml(_, maybeRole = None)) }
       </dcx-dai:author>
+  }
+
+  private def toURI(id: EntityId) = {
+    val uri = id.getIdentificationSystem.toString.replaceAll("/*$", "")
+    s"$uri/${id.getEntityId}"
   }
 
   private def toXml(value: IsoDate) = <label xsi:type={ orNull(value.getScheme) }>{ value }</label>

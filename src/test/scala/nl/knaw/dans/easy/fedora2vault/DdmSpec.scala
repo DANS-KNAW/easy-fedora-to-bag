@@ -256,6 +256,78 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
          |""".stripMargin)
   }
 
+  "author" should "succeed" in {
+    implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
+    DDM(
+      <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
+        <emd:creator>
+          <eas:creator>
+            <eas:title>Drs</eas:title>
+            <eas:initials>P</eas:initials>
+            <eas:prefix>van der</eas:prefix>
+            <eas:surname>Poel</eas:surname>
+            <eas:entityId eas:scheme="DAI">068519397</eas:entityId>
+          </eas:creator>
+          <eas:creator>
+              <eas:initials>X.I.</eas:initials>
+              <eas:surname>lastname</eas:surname>
+              <eas:entityId eas:identification-system="info:eu-repo/dai/nl/" eas:scheme="DAI">9876543216</eas:entityId>
+          </eas:creator>
+          <eas:creator>
+              <eas:initials>X.I.</eas:initials>
+              <eas:surname>lastname</eas:surname>
+              <eas:entityId eas:identification-system="http://isni.org/isni/" eas:scheme="ISNI">000000012281955X</eas:entityId>
+          </eas:creator>
+          <eas:creator>
+              <eas:initials>X.I.</eas:initials>
+              <eas:surname>lastname</eas:surname>
+              <eas:entityId eas:identification-system="https://orcid.org/" eas:scheme="ORCID">0000-0001-2281-955X</eas:entityId>
+          </eas:creator>
+        </emd:creator>
+      </emd:easymetadata>
+    ).map(toStripped) shouldBe Success(
+      s"""<ddm:DDM
+         |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
+         |  <ddm:profile>
+         |    <dcx-dai:creatorDetails>
+         |      <dcx-dai:author>
+         |        <dcx-dai:titles>Drs</dcx-dai:titles>
+         |        <dcx-dai:initials>P</dcx-dai:initials>
+         |        <dcx-dai:insertions>van der</dcx-dai:insertions>
+         |        <dcx-dai:surname>Poel</dcx-dai:surname>
+         |        <dcx-dai:DAI>info:eu-repo/dai/nl/068519397</dcx-dai:DAI>
+         |      </dcx-dai:author>
+         |    </dcx-dai:creatorDetails>
+         |    <dcx-dai:creatorDetails>
+         |      <dcx-dai:author>
+         |        <dcx-dai:initials>X.I.</dcx-dai:initials>
+         |        <dcx-dai:surname>lastname</dcx-dai:surname>
+         |        <dcx-dai:DAI>info:eu-repo/dai/nl/9876543216</dcx-dai:DAI>
+         |      </dcx-dai:author>
+         |    </dcx-dai:creatorDetails>
+         |    <dcx-dai:creatorDetails>
+         |      <dcx-dai:author>
+         |        <dcx-dai:initials>X.I.</dcx-dai:initials>
+         |        <dcx-dai:surname>lastname</dcx-dai:surname>
+         |        <dcx-dai:ISNI>http://isni.org/isni/000000012281955X</dcx-dai:ISNI>
+         |      </dcx-dai:author>
+         |    </dcx-dai:creatorDetails>
+         |    <dcx-dai:creatorDetails>
+         |      <dcx-dai:author>
+         |        <dcx-dai:initials>X.I.</dcx-dai:initials>
+         |        <dcx-dai:surname>lastname</dcx-dai:surname>
+         |        <dcx-dai:ORCID>https://orcid.org/0000-0001-2281-955X</dcx-dai:ORCID>
+         |      </dcx-dai:author>
+         |    </dcx-dai:creatorDetails>
+         |    <ddm:accessRights/>
+         |  </ddm:profile>
+         |  <ddm:dcmiMetadata>
+         |    <dcterms:license xsi:type="dcterms:URI">${ DDM.cc0 }</dcterms:license>
+         |  </ddm:dcmiMetadata>
+         |</ddm:DDM>
+         |""".stripMargin)
+  }
+
   it should "render only the first available" in {
     implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
     DDM(

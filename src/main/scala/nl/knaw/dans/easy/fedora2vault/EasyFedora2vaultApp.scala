@@ -18,22 +18,35 @@ package nl.knaw.dans.easy.fedora2vault
 import java.io.InputStream
 import java.nio.file.Paths
 
-import better.files.File
+import better.files.{ File, StringExtensions }
 import com.yourmediashelf.fedora.client.FedoraClient
 import javax.naming.ldap.InitialLdapContext
 import nl.knaw.dans.bag.v0.DansV0Bag
 import nl.knaw.dans.easy.fedora2vault.Command.FeedBackMessage
 import nl.knaw.dans.easy.fedora2vault.FoXml.{ getEmd, _ }
-import better.files.StringExtensions
+import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
-import scala.util.{ Success, Try }
+import scala.util.{ Failure, Success, Try }
 import scala.xml.{ Elem, Node, XML }
 
 class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLogging {
   lazy val fedoraProvider: FedoraProvider = new FedoraProvider(new FedoraClient(configuration.fedoraCredentials))
   lazy val ldapContext: InitialLdapContext = new InitialLdapContext(configuration.ldapEnv, null)
   private lazy val ldap = new Ldap(ldapContext)
+
+  def simpleTransForms(input: File, outputDir: File): Try[FeedBackMessage] = {
+    input.lineIterator.map(datasetId => {
+      val subDir = outputDir / datasetId.replaceAll("[^a-zA-Z0-9]+", "-")
+      simpleTransform(datasetId, subDir)
+        .doIfSuccess(println)
+        .doIfFailure { case t =>
+          logger.error(s"$datasetId failed", t)
+          println(s"$datasetId failed: $t")
+        }
+    }).collectFirst { case t @ Failure(_) => t }
+      .getOrElse(Success(s"All datasets in ${ input } saved as bags in ${ outputDir }"))
+  }
 
   def simpleTransform(datasetId: DatasetId, outputDir: File): Try[FeedBackMessage] = {
 

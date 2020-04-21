@@ -38,9 +38,11 @@ object Command extends App with DebugEnhancedLogging {
     .doIfFailure { case NonFatal(e) => println(s"FAILED: ${ e.getMessage }") }
 
   private def runSubcommand(app: EasyFedora2vaultApp): Try[FeedBackMessage] = {
-    app.simpleTransform(
-      commandLine.datasetId(),
-      commandLine.outputDir(),
-    )
+    val outputDir = commandLine.outputDir()
+    if (commandLine.datasetId.isDefined)
+      app.simpleTransform(commandLine.datasetId(), outputDir)
+    else {
+      app.simpleTransForms(commandLine.inputFile(), outputDir)
+    }
   }
 }

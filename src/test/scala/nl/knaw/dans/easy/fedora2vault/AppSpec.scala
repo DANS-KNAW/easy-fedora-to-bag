@@ -21,11 +21,12 @@ import better.files.File
 import javax.naming.NamingEnumeration
 import javax.naming.directory.{ BasicAttributes, SearchControls, SearchResult }
 import javax.naming.ldap.InitialLdapContext
+import nl.knaw.dans.easy.fedora2vault.Command.FeedBackMessage
 import nl.knaw.dans.easy.fedora2vault.fixture.{ FileSystemSupport, TestSupportFixture }
 import org.scalamock.scalatest.MockFactory
 import resource.managed
 
-import scala.util.Success
+import scala.util.{ Failure, Success, Try }
 import scala.xml.Elem
 
 class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport {
@@ -44,6 +45,45 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
   private class MockedApp() extends EasyFedora2vaultApp(null) {
     override lazy val fedoraProvider: FedoraProvider = mock[FedoraProvider]
     override lazy val ldapContext: InitialLdapContext = mock[MockedLdapContext]
+  }
+
+  private class OverriddenApp extends MockedApp {
+    /** overrides the method called by the method under test */
+    override def simpleTransform(datasetId: DatasetId, outputDir: File): Try[FeedBackMessage] = {
+      if (!datasetId.startsWith("success"))
+        Failure(new Exception(datasetId))
+      else {
+        outputDir.createFile()
+        Success(s"created $outputDir from $datasetId")
+      }
+    }
+  }
+
+  "simpleTransforms" should "report success" in {
+    val input = (testDir / "input").write(
+      """success:1
+        |success:2
+        |""".stripMargin
+    )
+    val outputDir = (testDir / "output").createDirectories()
+    new OverriddenApp().simpleTransForms(input, outputDir) shouldBe
+      Success(s"All datasets in $input saved as bags in $outputDir")
+    outputDir.list.toSeq.map(_.name) shouldBe Seq("success-1", "success-2")
+  }
+
+  it should "report failure" in {
+    val input = (testDir / "input").write(
+      """success:1
+        |failure:1
+        |success:2
+        |""".stripMargin
+    )
+    val outputDir = (testDir / "output").createDirectories()
+    new OverriddenApp().simpleTransForms(input, outputDir) should matchPattern {
+      case Failure(t) if t.getMessage == "failure:1" =>
+    }
+    outputDir.list.toSeq.map(_.name) shouldBe Seq("success-1")
+    // success-2 is not created because of a fail fast strategy
   }
 
   "simpleTransform" should "produce a bag with EMD" in {

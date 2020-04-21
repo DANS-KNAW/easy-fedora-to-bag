@@ -388,7 +388,10 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
               <eas:dateSubmitted eas:scheme="W3CDTF" eas:format="MONTH">1908-04-01T00:00:00.000+00:19:32</eas:dateSubmitted>
           </emd:date>
       </emd:easymetadata>
-    ).map(toStripped) shouldBe Success(
+    ).map{ elem =>
+      println(toS(elem))
+      toStripped(elem)
+    } shouldBe Success(
       s"""<ddm:DDM
          |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
          |  <ddm:profile>

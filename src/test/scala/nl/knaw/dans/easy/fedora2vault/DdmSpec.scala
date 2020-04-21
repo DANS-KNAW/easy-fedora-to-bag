@@ -53,7 +53,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
   }
 
   "depositApi" should "produce the DDM provided by easy-deposit-api" in {
-    val triedFoXml = Try(XML.loadFile((sampleFoXML / "depositApi.xml").toJava))
+    val triedFoXml = Try(XML.loadFile((sampleFoXML / "DepositApi.xml").toJava))
 
     implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
     expectedAudiences(Map("easy-discipline:77" -> "D13200"))

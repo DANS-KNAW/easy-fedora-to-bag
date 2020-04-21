@@ -23,6 +23,7 @@ import nl.knaw.dans.pf.language.emd.binding.EmdUnmarshaller
 import nl.knaw.dans.pf.language.emd.types.EmdConstants.DateScheme
 import nl.knaw.dans.pf.language.emd.types._
 import nl.knaw.dans.pf.language.emd.{ EasyMetadataImpl, EmdRights }
+import org.joda.time.DateTimeZone
 
 import scala.collection.JavaConverters._
 import scala.util.Try
@@ -33,6 +34,9 @@ object DDM extends DebugEnhancedLogging {
   val schemaLocation: String = "https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd"
   val dansLicense = "http://dans.knaw.nl/en/about/organisation-and-policy/legal-information/DANSLicence.pdf"
   val cc0 = "http://dans.knaw.nl/en/about/organisation-and-policy/legal-information/DANSLicence.pdf"
+
+  // for proper conversion of DateTime to date string by EMD's IsoDate/BasicDate
+  DateTimeZone.setDefault(DateTimeZone.forID("Europe/Amsterdam"))
 
   def apply(emdNode: Node)(implicit fedoraProvider: FedoraProvider): Try[Elem] = {
 

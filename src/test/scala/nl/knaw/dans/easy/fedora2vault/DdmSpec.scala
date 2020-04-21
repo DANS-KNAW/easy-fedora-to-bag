@@ -377,6 +377,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
               <dct:dateSubmitted>10-2013</dct:dateSubmitted>
               <eas:date eas:scheme="W3CDTF" eas:format="MONTH">1909-04-01T00:00:00.000+00:19:32</eas:date>
               <eas:date eas:scheme="W3CDTF" eas:format="MONTH">1910-04-01T00:00:00.000+00:19:32</eas:date>
+              <eas:created eas:scheme="W3CDTF" eas:format="DAY">2017-09-30T00:00:00.000+02:00</eas:created>
               <eas:created eas:scheme="W3CDTF" eas:format="MONTH">1901-04-01T00:00:00.000+00:19:32</eas:created>
               <eas:valid eas:scheme="W3CDTF" eas:format="MONTH">1904-04-01T00:00:00.000+00:19:32</eas:valid>
               <eas:available eas:scheme="W3CDTF" eas:format="YEAR">1900-01-01T00:00:00.000+00:19:32</eas:available>
@@ -393,6 +394,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
          |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
          |  <ddm:profile>
          |    <ddm:created>03-2013</ddm:created>
+         |    <ddm:created>2017-09-30</ddm:created>
          |    <ddm:created>1901-04</ddm:created>
          |    <ddm:available>04-2013</ddm:available>
          |    <ddm:available>1900</ddm:available>

@@ -25,7 +25,7 @@ import nl.knaw.dans.bag.v0.DansV0Bag
 import nl.knaw.dans.easy.fedora2vault.Command.FeedBackMessage
 import nl.knaw.dans.easy.fedora2vault.FoXml.{ getEmd, _ }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
-import org.joda.time.{ DateTime, DateTimeZone }
+import org.joda.time.DateTime
 
 import scala.util.{ Success, Try }
 import scala.xml.{ Elem, Node }
@@ -34,9 +34,6 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
   lazy val fedoraProvider: FedoraProvider = new FedoraProvider(new FedoraClient(configuration.fedoraCredentials))
   lazy val ldapContext: InitialLdapContext = new InitialLdapContext(configuration.ldapEnv, null)
   private lazy val ldap = new Ldap(ldapContext)
-
-  // for proper conversion of DateTime to date
-  DateTimeZone.setDefault(DateTimeZone.UTC)
 
   def simpleTransform(datasetId: DatasetId, outputDir: File): Try[FeedBackMessage] = {
 

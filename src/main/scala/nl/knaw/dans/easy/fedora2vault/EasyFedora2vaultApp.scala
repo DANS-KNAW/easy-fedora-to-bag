@@ -36,7 +36,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
   private lazy val ldap = new Ldap(ldapContext)
 
   def simpleTransForms(input: File, outputDir: File): Try[FeedBackMessage] = {
-    input.lineIterator.map(datasetId => {
+    input.lineIterator.filterNot(_.startsWith("#")).map(datasetId => {
       val subDir = outputDir / datasetId.replaceAll("[^a-zA-Z0-9]+", "-")
       simpleTransform(datasetId, subDir)
         .doIfFailure { case t =>

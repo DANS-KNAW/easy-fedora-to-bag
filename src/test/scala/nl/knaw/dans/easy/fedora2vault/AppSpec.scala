@@ -68,7 +68,7 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
     val outputDir = (testDir / "output").createDirectories()
     new OverriddenApp().simpleTransForms(input, outputDir) shouldBe
       Success(s"All datasets in $input saved as bags in $outputDir")
-    outputDir.list.toSeq.map(_.name) shouldBe Seq("success-1", "success-2")
+    outputDir.list.toSeq.map(_.name) should contain theSameElementsAs Seq("success-1", "success-2")
   }
 
   it should "report failure" in {

@@ -83,7 +83,7 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
       case Failure(t) if t.getMessage == "failure:1" =>
     }
     outputDir.list.toSeq.map(_.name) shouldBe Seq("success-1")
-    // success-2 is not created because of a fail fast strategy
+  // success-2 is not created because of a fail fast strategy
   }
 
   "simpleTransform" should "produce a bag with EMD" in {

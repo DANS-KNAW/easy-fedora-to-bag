@@ -39,10 +39,8 @@ object Command extends App with DebugEnhancedLogging {
 
   private def runSubcommand(app: EasyFedora2vaultApp): Try[FeedBackMessage] = {
     val outputDir = commandLine.outputDir()
-    if (commandLine.datasetId.isDefined)
-      app.simpleTransform(commandLine.datasetId(), outputDir)
-    else {
-      app.simpleTransForms(commandLine.inputFile(), outputDir)
-    }
+    commandLine.datasetId
+      .map(app.simpleTransform(_, outputDir)) // TODO curry to get rid of _, after/when merging with PR #2
+      .getOrElse(app.simpleTransForms(commandLine.inputFile(), outputDir))
   }
 }

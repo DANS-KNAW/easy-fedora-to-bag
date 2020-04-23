@@ -39,10 +39,8 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
     input.lineIterator.map(datasetId => {
       val subDir = outputDir / datasetId.replaceAll("[^a-zA-Z0-9]+", "-")
       simpleTransform(datasetId, subDir)
-        .doIfSuccess(println)
         .doIfFailure { case t =>
           logger.error(s"$datasetId failed", t)
-          println(s"$datasetId failed: $t")
         }
     }).collectFirst { case t @ Failure(_) => t }
       .getOrElse(Success(s"All datasets in ${ input } saved as bags in ${ outputDir }"))

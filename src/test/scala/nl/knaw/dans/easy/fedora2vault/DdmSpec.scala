@@ -92,12 +92,12 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
          |    <dct:description>abstract</dct:description>
          |    <dct:description>Suggestions for data usage: remark1</dct:description>
          |    <dct:description>beschrijving</dct:description>
-         |    <dct:description descriptionType="Abstract">blabl</dct:description>
-         |    <dct:description descriptionType="TableOfContent">rabar</dct:description>
          |    <ddm:accessRights/>
          |  </ddm:profile>
          |  <ddm:dcmiMetadata>
-         |    <dct:license xsi:type="dct:URI">${ DDM.cc0 }</dct:license>
+         |    <ddm:description descriptionType="Abstract">blabl</ddm:description>
+         |    <ddm:description descriptionType="TableOfContent">rabar</ddm:description>
+         |    <dct:license xsi:type="dct:URI">${ DDM.dansLicense }</dct:license>
          |  </ddm:dcmiMetadata>
          |</ddm:DDM>
          |""".stripMargin)
@@ -162,7 +162,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
          |    <ddm:replaces scheme="id-type:URN" href="http://persistent-identifier.nl/urn:nbn:nl:ui:test-urn-related-identifier">
          |      urn:nbn:nl:ui:test-urn-related-identifier
          |    </ddm:replaces>
-         |    <dct:license xsi:type="dct:URI">${ DDM.cc0 }</dct:license>
+         |    <dct:license xsi:type="dct:URI">${ DDM.dansLicense }</dct:license>
          |  </ddm:dcmiMetadata>
          |</ddm:DDM>
          |""".stripMargin)
@@ -185,7 +185,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
          |    <ddm:accessRights>ACCESS_ELSEWHERE</ddm:accessRights>
          |  </ddm:profile>
          |  <ddm:dcmiMetadata>
-         |    <dct:license xsi:type="dct:URI">${ DDM.cc0 }</dct:license>
+         |    <dct:license xsi:type="dct:URI">${ DDM.dansLicense }</dct:license>
          |  </ddm:dcmiMetadata>
          |</ddm:DDM>
          |""".stripMargin)
@@ -251,7 +251,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
          |    <ddm:accessRights/>
          |  </ddm:profile>
          |  <ddm:dcmiMetadata>
-         |    <dct:license xsi:type="dct:URI">${ DDM.cc0 }</dct:license>
+         |    <dct:license xsi:type="dct:URI">${ DDM.dansLicense }</dct:license>
          |  </ddm:dcmiMetadata>
          |</ddm:DDM>
          |""".stripMargin)
@@ -281,7 +281,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
          |    <dc:subject xml:lang="nld-NLD" xsi:type="id-type:BSS1">subject 1</dc:subject>
          |    <dc:subject xml:lang="nld-NLD" xsi:type="id-type:BSS0">subject zero</dc:subject>
          |    <dc:subject>hello world</dc:subject>
-         |    <dct:license xsi:type="dct:URI">${ DDM.cc0 }</dct:license>
+         |    <dct:license xsi:type="dct:URI">${ DDM.dansLicense }</dct:license>
          |  </ddm:dcmiMetadata>
          |</ddm:DDM>
          |""".stripMargin)
@@ -353,7 +353,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
          |    <ddm:accessRights/>
          |  </ddm:profile>
          |  <ddm:dcmiMetadata>
-         |    <dct:license xsi:type="dct:URI">${ DDM.cc0 }</dct:license>
+         |    <dct:license xsi:type="dct:URI">${ DDM.dansLicense }</dct:license>
          |  </ddm:dcmiMetadata>
          |</ddm:DDM>
          |""".stripMargin)
@@ -419,7 +419,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
          |    <dct:dateAccepted xsi:type="dct:W3CDTF">1903-04</dct:dateAccepted>
          |    <dct:valid>06-2013</dct:valid>
          |    <dct:valid xsi:type="dct:W3CDTF">1904-04</dct:valid>
-         |    <dct:license xsi:type="dct:URI">${ DDM.cc0 }</dct:license>
+         |    <dct:license xsi:type="dct:URI">${ DDM.dansLicense }</dct:license>
          |  </ddm:dcmiMetadata>
          |</ddm:DDM>
          |""".stripMargin)

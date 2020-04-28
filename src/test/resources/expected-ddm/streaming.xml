@@ -15,6 +15,6 @@
     <ddm:dcmiMetadata>
         <dct:type xsi:type="dct:DCMIType">Dataset</dct:type>
         <dct:format>video/mpeg</dct:format>
-        <dct:license xsi:type="dct:URI">http://dans.knaw.nl/en/about/organisation-and-policy/legal-information/DANSLicence.pdf</dct:license>
+        <dct:license xsi:type="dct:URI">http://creativecommons.org/publicdomain/zero/1.0</dct:license>
     </ddm:dcmiMetadata>
 </ddm:DDM>

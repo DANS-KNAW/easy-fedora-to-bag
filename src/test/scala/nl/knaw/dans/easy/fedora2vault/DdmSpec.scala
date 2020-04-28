@@ -277,10 +277,10 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
          |  </ddm:profile>
          |  <ddm:dcmiMetadata>
          |    <dc:subject xsi:type="abr:ABRcomplex">DEPO</dc:subject>
-         |    <dc:subject xml:lang="nld-NLD" xsi:type="id-type:BSS0">subject 0</dc:subject>
-         |    <dc:subject xml:lang="nld-NLD" xsi:type="id-type:BSS1">subject 1</dc:subject>
-         |    <dc:subject xml:lang="nld-NLD" xsi:type="id-type:BSS0">subject zero</dc:subject>
-         |    <dc:subject>hello world</dc:subject>
+         |    <ddm:subject xml:lang="nld-NLD" subjectScheme="BSS0">subject 0</ddm:subject>
+         |    <ddm:subject xml:lang="nld-NLD" subjectScheme="BSS1">subject 1</ddm:subject>
+         |    <ddm:subject xml:lang="nld-NLD" subjectScheme="BSS0">subject zero</ddm:subject>
+         |    <ddm:subject>hello world</ddm:subject>
          |    <dct:license xsi:type="dct:URI">${ DDM.dansLicense }</dct:license>
          |  </ddm:dcmiMetadata>
          |</ddm:DDM>

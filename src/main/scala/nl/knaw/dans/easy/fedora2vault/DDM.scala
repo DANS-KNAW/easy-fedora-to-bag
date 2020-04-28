@@ -78,7 +78,7 @@ object DDM extends DebugEnhancedLogging {
           <ddm:accessRights>{ emd.getEmdRights.getAccessCategory }</ddm:accessRights>
         </ddm:profile>
         <ddm:dcmiMetadata>
-          { emd.getEmdIdentifier.getDcIdentifier.asScala.filter(isDdmId).map(bi => <dct:identifier xsi:type={ xsiType(bi) }>{ bi.getValue }</dct:identifier>) }
+          { emd.getEmdIdentifier.getDcIdentifier.asScala.filter(isDdmId).map(bi => <dct:identifier xsi:type={ idType(bi) }>{ bi.getValue }</dct:identifier>) }
           { emd.getEmdTitle.getTermsAlternative.asScala.map(str => <dct:alternative>{ str }</dct:alternative>) }
           { emd.getEmdDescription.getTermsAbstract.asScala.map(bs => <ddm:description xml:lang={ lang(bs) } descriptionType='Abstract'>{ bs.getValue }</ddm:description>) }
           { emd.getEmdDescription.getTermsTableOfContents.asScala.map(bs => <ddm:description xml:lang={ lang(bs) } descriptionType='TableOfContent'>{ bs.getValue }</ddm:description>) }
@@ -89,14 +89,17 @@ object DDM extends DebugEnhancedLogging {
           { /* easy-desposit-api creates authors once more as rightsHolders TODO ? */ }
           { emd.getEmdPublisher.getDcPublisher.asScala.map(bs => <dct:publisher xml:lang={ lang(bs) }>{ bs.getValue }</dct:publisher>) }
           { emd.getEmdSource.getDcSource.asScala.map(bs => <dc:source xml:lang={ lang(bs) }>{ bs.getValue }</dc:source>) }
-          { emd.getEmdType.getDcType.asScala.map(bs => <dct:type xsi:type={ xsiType(bs) }>{ bs.getValue }</dct:type>) }
-          { emd.getEmdFormat.getDcFormat.asScala.map(bs => <dct:format xsi:type={ xsiType(bs) }>{ bs.getValue }</dct:format>) }
+          { emd.getEmdType.getDcType.asScala.map(bs => <dct:type xsi:type={ dcType(bs) }>{ bs.getValue }</dct:type>) }
+          { emd.getEmdFormat.getDcFormat.asScala.map(bs => <dct:format>{ bs.getValue }</dct:format>) }
           { emd.getEmdFormat.getTermsExtent.asScala.map(notImplemented("extent format")) }
           { emd.getEmdFormat.getTermsMedium.asScala.map(notImplemented("medium formt")) }
-          { emd.getEmdSubject.getDcSubject.asScala.map(bs => <dc:subject xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue }</dc:subject>) }
+          { emd.getEmdSubject.getDcSubject.asScala.filter(isAbr).map(bs => <dc:subject xml:lang={ lang(bs) } xsi:type={ abrType(bs) }>{ bs.getValue }</dc:subject>) }
+          { emd.getEmdSubject.getDcSubject.asScala.filterNot(isAbr).map(bs => <ddm:subject xml:lang={ lang(bs) } subjectScheme={ bs.getScheme }>{ bs.getValue }</ddm:subject>) }
           { emd.getEmdCoverage.getDcCoverage.asScala.map(bs => <dct:coverage xml:lang={ lang(bs) }>{ bs.getValue }</dct:coverage>) }
-          { emd.getEmdCoverage.getTermsSpatial.asScala.map(bs => <dct:spatial xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue }</dct:spatial>) }
-          { emd.getEmdCoverage.getTermsTemporal.asScala.map(bs => <dct:temporal xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue }</dct:temporal>) }
+          { emd.getEmdCoverage.getTermsSpatial.asScala.filter(isAbr).map(bs => <dct:spatial xml:lang={ lang(bs) } xsi:type={ abrType(bs) }>{ bs.getValue }</dct:spatial>) }
+          { emd.getEmdCoverage.getTermsSpatial.asScala.filterNot(isAbr).map(bs => <dct:spatial xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue }</dct:spatial>) }
+          { emd.getEmdCoverage.getTermsTemporal.asScala.filter(isAbr).map(bs => <dct:temporal xml:lang={ lang(bs) } xsi:type={ abrType(bs) }>{ bs.getValue }</dct:temporal>) }
+          { emd.getEmdCoverage.getTermsTemporal.asScala.filterNot(isAbr).map(bs => <dct:temporal xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue }</dct:temporal>) }
           { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getPlace == null).map(notImplemented("places")) }
           { dateMap.filter(isOtherDate).map { case (key, values) => values.map(_.withLabel(dateLabel(key))) } }
           { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getBox == null).map(notImplemented("boxes")) }
@@ -109,18 +112,36 @@ object DDM extends DebugEnhancedLogging {
     }
   }
 
-  private def xsiType(bs: BasicString) = {
+  private def isAbr(string: BasicString) = string.getScheme == "ABR"
+
+  private def abrType(bs: BasicString) = bs.getSchemeId match {
+    case "archaeology.dc.subject" => "abr:ABRcomplex"
+    case "archaeology.dc.temporal" => "abr:ABRperiode"
+    case _ => notImplemented(s"ABR schemeId")(bs)
+      null
+  }
+
+  private def dcType(bs: BasicString) = {
     (bs.getScheme, bs.getSchemeId) match {
-      case ("DCMI", _) => "dct:DCMIType"
-      case ("ABR", "archaeology.dc.subject") => "abr:ABRcomplex"
-      case ("ABR", "archaeology.dc.temporal") => "abr:ABRperiode"
-      case (null,_) => null
-      case (s,_) => "id-type:" + s
+      case ("DCMI", "common.dc.type") => "dct:DCMIType"
+      case _ => notImplemented(s"dctType")(bs)
+        null
     }
   }
 
-  private def notImplemented(polygons: String)(data: Any): Unit = {
-    logger.error(s"not implemented $polygons [$data]")
+  private def idType(bs: BasicString) = Option(bs.getScheme).map(s => "id-type:" + s).orNull
+
+  private def xsiType(bs: BasicString): String = {
+    if (bs.getScheme != null && bs.getScheme.startsWith("id-type"))
+      bs.getScheme
+    else if (bs.getScheme != null || bs.getSchemeId != null)
+           notImplemented("")(bs)
+    null
+  }
+
+  private def notImplemented(msg: String)(data: Any): Unit = {
+    // TODO throw (and collect) before completing phase 1 of EASY-2410
+    logger.error(s"not implemented $msg [$data]")
   }
 
   /** a null value skips rendering the attribute */
@@ -184,7 +205,7 @@ object DDM extends DebugEnhancedLogging {
   }.withLabel(relationLabel("ddm:", key))
 
   private def toRelationXml(key: String, bs: BasicString) = {
-    <label xsi:type={ xsiType(bs) }
+    <label xsi:type={ idType(bs) }
            xml:lang={ bs.getLanguage }
     >{ bs.getValue }</label>
   }.withLabel(relationLabel("dct:", key))

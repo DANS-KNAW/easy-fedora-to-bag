@@ -38,9 +38,9 @@ object Command extends App with DebugEnhancedLogging {
     .doIfFailure { case NonFatal(e) => println(s"FAILED: ${ e.getMessage }") }
 
   private def runSubcommand(app: EasyFedora2vaultApp): Try[FeedBackMessage] = {
-    app.simpleTransform(
-      commandLine.datasetId(),
-      commandLine.outputDir(),
-    )
+    val outputDir = commandLine.outputDir()
+    commandLine.datasetId
+      .map(app.simpleTransform(_, outputDir)) // TODO curry to get rid of _, after/when merging with PR #2
+      .getOrElse(app.simpleTransForms(commandLine.inputFile(), outputDir))
   }
 }

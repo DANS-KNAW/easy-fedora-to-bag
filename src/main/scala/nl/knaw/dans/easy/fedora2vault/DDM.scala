@@ -33,7 +33,7 @@ object DDM extends DebugEnhancedLogging {
   val schemaNameSpace: String = "http://easy.dans.knaw.nl/schemas/md/ddm/"
   val schemaLocation: String = "https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd"
   val dansLicense = "http://dans.knaw.nl/en/about/organisation-and-policy/legal-information/DANSLicence.pdf"
-  val cc0 = "http://dans.knaw.nl/en/about/organisation-and-policy/legal-information/DANSLicence.pdf"
+  val cc0 = "http://creativecommons.org/publicdomain/zero/1.0"
 
   // for proper conversion of DateTime to date string by EMD's IsoDate/BasicDate
   DateTimeZone.setDefault(DateTimeZone.forID("Europe/Amsterdam"))
@@ -69,10 +69,10 @@ object DDM extends DebugEnhancedLogging {
         <ddm:profile>
           { emd.getEmdTitle.getDcTitle.asScala.map(bs => <dc:title xml:lang={ lang(bs) }>{ bs.getValue }</dc:title>) }
           { emd.getEmdDescription.getDcDescription.asScala.map(bs => <dct:description xml:lang={ lang(bs) }>{ bs.getValue }</dct:description>) }
-          { emd.getEmdDescription.getTermsAbstract.asScala.map(bs => <dct:description xml:lang={ lang(bs) } descriptionType='Abstract'>{ bs.getValue }</dct:description>) }
-          { emd.getEmdDescription.getTermsTableOfContents.asScala.map(bs => <dct:description xml:lang={ lang(bs) } descriptionType='TableOfContent'>{ bs.getValue }</dct:description>) }
+          { emd.getEmdDescription.getTermsAbstract.asScala.map(bs => <ddm:description xml:lang={ lang(bs) } descriptionType='Abstract'>{ bs.getValue }</ddm:description>) }
+          { emd.getEmdDescription.getTermsTableOfContents.asScala.map(bs => <ddm:description xml:lang={ lang(bs) } descriptionType='TableOfContent'>{ bs.getValue }</ddm:description>) }
           { /* instructions for reuse not specified as such in EMD */ }
-          { emd.getEmdCreator.getDcCreator.asScala.map(bs => <dc:creator eas:scheme={ bs.getScheme } eas:schemeId={ bs.getSchemeId } xml:lang={ lang(bs) }>{ bs.getValue }</dc:creator>) }
+          { emd.getEmdCreator.getDcCreator.asScala.map(bs => <dc:creator>{ bs.getValue }</dc:creator>) }
           { emd.getEmdCreator.getEasCreator.asScala.map(author => <dcx-dai:creatorDetails>{ toXml(author)} </dcx-dai:creatorDetails>) }
           { dateCreated.map(node =>  <ddm:created>{ node.text }</ddm:created>) }
           { dateAvailable.map(node =>  <ddm:available>{ node.text }</ddm:available>) }
@@ -84,7 +84,7 @@ object DDM extends DebugEnhancedLogging {
           { emd.getEmdTitle.getTermsAlternative.asScala.map(str => <dct:alternative>{ str }</dct:alternative>) }
           { emd.getEmdRelation.getDCRelationMap.asScala.map { case (key, values) => values.asScala.map(toRelationXml(key, _)) } }
           { emd.getEmdRelation.getRelationMap.asScala.map { case (key, values) => values.asScala.map(toRelationXml(key, _)) } }
-          { emd.getEmdContributor.getDcContributor.asScala.map(bs => <dc:contributor eas:scheme={ bs.getScheme } eas:schemeId={ bs.getSchemeId } xml:lang={ lang(bs) }>{ bs.getValue }</dc:contributor>) }
+          { emd.getEmdContributor.getDcContributor.asScala.map(bs => <dc:contributor>{ bs.getValue }</dc:contributor>) }
           { emd.getEmdContributor.getEasContributor.asScala.map(author => <dcx-dai:contributorDetails>{ toXml(author)} </dcx-dai:contributorDetails>) }
           { /* easy-desposit-api creates authors once more as rightsHolders TODO ? */ }
           { emd.getEmdPublisher.getDcPublisher.asScala.map(bs => <dct:publisher xml:lang={ lang(bs) }>{ bs.getValue }</dct:publisher>) }
@@ -94,7 +94,7 @@ object DDM extends DebugEnhancedLogging {
           { emd.getEmdFormat.getTermsExtent.asScala.map(notImplemented("extent format")) }
           { emd.getEmdFormat.getTermsMedium.asScala.map(notImplemented("medium formt")) }
           { emd.getEmdSubject.getDcSubject.asScala.map(bs => <dc:subject xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue }</dc:subject>) }
-          { emd.getEmdCoverage.getDcCoverage.asScala.map(bs => <dct:coverage eas:scheme={ bs.getScheme } eas:schemeId={ bs.getSchemeId } xml:lang={ lang(bs) }>{ bs.getValue }</dct:coverage>) }
+          { emd.getEmdCoverage.getDcCoverage.asScala.map(bs => <dct:coverage xml:lang={ lang(bs) }>{ bs.getValue }</dct:coverage>) }
           { emd.getEmdCoverage.getTermsSpatial.asScala.map(bs => <dct:spatial xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue }</dct:spatial>) }
           { emd.getEmdCoverage.getTermsTemporal.asScala.map(bs => <dct:temporal xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue }</dct:temporal>) }
           { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getPlace == null).map(notImplemented("places")) }
@@ -139,7 +139,7 @@ object DDM extends DebugEnhancedLogging {
         { Option(author.getOrcid).toSeq.map(id => { <dcx-dai:ORCID>{ toURI(id) }</dcx-dai:ORCID> }) }
         { Option(author.getIsni).toSeq.map(id => { <dcx-dai:ISNI>{ toURI(id) }</dcx-dai:ISNI> }) }
         { Option(author.getDigitalAuthorId).toSeq.map(dai => { <dcx-dai:DAI>{ dai.getURI }</dcx-dai:DAI> }) }
-        { Option(author.getRole).toSeq.map(role =>  <dcx-dai:role>{ role.getRole /* TODO scheme? */ }</dcx-dai:role>) }
+        { Option(author.getRole).toSeq.map(role =>  <dcx-dai:role>{ role.getRole }</dcx-dai:role>) }
         { seq(author.getOrganization).map(toXml(_, maybeRole = None)) }
       </dcx-dai:author>
   }

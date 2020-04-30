@@ -17,6 +17,7 @@ package nl.knaw.dans.easy.fedora2vault
 
 import java.io.InputStream
 import java.nio.file.{ Path, Paths }
+import java.util.UUID
 
 import better.files.{ File, StringExtensions }
 import com.yourmediashelf.fedora.client.FedoraClient
@@ -25,27 +26,30 @@ import nl.knaw.dans.bag.v0.DansV0Bag
 import nl.knaw.dans.easy.fedora2vault.Command.FeedBackMessage
 import nl.knaw.dans.easy.fedora2vault.FoXml.{ getEmd, _ }
 import nl.knaw.dans.lib.error._
-import better.files.StringExtensions
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
+import nl.knaw.dans.pf.language.emd.EasyMetadataImpl
+import nl.knaw.dans.pf.language.emd.binding.EmdUnmarshaller
 import org.joda.time.DateTime
 
+import scala.collection.JavaConverters._
 import scala.util.{ Failure, Success, Try }
 import scala.xml.{ Elem, Node }
 
 class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLogging {
-  lazy val fedoraProvider: FedoraProvider = new FedoraProvider(new FedoraClient(configuration.fedoraCredentials))
+  lazy implicit val fedoraProvider: FedoraProvider = new FedoraProvider(new FedoraClient(configuration.fedoraCredentials))
   lazy val ldapContext: InitialLdapContext = new InitialLdapContext(configuration.ldapEnv, null)
   private lazy val ldap = new Ldap(ldapContext)
+  private val emdUnmarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
 
   def simpleTransForms(input: File, outputDir: File): Try[FeedBackMessage] = {
     input.lineIterator.filterNot(_.startsWith("#")).map(datasetId => {
-      val subDir = outputDir / datasetId.replaceAll("[^a-zA-Z0-9]+", "-")
-      simpleTransform(datasetId, subDir)
+      simpleTransform(datasetId, outputDir)
         .doIfFailure { case t =>
           logger.error(s"$datasetId failed", t)
         }
     }).collectFirst { case t @ Failure(_) => t }
       .getOrElse(Success(s"All datasets in ${ input } saved as bags in ${ outputDir }"))
+    // TODO return individual feedback messages preceded with FeedBack.header
   }
 
   def simpleTransform(datasetId: DatasetId, outputDir: File): Try[FeedBackMessage] = {
@@ -69,24 +73,31 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
         }.tried.flatten
     }
 
+    val uuid = UUID.randomUUID()
     for {
       foXml <- fedoraProvider.loadFoXml(datasetId)
       depositor <- getOwner(foXml)
       msg = s"$outputDir from $datasetId with owner $depositor"
       _ = logger.info("Created " + msg)
-      bag <- DansV0Bag.empty(outputDir).map(_.withEasyUserAccount(depositor).withCreated(DateTime.now()))
-      emd <- getEmd(foXml)
-      _ <- addMetadataXml(bag, "emd.xml")(emd)
+      bag <- DansV0Bag.empty(outputDir / uuid.toString)
+        .map(_.withEasyUserAccount(depositor).withCreated(DateTime.now()))
+      emdXml <- getEmd(foXml)
+      _ <- addXmlMetadata(bag, "emd.xml")(emdXml)
       amd <- getAmd(foXml)
-      _ <- addMetadataXml(bag, "amd.xml")(amd)
-      //_ <- getDdm(foXml) // TODO where to store original?
-      ddm <- DDM(emd)(fedoraProvider)
-      _ <- addMetadataXml(bag, "dataset.xml")(ddm)
+      _ <- addXmlMetadata(bag, "amd.xml")(amd)
+      _ <- getDdm(foXml)
+        .map(addXmlPayload(bag, "original-ddm.xml"))
+        .getOrElse(Success())
+      emd <- Try(emdUnmarshaller.unmarshal(emdXml.serialize))
+      audiences <- emd.getEmdAudience.getDisciplines.asScala
+        .map(id => getAudience(id.getValue)).collectResults
+      ddm <- DDM(emd, audiences)
+      _ <- addXmlMetadata(bag, "dataset.xml")(ddm)
       _ <- getMessageFromDepositor(foXml)
-        .map(addMetadataXml(bag, "depositor-info/message-from-depositor.txt"))
+        .map(addXmlMetadata(bag, "depositor-info/message-from-depositor.txt"))
         .getOrElse(Success(())) // TODO EASY-2697: EMD/other/remark
       _ <- getFilesXml(foXml)
-        .map(addMetadataXml(bag, "files.xml"))
+        .map(addXmlMetadata(bag, "files.xml"))
         .getOrElse(Success(()))
       _ <- getAgreementsXml(foXml)
         .map(addAgreements(bag))
@@ -104,19 +115,30 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       _ <- getManifest(foXml)
         .map(compareManifest(bag))
         .getOrElse(Success(())) // TODO check with sha's from fedora
-    } yield "Created " + msg
+      doi = emd.getEmdIdentifier.getDansManagedDoi
+    } yield FeedBack(datasetId, doi, depositor, TransformationType.SIMPLE, uuid, "???").toString
+  }
+
+  private def getAudience(id: String)(implicit fedoraProvider: FedoraProvider) = {
+    fedoraProvider.loadFoXml(id).map(foXml =>
+      (foXml \\ "discipline-md" \ "OICode").text
+    )
   }
 
   private def addMetadataStream(bag: DansV0Bag, target: String)(content: InputStream): Try[Any] = {
     bag.addTagFile(content, Paths.get(s"metadata/$target"))
   }
 
-  private def addMetadataXml(bag: DansV0Bag, target: String)(content: Node): Try[Any] = {
+  private def addXmlMetadata(bag: DansV0Bag, target: String)(content: Node): Try[Any] = {
     bag.addTagFile(content.serialize.inputStream, Paths.get(s"metadata/$target"))
   }
 
   private def addAgreements(bag: DansV0Bag)(content: Node): Try[Any] = {
     bag.addTagFile(content.serialize.inputStream, Paths.get(s"metadata/depositor-info/agreements.xml"))
+  }
+
+  private def addXmlPayload(bag: DansV0Bag, path: String)(content: Node): Try[Any] = {
+    bag.addTagFile(content.serialize.inputStream, Paths.get(path))
   }
 
   private def addPayloadFileTo(bag: DansV0Bag)(fedoraFileId: String): Try[Path] = {

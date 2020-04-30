@@ -16,6 +16,7 @@
 package nl.knaw.dans.easy.fedora2vault
 
 import java.io.FileInputStream
+import java.util.UUID
 
 import better.files.File
 import javax.naming.NamingEnumeration
@@ -27,7 +28,7 @@ import org.scalamock.scalatest.MockFactory
 import resource.managed
 
 import scala.util.{ Failure, Success, Try }
-import scala.xml.{ Elem, XML }
+import scala.xml.XML
 
 class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport with AudienceSupport {
 
@@ -50,7 +51,7 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
       if (!datasetId.startsWith("success"))
         Failure(new Exception(datasetId))
       else {
-        outputDir.createFile()
+        (outputDir / UUID.randomUUID().toString).createFile()
         Success(s"created $outputDir from $datasetId")
       }
     }
@@ -65,7 +66,7 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
     val outputDir = (testDir / "output").createDirectories()
     new OverriddenApp().simpleTransForms(input, outputDir) shouldBe
       Success(s"All datasets in $input saved as bags in $outputDir")
-    outputDir.list.toSeq.map(_.name) should contain theSameElementsAs Seq("success-1", "success-2")
+    outputDir.list.toSeq.map(_.name) should have length (2)
   }
 
   it should "report failure" in {
@@ -79,39 +80,11 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
     new OverriddenApp().simpleTransForms(input, outputDir) should matchPattern {
       case Failure(t) if t.getMessage == "failure:1" =>
     }
-    outputDir.list.toSeq.map(_.name) shouldBe Seq("success-1")
-  // success-2 is not created because of a fail fast strategy
+    outputDir.list.toSeq.map(_.name) should have length (1)
+    // success-2 is not created because of a fail fast strategy
   }
 
-  "simpleTransform" should "produce a bag with EMD" in {
-    val emd = <emd:easymetadata xmlns:emd="http://easy.dans.knaw.nl/easy/easymetadata/" xmlns:eas="http://easy.dans.knaw.nl/easy/easymetadata/eas/" xmlns:dct="http://purl.org/dc/terms/" xmlns:dc="http://purl.org/dc/elements/1.1/" emd:version="0.1">
-                  <emd:title>
-                      <dc:title>Incomplete metadata</dc:title>
-                  </emd:title>
-              </emd:easymetadata>
-    (testDir / "fo.xml").write(createFoXml(emd, "easyadmin").serialize)
-
-    val app = new MockedApp()
-    expectAUser(app.ldapContext)
-    expectedSubordinates(app.fedoraProvider, "easy-file:35")
-    expectedFoXmls(app.fedoraProvider,
-      testDir / "fo.xml",
-      sampleFoXML / "easy-file-35.xml",
-    )
-    expectedManagedStreams(app.fedoraProvider,
-      (testDir / "EASY_FILE").write("lalala"),
-    )
-
-    app.simpleTransform("easy-dataset:17", testDir / "bag") shouldBe
-      Success(s"Created $testDir/bag from easy-dataset:17 with owner easyadmin")
-
-    (testDir / "bag" / "bag-info.txt").contentAsString should startWith("EASY-User-Account: easyadmin")
-    (testDir / "bag" / "metadata" / "emd.xml").contentAsString.replaceAll(nameSpaceRegExp, "") shouldBe
-      emd.serialize.replaceAll(nameSpaceRegExp, "")
-    (testDir / "bag" / "data" / "original" / "P1130783.JPG").contentAsString shouldBe "lalala"
-  }
-
-  it should "process DepositApi" in {
+  "simpleTransform" should "process DepositApi" in {
     val app = new MockedApp()
     implicit val fedoraProvider: FedoraProvider = app.fedoraProvider
     expectedAudiences(Map(
@@ -125,14 +98,16 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
       (testDir / "manifest-sha1.txt").write("rabarbera"),
     )
 
-    app.simpleTransform("easy-dataset:17", testDir / "bag") shouldBe
-      Success(s"Created $testDir/bag from easy-dataset:17 with owner user001")
+    app.simpleTransform("easy-dataset:17", testDir / "bags") should matchPattern {
+      case Success(msg: String) if msg.startsWith("easy-dataset:17\t10.17026/test-Iiib-z9p-4ywa\tuser001\tsimple\t") =>
+    }
 
-    (testDir / "bag" / "metadata" / "depositor-info/depositor-agreement.pdf").contentAsString shouldBe "blablabla"
-    (testDir / "bag" / "metadata" / "license.pdf").contentAsString shouldBe "lalala"
-    (testDir / "bag" / "metadata").list.toSeq.map(_.name).sortBy(identity) shouldBe
+    val bag = (testDir / "bags").children.next()
+    (bag / "metadata" / "depositor-info/depositor-agreement.pdf").contentAsString shouldBe "blablabla"
+    (bag / "metadata" / "license.pdf").contentAsString shouldBe "lalala"
+    (bag / "metadata").list.toSeq.map(_.name).sortBy(identity) shouldBe
       Seq("amd.xml", "dataset.xml", "depositor-info", "emd.xml", "files.xml", "license.pdf")
-    (testDir / "bag" / "metadata" / "depositor-info").list.toSeq.map(_.name).sortBy(identity) shouldBe
+    (bag / "metadata" / "depositor-info").list.toSeq.map(_.name).sortBy(identity) shouldBe
       Seq("agreements.xml", "depositor-agreement.pdf", "message-from-depositor.txt")
   }
 
@@ -146,12 +121,14 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
     expectedFoXmls(app.fedoraProvider, sampleFoXML / "streaming.xml")
     expectedSubordinates(app.fedoraProvider)
 
-    app.simpleTransform("easy-dataset:13", testDir / "bag") shouldBe
-      Success(s"Created $testDir/bag from easy-dataset:13 with owner user001")
+    app.simpleTransform("easy-dataset:13", testDir / "bags") should matchPattern {
+      case Success(msg: String) if msg.startsWith("easy-dataset:13\tnull\tuser001\tsimple\t") =>
+    }
 
-    (testDir / "bag" / "metadata").list.toSeq.map(_.name)
+    val bag = (testDir / "bags").children.next()
+    (bag / "metadata").list.toSeq.map(_.name)
       .sortBy(identity) shouldBe Seq("amd.xml", "dataset.xml", "depositor-info", "emd.xml")
-    (testDir / "bag" / "metadata" / "depositor-info").list.toSeq.map(_.name).sortBy(identity) shouldBe
+    (bag / "metadata" / "depositor-info").list.toSeq.map(_.name).sortBy(identity) shouldBe
       Seq("agreements.xml")
   }
 
@@ -182,39 +159,5 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
     }
     result.nextElement _ expects() returning new SearchResult("", null, attributes)
     (ldapContext.search(_: String, _: String, _: SearchControls)) expects(*, *, *) returning result
-  }
-
-  private def createFoXml(emd: Elem, owner: String) = {
-    // reduced variant of http://deasy.dans.knaw.nl:8080/fedora/objects/easy-dataset:1/objectXML
-    <foxml:digitalObject VERSION="1.1" PID="easy-dataset:1"
-                   xmlns:foxml="info:fedora/fedora-system:def/foxml#"
-                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                   xsi:schemaLocation="info:fedora/fedora-system:def/foxml# http://www.fedora.info/definitions/1/0/foxml1-1.xsd">
-        <foxml:objectProperties>
-            <foxml:property NAME="info:fedora/fedora-system:def/model#state" VALUE="Inactive"/>
-            <foxml:property NAME="info:fedora/fedora-system:def/model#label" VALUE="DDM example 2 deposited with sword-v1 and UNSPECIFIED as format"/>
-            <foxml:property NAME="info:fedora/fedora-system:def/model#ownerId" VALUE={ owner }/>
-            <foxml:property NAME="info:fedora/fedora-system:def/model#createdDate" VALUE="2016-11-22T13:11:20.341Z"/>
-            <foxml:property NAME="info:fedora/fedora-system:def/view#lastModifiedDate" VALUE="2020-03-17T06:13:44.896Z"/>
-        </foxml:objectProperties>
-        <foxml:datastream ID="EMD" STATE="A" CONTROL_GROUP="X" VERSIONABLE="false">
-            <foxml:datastreamVersion ID="EMD.1" LABEL="Descriptive metadata for this dataset" CREATED="2016-11-22T13:11:22.765Z" MIMETYPE="text/xml" FORMAT_URI="http://easy.dans.knaw.nl/easy/easymetadata/" SIZE="8119">
-                <foxml:contentDigest TYPE="SHA-1" DIGEST="b7f5d6b48483f1f9038e220baae4ec24f768b19a"/>
-                <foxml:xmlContent>
-                    { emd }
-                </foxml:xmlContent>
-            </foxml:datastreamVersion>
-        </foxml:datastream>
-        <foxml:datastream ID="AMD" STATE="A" CONTROL_GROUP="X" VERSIONABLE="false">
-            <foxml:datastreamVersion ID="AMD.0" LABEL="Administrative metadata for this dataset" CREATED="2020-03-17T10:24:17.268Z" MIMETYPE="text/xml" SIZE="4807">
-                <foxml:xmlContent>
-                    <damd:administrative-md xmlns:damd="http://easy.dans.knaw.nl/easy/dataset-administrative-metadata/" version="0.1">
-                        <datasetState>SUBMITTED</datasetState>
-                        <previousState>DRAFT</previousState>
-                    </damd:administrative-md>
-                </foxml:xmlContent>
-            </foxml:datastreamVersion>
-        </foxml:datastream>
-    </foxml:digitalObject>
   }
 }

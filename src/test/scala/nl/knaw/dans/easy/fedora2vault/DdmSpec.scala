@@ -23,6 +23,8 @@ import javax.xml.transform.Source
 import javax.xml.transform.stream.StreamSource
 import javax.xml.validation.SchemaFactory
 import nl.knaw.dans.easy.fedora2vault.fixture.{ AudienceSupport, TestSupportFixture }
+import nl.knaw.dans.pf.language.emd.EasyMetadataImpl
+import nl.knaw.dans.pf.language.emd.binding.EmdUnmarshaller
 
 import scala.util.{ Failure, Success, Try }
 import scala.xml._
@@ -37,15 +39,12 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
     .newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
     .newSchema(Array(new StreamSource("https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd")).toArray[Source])
   )
+  private val emdUnMarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
 
   "streaming" should "get a valid DDM out of its EMD" in {
     val file = "streaming.xml"
-
-    implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
-    expectedAudiences(Map("easy-discipline:6" -> "D35400"))
-    val triedString = FoXml.getEmd(XML.loadFile((sampleFoXML / file).toJava))
-      .flatMap(DDM(_).map(toS))
-    triedString.map(normalize(_)
+    val triedDdm = getEmd(file).flatMap(DDM(_, Seq("D35400")))
+    triedDdm.map(toS).map(normalize(_)
       .split("\n") // TODO dropping a line that would not validate
       .filterNot(_.contains("""<dct:relation xsi:type="id-type:STREAMING_SURROGATE_RELATION">"""))
       .mkString("\n")
@@ -54,11 +53,9 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
 
   "depositApi" should "produce the DDM provided by easy-deposit-api" in {
     val triedFoXml = Try(XML.loadFile((sampleFoXML / "DepositApi.xml").toJava))
-
-    implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
-    expectedAudiences(Map("easy-discipline:77" -> "D13200"))
-
-    val triedDdm = triedFoXml.flatMap(FoXml.getEmd).flatMap(DDM(_).map(toS))
+    val triedDdm = getEmd("DepositApi.xml")
+      .flatMap(DDM(_, Seq("D13200")))
+      .map(toS)
     triedDdm shouldBe a[Success[_]]
 
     // round trip test (foXml/EMD was created from the foXML/DDM by easy-ingest-flow)
@@ -74,8 +71,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
   }
 
   "descriptions" should "all appear" in {
-    implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
-    DDM(
+    toEmdObject(
       <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
         <emd:description>
           <dc:description>abstract</dc:description>
@@ -85,7 +81,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
           <dct:abstract>blabl</dct:abstract>
         </emd:description>
       </emd:easymetadata>
-    ).map(toStripped) shouldBe Success(
+    ).flatMap(DDM(_, Seq.empty)).map(toStripped) shouldBe Success(
       s"""<ddm:DDM
          |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
          |  <ddm:profile>
@@ -104,8 +100,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
   }
 
   "relations" should "all appear" in {
-    implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
-    DDM(
+    toEmdObject(
       <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
         <emd:relation>
           <dct:hasVersion eas:scheme="ISSN">my-issn-related-identifier</dct:hasVersion>
@@ -138,7 +133,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
           </eas:isFormatOf>
         </emd:relation>
       </emd:easymetadata>
-    ).map(toStripped) shouldBe Success( // TODO implemented quick and dirty
+    ).flatMap(DDM(_, Seq.empty)).map(toStripped) shouldBe Success( // TODO implemented quick and dirty
       s"""<ddm:DDM
          |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
          |  <ddm:profile>
@@ -169,8 +164,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
   }
 
   "license" should "be copied from <dct:license>" in {
-    implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
-    DDM(
+    toEmdObject(
       <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
         <emd:rights>
             <dct:accessRights eas:schemeId="common.dct.accessrights">ACCESS_ELSEWHERE</dct:accessRights>
@@ -178,7 +172,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
             <dct:license eas:scheme="Easy2 version 1">accept</dct:license>
         </emd:rights>
       </emd:easymetadata>
-    ).map(toStripped) shouldBe Success(
+    ).flatMap(DDM(_, Seq.empty)).map(toStripped) shouldBe Success(
       s"""<ddm:DDM
          |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
          |  <ddm:profile>
@@ -192,14 +186,13 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
   }
 
   it should "convert from OPEN_ACCESS" in { // as in streaming.xml
-    implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
-    DDM(
+    toEmdObject(
       <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
         <emd:rights>
             <dct:accessRights eas:schemeId="common.dct.accessrights">OPEN_ACCESS</dct:accessRights>
         </emd:rights>
       </emd:easymetadata>
-    ).map(toStripped) shouldBe Success(
+    ).flatMap(DDM(_, Seq.empty)).map(toStripped) shouldBe Success(
       s"""<ddm:DDM
          |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
          |  <ddm:profile>
@@ -213,15 +206,14 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
   }
 
   it should "convert from REQUEST_PERMISSION" in { // as in TalkOfEurope.xml
-    implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
-    DDM(
+    toEmdObject(
       <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
         <emd:rights>
             <dct:accessRights eas:schemeId="common.dct.accessrights">REQUEST_PERMISSION</dct:accessRights>
             <dct:license>accept</dct:license>
         </emd:rights>
       </emd:easymetadata>
-    ).map(toStripped) shouldBe Success(
+    ).flatMap(DDM(_, Seq.empty)).map(toStripped) shouldBe Success(
       s"""<ddm:DDM
          |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
          |  <ddm:profile>
@@ -236,13 +228,13 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
 
   "dates" should "use created for available" in {
     implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
-    DDM(
+    toEmdObject(
       <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
           <emd:date>
               <dct:created>03-2013</dct:created>
           </emd:date>
       </emd:easymetadata>
-    ).map(toStripped) shouldBe Success(
+    ).flatMap(DDM(_, Seq.empty)).map(toStripped) shouldBe Success(
       s"""<ddm:DDM
          |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
          |  <ddm:profile>
@@ -258,8 +250,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
   }
 
   "subject" should "use created for available" in {
-    implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
-    DDM(
+    toEmdObject(
       <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
         <emd:subject>
             <dc:subject eas:scheme="ABR" eas:schemeId="archaeology.dc.subject">DEPO</dc:subject>
@@ -269,7 +260,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
             <dc:subject>hello world</dc:subject>
         </emd:subject>
       </emd:easymetadata>
-    ).map(toStripped) shouldBe Success(
+    ).flatMap(DDM(_, Seq.empty)).map(toStripped) shouldBe Success(
       s"""<ddm:DDM
          |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
          |  <ddm:profile>
@@ -288,8 +279,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
   }
 
   "author" should "succeed" in {
-    implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
-    DDM(
+    toEmdObject(
       <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
         <emd:creator>
           <eas:creator>
@@ -316,7 +306,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
           </eas:creator>
         </emd:creator>
       </emd:easymetadata>
-    ).map(toStripped) shouldBe Success(
+    ).flatMap(DDM(_, Seq.empty)).map(toStripped) shouldBe Success(
       s"""<ddm:DDM
          |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
          |  <ddm:profile>
@@ -360,8 +350,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
   }
 
   it should "render only the first available" in {
-    implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
-    DDM(
+    toEmdObject(
       <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
           <emd:date>
               <dc:date>gisteren</dc:date>
@@ -389,7 +378,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
               <eas:dateSubmitted eas:scheme="W3CDTF" eas:format="MONTH">1908-04-01T00:00:00.000+00:19:32</eas:dateSubmitted>
           </emd:date>
       </emd:easymetadata>
-    ).map(toStripped) shouldBe Success(
+    ).flatMap(DDM(_, Seq.empty)).map(toStripped) shouldBe Success(
       s"""<ddm:DDM
          |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
          |  <ddm:profile>
@@ -459,5 +448,16 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
   private def expectedDDM(file: String) = {
     (File("src/test/resources/expected-ddm/") / file)
       .contentAsString.replaceAll(" +", " ")
+  }
+
+  private def getEmd(file: DatasetId) = {
+    for {
+      emdNode <- FoXml.getEmd(XML.loadFile((sampleFoXML / file).toJava))
+      emd <- toEmdObject(emdNode)
+    } yield emd
+  }
+
+  private def toEmdObject(emdNode: Node) = {
+    Try(emdUnMarshaller.unmarshal(emdNode.serialize))
   }
 }

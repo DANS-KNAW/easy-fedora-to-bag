@@ -23,7 +23,7 @@ object FoXml {
   private def getStream(streamId: String, rootTag: String, foXml: Node): Try[Node] = Try {
     val node = getStreamRoot(streamId, foXml)
       .getOrElse(throw new Exception(s"Stream with ID $streamId not found"))
-    if(!controlGroup(node).contains("X"))
+    if (!controlGroup(node).contains("X"))
       throw new Exception(s"Stream with ID $streamId does not have control group X")
 
     (node \\ "xmlContent")
@@ -80,7 +80,7 @@ object FoXml {
       .flatten.headOption.map(_.text)
   }
 
-  def getOwner(foXml: Node): Try[String] = Try {
+  def getOwner(foXml: Node): Try[Depositor] = Try {
     (foXml \ "objectProperties" \ "property")
       .filter(_.attribute("NAME").exists(_.map(_.text).exists(_.endsWith("#ownerId"))))
       .flatMap(_.attribute("VALUE"))

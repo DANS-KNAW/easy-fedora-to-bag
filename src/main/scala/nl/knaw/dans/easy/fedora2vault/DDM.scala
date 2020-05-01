@@ -101,7 +101,7 @@ object DDM extends DebugEnhancedLogging {
 
   private def langType(bs: BasicString) = bs.getSchemeId match {
     case "fra" |"fra/fre" | "deu" | "deu/ger" | "nld" | "nld/dut" | "eng" => "dct:ISO639-3"
-    case s => null
+    case _ => null
   }
 
   private def langValue(bs: BasicString) = bs.getValue match {

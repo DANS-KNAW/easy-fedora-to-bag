@@ -16,12 +16,12 @@
 package nl.knaw.dans.easy.fedora2vault
 
 import better.files.File
+import nl.knaw.dans.easy.fedora2vault.fixture.TestSupportFixture
 import org.apache.commons.configuration.PropertiesConfiguration
-import org.scalatest.{ FlatSpec, Matchers }
 
 import scala.collection.JavaConverters._
 
-class DebugConfigSpec extends FlatSpec with Matchers {
+class DebugConfigSpec extends TestSupportFixture {
 
   val configDir = File("src/main/assembly/dist/cfg")
   val debugConfigDir = File("src/test/resources/debug-config")

@@ -18,7 +18,8 @@ package nl.knaw.dans.easy.fedora2vault.fixture
 import better.files.File
 import org.scalatest._
 
-trait TestSupportFixture extends FlatSpec
+trait TestSupportFixture extends FlatSpec with TimeZoneFixture
+
   with Matchers
   with Inside
   with OptionValues

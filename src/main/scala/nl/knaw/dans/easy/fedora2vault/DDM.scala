@@ -21,7 +21,6 @@ import nl.knaw.dans.lib.string._
 import nl.knaw.dans.pf.language.emd.types.EmdConstants.DateScheme
 import nl.knaw.dans.pf.language.emd.types._
 import nl.knaw.dans.pf.language.emd.{ EasyMetadataImpl, EmdRights }
-import org.joda.time.DateTimeZone
 
 import scala.collection.JavaConverters._
 import scala.util.Try
@@ -32,9 +31,6 @@ object DDM extends DebugEnhancedLogging {
   val schemaLocation: String = "https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd"
   val dansLicense = "http://dans.knaw.nl/en/about/organisation-and-policy/legal-information/DANSLicence.pdf"
   val cc0 = "http://creativecommons.org/publicdomain/zero/1.0"
-
-  // for proper conversion of DateTime to date string by EMD's IsoDate/BasicDate
-  DateTimeZone.setDefault(DateTimeZone.forID("Europe/Amsterdam"))
 
   def apply(emd: EasyMetadataImpl, audiences: Seq[String]): Try[Elem] = Try {
     //    println(new EmdMarshaller(emd).getXmlString)
@@ -98,10 +94,23 @@ object DDM extends DebugEnhancedLogging {
        { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getPoint == null).map(notImplemented("points")) }
        { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getPolygons == null).map(notImplemented("polygons")) }
        <dct:license xsi:type="dct:URI">{ toUri(emd.getEmdRights) }</dct:license>
-       { emd.getEmdLanguage.getDcLanguage.asScala.map(bs => <dct:language>{ bs.getValue }</dct:language>) }
+       { emd.getEmdLanguage.getDcLanguage.asScala.map(bs => <dct:language xsi:type={langType(bs)}>{ langValue(bs) }</dct:language>) }
      </ddm:dcmiMetadata>
    </ddm:DDM>
  }
+
+  private def langType(bs: BasicString) = bs.getSchemeId match {
+    case "fra" |"fra/fre" | "deu" | "deu/ger" | "nld" | "nld/dut" | "eng" => "dct:ISO639-3"
+    case s => null
+  }
+
+  private def langValue(bs: BasicString) = bs.getValue match {
+    case "fra/fre" => "fra"
+    case "deu/ger" => "deu"
+    case "nld/dut" => "nld"
+    case "eng" => "eng"
+    case s => s
+  }
 
   private def isAbr(string: BasicString) = string.getScheme == "ABR"
 

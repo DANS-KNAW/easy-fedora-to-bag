@@ -17,21 +17,26 @@ package nl.knaw.dans.easy.fedora2vault
 
 import java.util.UUID
 
-import better.files.File
+import nl.knaw.dans.easy.fedora2vault.Command.FeedBackMessage
 import nl.knaw.dans.easy.fedora2vault.TransformationType.TransformationType
+import org.apache.commons.csv.{ CSVFormat, CSVPrinter }
 
-case class LogRecord(easyDatasetId: DatasetId,
+import scala.util.Try
+
+case class CsvRecord(easyDatasetId: DatasetId,
                      doi: String,
                      depositor: Depositor,
                      transformationType: TransformationType,
                      uuid: UUID,
                      comment: String,
                    ) {
-  def write (implicit logFile: File): String = {
-    logFile.appendLine(s"$easyDatasetId\t$doi\t$depositor\t$transformationType\t$uuid\t$comment")
-    comment
-  }
+  def print(implicit printer: CSVPrinter): Try[FeedBackMessage] = Try(
+    printer.printRecord(easyDatasetId, doi, depositor, transformationType, uuid, comment)
+  ).map(_ => comment)
 }
-object LogRecord {
-  val header = "easyDatasetId\tdoi\tdepositor\ttransformationType\tuuid\tcomment"
+object CsvRecord {
+  val csvFormat: CSVFormat = CSVFormat.RFC4180
+    .withHeader("easyDatasetId", "doi", "depositor", "transformationType", "uuid", "comment")
+    .withDelimiter(',')
+    .withRecordSeparator('\n')
 }

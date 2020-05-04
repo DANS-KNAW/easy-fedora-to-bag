@@ -30,6 +30,7 @@ import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import nl.knaw.dans.pf.language.emd.EasyMetadataImpl
 import nl.knaw.dans.pf.language.emd.binding.EmdUnmarshaller
+import org.apache.commons.csv.CSVPrinter
 import org.joda.time.DateTime
 
 import scala.collection.JavaConverters._
@@ -42,26 +43,25 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
   private lazy val ldap = new Ldap(ldapContext)
   private val emdUnmarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
 
-  def simpleTransForms(input: File, outputDir: File)(implicit logFile: File): Try[FeedBackMessage] = {
-    input.lineIterator.filterNot(_.startsWith("#")).map(datasetId => {
+  def simpleTransForms(input: File, outputDir: File)(implicit printer: CSVPrinter): Try[FeedBackMessage] = {
+    input.lineIterator.filterNot(_.startsWith("#")).map{datasetId =>
       val uuid = UUID.randomUUID
       simpleTransform(outputDir / uuid.toString)(datasetId)
         .doIfFailure { case t => logger.error(s"$datasetId -> $uuid failed: $t", t) }
         .recoverWith {
           case t: FedoraClientException if t.getStatus != 404 => Failure(t)
-          case t => Success(LogRecord(
+          case t => CsvRecord(
             datasetId, doi = "", depositor = "", SIMPLE, uuid, s"FAILED: $t"
-          ).write)
+          ).print
         }
-    }).collectFirst { case f @ Failure(_) => f }
+    }}.collectFirst { case f @ Failure(_) => f }
       .getOrElse(Success(
         s"""All datasets in $input
            | saved as bags in $outputDir
-           | details in $logFile
-           | """.stripMargin))
-  }
+           | """.stripMargin
+      ))
 
-  def simpleTransform(bagDir: File)(datasetId: DatasetId)(implicit logFile: File): Try[FeedBackMessage] = {
+  def simpleTransform(bagDir: File)(datasetId: DatasetId)(implicit printer: CSVPrinter): Try[FeedBackMessage] = {
 
     def managedMetadataStream(foXml: Elem, streamId: String, bag: DansV0Bag, metadataFile: String) = {
       managedStreamLabel(foXml, streamId)
@@ -124,7 +124,8 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
         .map(compareManifest(bag))
         .getOrElse(Success(())) // TODO check with sha's from fedora
       doi = emd.getEmdIdentifier.getDansManagedDoi
-    } yield LogRecord(datasetId, doi, depositor, SIMPLE, UUID.fromString(bagDir.name), "OK").write
+      msg <- CsvRecord(datasetId, doi, depositor, SIMPLE, UUID.fromString(bagDir.name), "OK").print
+    } yield msg
   }
 
   private def getAudience(id: String) = {

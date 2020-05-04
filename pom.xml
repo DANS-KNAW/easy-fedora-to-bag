@@ -55,6 +55,10 @@
             <artifactId>emd</artifactId>
             <version>${easy.emd.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+        </dependency>
 
         <!-- testing -->
         <dependency>

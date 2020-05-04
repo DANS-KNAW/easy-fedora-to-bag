@@ -20,11 +20,12 @@ import java.nio.file.{ Path, Paths }
 import java.util.UUID
 
 import better.files.{ File, StringExtensions }
-import com.yourmediashelf.fedora.client.FedoraClient
+import com.yourmediashelf.fedora.client.{ FedoraClient, FedoraClientException }
 import javax.naming.ldap.InitialLdapContext
 import nl.knaw.dans.bag.v0.DansV0Bag
 import nl.knaw.dans.easy.fedora2vault.Command.FeedBackMessage
 import nl.knaw.dans.easy.fedora2vault.FoXml.{ getEmd, _ }
+import nl.knaw.dans.easy.fedora2vault.TransformationType.SIMPLE
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import nl.knaw.dans.pf.language.emd.EasyMetadataImpl
@@ -41,18 +42,26 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
   private lazy val ldap = new Ldap(ldapContext)
   private val emdUnmarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
 
-  def simpleTransForms(input: File, outputDir: File): Try[FeedBackMessage] = {
+  def simpleTransForms(input: File, outputDir: File)(implicit logFile: File): Try[FeedBackMessage] = {
     input.lineIterator.filterNot(_.startsWith("#")).map(datasetId => {
-      simpleTransform(datasetId, outputDir)
-        .doIfFailure { case t =>
-          logger.error(s"$datasetId failed", t)
+      val uuid = UUID.randomUUID
+      simpleTransform(outputDir / uuid.toString)(datasetId)
+        .doIfFailure { case t => logger.error(s"$datasetId -> $uuid failed: $t", t) }
+        .recoverWith {
+          case t: FedoraClientException if t.getStatus != 404 => Failure(t)
+          case t => Success(LogRecord(
+            datasetId, doi = "", depositor = "", SIMPLE, uuid, s"FAILED: $t"
+          ).write)
         }
-    }).collectFirst { case t @ Failure(_) => t }
-      .getOrElse(Success(s"All datasets in ${ input } saved as bags in ${ outputDir }"))
-    // TODO return individual feedback messages preceded with FeedBack.header
+    }).collectFirst { case f @ Failure(_) => f }
+      .getOrElse(Success(
+        s"""All datasets in $input
+           | saved as bags in $outputDir
+           | details in $logFile
+           | """.stripMargin))
   }
 
-  def simpleTransform(datasetId: DatasetId, outputDir: File): Try[FeedBackMessage] = {
+  def simpleTransform(bagDir: File)(datasetId: DatasetId)(implicit logFile: File): Try[FeedBackMessage] = {
 
     def managedMetadataStream(foXml: Elem, streamId: String, bag: DansV0Bag, metadataFile: String) = {
       managedStreamLabel(foXml, streamId)
@@ -73,13 +82,12 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
         }.tried.flatten
     }
 
-    val uuid = UUID.randomUUID()
     for {
       foXml <- fedoraProvider.loadFoXml(datasetId)
       depositor <- getOwner(foXml)
-      msg = s"$outputDir from $datasetId with owner $depositor"
+      msg = s"$bagDir from $datasetId with owner $depositor"
       _ = logger.info("Created " + msg)
-      bag <- DansV0Bag.empty(outputDir / uuid.toString)
+      bag <- DansV0Bag.empty(bagDir)
         .map(_.withEasyUserAccount(depositor).withCreated(DateTime.now()))
       emdXml <- getEmd(foXml)
       _ <- addXmlMetadata(bag, "emd.xml")(emdXml)
@@ -116,7 +124,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
         .map(compareManifest(bag))
         .getOrElse(Success(())) // TODO check with sha's from fedora
       doi = emd.getEmdIdentifier.getDansManagedDoi
-    } yield FeedBack(datasetId, doi, depositor, TransformationType.SIMPLE, uuid, "???").toString
+    } yield LogRecord(datasetId, doi, depositor, SIMPLE, UUID.fromString(bagDir.name), "OK").write
   }
 
   private def getAudience(id: String) = {

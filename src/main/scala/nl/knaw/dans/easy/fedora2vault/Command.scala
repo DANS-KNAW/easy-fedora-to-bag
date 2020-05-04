@@ -15,9 +15,12 @@
  */
 package nl.knaw.dans.easy.fedora2vault
 
+import java.util.UUID
+
 import better.files.File
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
+import org.joda.time.DateTime
 
 import scala.language.reflectiveCalls
 import scala.util.Try
@@ -39,8 +42,11 @@ object Command extends App with DebugEnhancedLogging {
 
   private def runSubcommand(app: EasyFedora2vaultApp): Try[FeedBackMessage] = {
     val outputDir = commandLine.outputDir()
+    implicit val logFile: File = commandLine.logFile.map(identity)
+        .getOrElse(File(s"easy-fedora2vault-${DateTime.now.toString("yyyy-MM-dd_mm-ss")}.csv"))
+    logFile.write(LogRecord.header)
     commandLine.datasetId
-      .map(app.simpleTransform(_, outputDir)) // TODO curry to get rid of _, after/when merging with PR #2
+      .map(app.simpleTransform(outputDir / UUID.randomUUID().toString))
       .getOrElse(app.simpleTransForms(commandLine.inputFile(), outputDir))
   }
 }

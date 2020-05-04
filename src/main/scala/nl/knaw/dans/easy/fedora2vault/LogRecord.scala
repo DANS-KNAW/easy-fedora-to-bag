@@ -17,17 +17,21 @@ package nl.knaw.dans.easy.fedora2vault
 
 import java.util.UUID
 
+import better.files.File
 import nl.knaw.dans.easy.fedora2vault.TransformationType.TransformationType
 
-case class FeedBack(easyDatasetId: DatasetId,
-                    doi: String,
-                    depositor: Depositor,
-                    transformationType: TransformationType,
-                    uuid: UUID,
-                    comment: String,
+case class LogRecord(easyDatasetId: DatasetId,
+                     doi: String,
+                     depositor: Depositor,
+                     transformationType: TransformationType,
+                     uuid: UUID,
+                     comment: String,
                    ) {
-  override def toString = s"$easyDatasetId\t$doi\t$depositor\t$transformationType\t$uuid\t$comment"
+  def write (implicit logFile: File): String = {
+    logFile.appendLine(s"$easyDatasetId\t$doi\t$depositor\t$transformationType\t$uuid\t$comment")
+    comment
+  }
 }
-object FeedBack {
+object LogRecord {
   val header = "easyDatasetId\tdoi\tdepositor\ttransformationType\tuuid\tcomment"
 }

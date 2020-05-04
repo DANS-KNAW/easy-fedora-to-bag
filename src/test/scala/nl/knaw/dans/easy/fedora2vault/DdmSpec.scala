@@ -269,7 +269,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
     }
   }
 
-  "subject" should "use created for available" in {
+  "subject" should "succeed" in {
     toEmdObject(
       <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
         <emd:subject>
@@ -285,7 +285,6 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
          |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
          |  <ddm:profile>
          |    <ddm:accessRights/>
-         |    <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
          |  </ddm:profile>
          |  <ddm:dcmiMetadata>
          |    <dc:subject xsi:type="abr:ABRcomplex">DEPO</dc:subject>

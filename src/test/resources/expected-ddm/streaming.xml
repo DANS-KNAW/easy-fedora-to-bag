@@ -13,6 +13,7 @@
         <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
     </ddm:profile>
     <ddm:dcmiMetadata>
+        <dct:relation/>
         <dct:type xsi:type="dct:DCMIType">Dataset</dct:type>
         <dct:format>video/mpeg</dct:format>
         <dct:license xsi:type="dct:URI">http://creativecommons.org/publicdomain/zero/1.0</dct:license>

@@ -36,7 +36,7 @@ import scala.util.{ Failure, Success, Try }
 import scala.xml.{ Elem, Node }
 
 class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLogging {
-  lazy implicit val fedoraProvider: FedoraProvider = new FedoraProvider(new FedoraClient(configuration.fedoraCredentials))
+  lazy val fedoraProvider: FedoraProvider = new FedoraProvider(new FedoraClient(configuration.fedoraCredentials))
   lazy val ldapContext: InitialLdapContext = new InitialLdapContext(configuration.ldapEnv, null)
   private lazy val ldap = new Ldap(ldapContext)
   private val emdUnmarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
@@ -119,7 +119,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
     } yield FeedBack(datasetId, doi, depositor, TransformationType.SIMPLE, uuid, "???").toString
   }
 
-  private def getAudience(id: String)(implicit fedoraProvider: FedoraProvider) = {
+  private def getAudience(id: String) = {
     fedoraProvider.loadFoXml(id).map(foXml =>
       (foXml \\ "discipline-md" \ "OICode").text
     )

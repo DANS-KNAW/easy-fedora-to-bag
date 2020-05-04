@@ -70,7 +70,7 @@ object DDM extends DebugEnhancedLogging {
        { emd.getEmdTitle.getTermsAlternative.asScala.map(str => <dct:alternative>{ str }</dct:alternative>) }
        { emd.getEmdDescription.getTermsAbstract.asScala.map(bs => <ddm:description xml:lang={ lang(bs) } descriptionType='Abstract'>{ bs.getValue }</ddm:description>) }
        { emd.getEmdDescription.getTermsTableOfContents.asScala.map(bs => <ddm:description xml:lang={ lang(bs) } descriptionType='TableOfContent'>{ bs.getValue }</ddm:description>) }
-       { emd.getEmdRelation.getDCRelationMap.asScala.map { case (key, values) => values.asScala.filterNot(_.getScheme == "STREAMING_SURROGATE_RELATION").map(toRelationXml(key, _)) } }
+       { emd.getEmdRelation.getDCRelationMap.asScala.map { case (key, values) => values.asScala.map(toRelationXml(key, _)) } }
        { emd.getEmdRelation.getRelationMap.asScala.map { case (key, values) => values.asScala.map(toRelationXml(key, _)) } }
        { emd.getEmdContributor.getDcContributor.asScala.map(bs => <dc:contributor>{ bs.getValue }</dc:contributor>) }
        { emd.getEmdContributor.getEasContributor.asScala.map(author => <dcx-dai:contributorDetails>{ toXml(author)} </dcx-dai:contributorDetails>) }
@@ -93,35 +93,34 @@ object DDM extends DebugEnhancedLogging {
        { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getBox == null).map(notImplemented("boxes")) }
        { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getPoint == null).map(notImplemented("points")) }
        { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getPolygons == null).map(notImplemented("polygons")) }
-       <dct:license xsi:type="dct:URI">{ toUri(emd.getEmdRights) }</dct:license>
+       <dct:license xsi:type="dct:URI">{ toLicenseUrl(emd.getEmdRights) }</dct:license>
        { emd.getEmdLanguage.getDcLanguage.asScala.map(bs => <dct:language xsi:type={langType(bs)}>{ langValue(bs) }</dct:language>) }
      </ddm:dcmiMetadata>
    </ddm:DDM>
  }
 
-  private def langType(bs: BasicString) = bs.getSchemeId match {
+  private def langType(bs: BasicString): String = bs.getSchemeId match {
     case "fra" | "fra/fre" | "deu" | "deu/ger" | "nld" | "nld/dut" | "eng" => "dct:ISO639-3"
     case _ => null
   }
 
-  private def langValue(bs: BasicString) = bs.getValue match {
+  private def langValue(bs: BasicString): String = bs.getValue match {
     case "fra/fre" => "fra"
     case "deu/ger" => "deu"
     case "nld/dut" => "nld"
-    case "eng" => "eng"
     case s => s
   }
 
-  private def isAbr(string: BasicString) = string.getScheme == "ABR"
+  private def isAbr(string: BasicString): Boolean = Option(string.getScheme).exists(_.toUpperCase == "ABR")
 
-  private def abrType(bs: BasicString) = bs.getSchemeId match {
+  private def abrType(bs: BasicString): String = bs.getSchemeId match {
     case "archaeology.dc.subject" => "abr:ABRcomplex"
     case "archaeology.dc.temporal" => "abr:ABRperiode"
     case _ => notImplementedAttribute(s"ABR schemeId")(bs)
       null
   }
 
-  private def dcType(bs: BasicString) = {
+  private def dcType(bs: BasicString): String = {
     (bs.getScheme, bs.getSchemeId) match {
       case ("DCMI", "common.dc.type") => "dct:DCMIType"
       case _ => notImplementedAttribute(s"dctType")(bs)
@@ -129,7 +128,7 @@ object DDM extends DebugEnhancedLogging {
     }
   }
 
-  private def idType(bs: BasicString) = Option(bs.getScheme).map(s => "id-type:" + s).orNull
+  private def idType(bs: BasicString): String = Option(bs.getScheme).map(s => "id-type:" + s).orNull
 
   private def xsiType(bs: BasicString): String = {
     if (bs.getScheme != null && bs.getScheme.startsWith("id-type"))
@@ -150,7 +149,7 @@ object DDM extends DebugEnhancedLogging {
   }
 
   /** a null value skips rendering the attribute */
-  private def lang(bs: BasicString) = Option(bs.getLanguage).map(_.replace("/", "-")).orNull
+  private def lang(bs: BasicString): String = Option(bs.getLanguage).map(_.replace("/", "-")).orNull
 
   private def toXml(author: Author): Seq[Node] = {
     val surname = author.getSurname
@@ -170,25 +169,24 @@ object DDM extends DebugEnhancedLogging {
       </dcx-dai:author>
   }
 
-  private def toURI(id: EntityId) = {
+  private def toURI(id: EntityId): String = {
     val uri = id.getIdentificationSystem.toString.replaceAll("/*$", "")
     s"$uri/${ id.getEntityId }"
   }
 
-  private def toXml(value: IsoDate) = <label xsi:type={ orNull(value.getScheme) }>{ value }</label>
+  private def toXml(value: IsoDate): Elem = <label xsi:type={ orNull(value.getScheme) }>{ value }</label>
 
-  private def toXml(value: BasicDate) = <label xsi:type={ orNull(value.getScheme) }>{ value }</label>
+  private def toXml(value: BasicDate): Elem = <label xsi:type={ orNull(value.getScheme) }>{ value }</label>
 
   def orNull(dateScheme: DateScheme): String = Option(dateScheme).map("dct:" + _.toString).orNull
 
-  private def isOtherDate(kv: (String, Iterable[Elem])) = !Seq("created", "available").contains(kv._1)
+  private def isOtherDate(kv: (String, Iterable[Elem])): Boolean = !Seq("created", "available").contains(kv._1)
 
-  private def dateLabel(key: String) = {
-    if (key.isBlank) "dct:date"
-    else "dct:" + key
+  private def dateLabel(key: String): String = {
+    key.toOption.map("dct:" + _).getOrElse("dct:date")
   }
 
-  private def getDateMap(emd: EasyMetadataImpl) = {
+  private def getDateMap(emd: EasyMetadataImpl): Map[DatasetId, Seq[Elem]] = {
     val basicDates = emd.getEmdDate.getAllBasicDates.asScala.map { case (key, values) => key -> values.asScala.map(toXml) }
     val isoDates = emd.getEmdDate.getAllIsoDates.asScala.map { case (key, values) => key -> values.asScala.map(toXml) }
     (basicDates.toSeq ++ isoDates.toSeq)
@@ -196,26 +194,27 @@ object DDM extends DebugEnhancedLogging {
       .mapValues(_.flatMap(_._2))
   }
 
-  private def getAudience(id: String)(implicit fedoraProvider: FedoraProvider) = {
+  private def getAudience(id: String)(implicit fedoraProvider: FedoraProvider): Try[String] = {
     fedoraProvider.loadFoXml(id).map(foXml =>
       (foXml \\ "discipline-md" \ "OICode").text
     )
   }
 
-  private def toRelationXml(key: String, rel: Relation) = {
+  private def toRelationXml(key: String, rel: Relation): Elem = {
     <label scheme={ relationType(rel) }
            href={ rel.getSubjectLink.toURL.toString }
            xml:lang={ rel.getSubjectTitle.getLanguage }
     >{ rel.getSubjectTitle.getValue }</label>
   }.withLabel(relationLabel("ddm:", key))
 
-  private def toRelationXml(key: String, bs: BasicString) = {
-    <label xsi:type={ idType(bs) }
-           xml:lang={ bs.getLanguage }
-    >{ bs.getValue }</label>
+  private def toRelationXml(key: String, bs: BasicString): Elem = {
+    if (bs.getScheme == "STREAMING_SURROGATE_RELATION") notImplemented("relation")(bs)
+    else <label xsi:type={ idType(bs) }
+                xml:lang={ bs.getLanguage }
+         >{ bs.getValue }</label>
   }.withLabel(relationLabel("dct:", key))
 
-  private def relationType(rel: Relation) = {
+  private def relationType(rel: Relation): String = {
     rel.getSubjectLink.getAuthority match {
       case "persistent-identifier.nl" => "id-type:URN"
       case "doi.org" => "id-type:DOI"
@@ -224,8 +223,7 @@ object DDM extends DebugEnhancedLogging {
   }
 
   private def relationLabel(prefix: String, key: String): String = prefix + {
-    if (key.isBlank) "relation"
-    else key
+    key.toOption.getOrElse("relation")
   }
 
   /** @return an empty Seq for a null or blank String */
@@ -237,7 +235,7 @@ object DDM extends DebugEnhancedLogging {
         { maybeRole.toSeq.map(role => <dcx-dai:role>{ role.getRole }</dcx-dai:role>) }
       </dcx-dai:organization>
 
-  private def toUri(emdRights: EmdRights) = {
+  private def toLicenseUrl(emdRights: EmdRights) = {
     emdRights.getTermsLicense.asScala
       .find(_.getValue.startsWith("http"))
       .getOrElse(emdRights.getAccessCategory match {
@@ -246,7 +244,7 @@ object DDM extends DebugEnhancedLogging {
       })
   }
 
-  private def isDdmId(bi: BasicIdentifier) = {
+  private def isDdmId(bi: BasicIdentifier): Boolean = {
     // these ID's are generated by easy-ingest-flow/EASY-I, not converted from DDM
     !Seq("PID", "DMO_ID", "AIP_ID").contains(bi.getScheme)
   }

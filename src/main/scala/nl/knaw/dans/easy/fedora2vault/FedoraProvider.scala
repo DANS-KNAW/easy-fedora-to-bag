@@ -28,7 +28,7 @@ import scala.xml.{ Elem, XML }
 class FedoraProvider(fedoraClient: FedoraClient) {
   // copy of https://github.com/DANS-KNAW/easy-export-dataset/blob/6e656c6e6dad19bdea70694d63ce929ab7b0ad2b/src/main/scala/nl.knaw.dans.easy.export/FedoraProvider.scala
   // variant of https://github.com/DANS-KNAW/easy-deposit-agreement-creator/blob/e718655515ad5d597fd227bc29776c074a959f00/src/main/scala/nl/knaw/dans/easy/agreement/datafetch/Fedora.scala#L52
-  def getSubordinates(datasetId: String): Try[Seq[String]] = {
+  def getSubordinates(datasetId: DatasetId): Try[Seq[String]] = {
     search(
       s"""
          |PREFIX dans: <http://dans.knaw.nl/ontologies/relations#>
@@ -49,8 +49,8 @@ class FedoraProvider(fedoraClient: FedoraClient) {
       }
   }
 
-  def getObject(datasetId: String): ManagedResource[InputStream] = {
-    managed(FedoraClient.getObjectXML(datasetId).execute(fedoraClient))
+  def getObject(objectId: String): ManagedResource[InputStream] = {
+    managed(FedoraClient.getObjectXML(objectId).execute(fedoraClient))
       .flatMap(response => managed(response.getEntityInputStream))
   }
 
@@ -59,7 +59,7 @@ class FedoraProvider(fedoraClient: FedoraClient) {
       .flatMap(response => managed(response.getEntityInputStream))
   }
 
-  def loadFoXml(fedoraId: String): Try[Elem] = {
-    getObject(fedoraId).map(XML.load).tried
+  def loadFoXml(objectId: String): Try[Elem] = {
+    getObject(objectId).map(XML.load).tried
   }
 }

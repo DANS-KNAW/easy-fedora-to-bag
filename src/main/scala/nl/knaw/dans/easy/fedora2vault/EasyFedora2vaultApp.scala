@@ -95,7 +95,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       _ <- addXmlMetadata(bag, "amd.xml")(amd)
       _ <- getDdm(foXml)
         .map(addXmlPayload(bag, "original-ddm.xml"))
-        .getOrElse(Success())
+        .getOrElse(Success(()))
       emd <- Try(emdUnmarshaller.unmarshal(emdXml.serialize))
       audiences <- emd.getEmdAudience.getDisciplines.asScala
         .map(id => getAudience(id.getValue)).collectResults

@@ -23,7 +23,7 @@
     <parent>
         <groupId>nl.knaw.dans.shared</groupId>
         <artifactId>dans-scala-app-project</artifactId>
-        <version>6.0.0</version>
+        <version>6.0.2</version>
     </parent>
 
     <groupId>nl.knaw.dans.easy</groupId>
@@ -37,6 +37,7 @@
 
     <properties>
         <main-class>nl.knaw.dans.easy.fedora2vault.Command</main-class>
+        <easy.emd.version>3.9.2</easy.emd.version>
     </properties>
 
     <scm>
@@ -52,7 +53,7 @@
         <dependency>
             <groupId>nl.knaw.dans.easy</groupId>
             <artifactId>emd</artifactId>
-            <version>3.9.1</version>
+            <version>${easy.emd.version}</version>
         </dependency>
 
         <!-- testing -->

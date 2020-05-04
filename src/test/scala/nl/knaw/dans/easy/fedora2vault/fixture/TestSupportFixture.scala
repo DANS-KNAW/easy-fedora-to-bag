@@ -17,8 +17,10 @@ package nl.knaw.dans.easy.fedora2vault.fixture
 
 import better.files.File
 import org.scalatest._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-trait TestSupportFixture extends FlatSpec with TimeZoneFixture
+trait TestSupportFixture extends AnyFlatSpec with TimeZoneFixture
 
   with Matchers
   with Inside
@@ -26,5 +28,5 @@ trait TestSupportFixture extends FlatSpec with TimeZoneFixture
   with EitherValues
   with Inspectors {
   val nameSpaceRegExp = """ xmlns:[a-z-]+="[^"]*"""" // these attributes have a variable order
-  val sampleFoXML = File("src/test/resources/sample-foxml")
+  val sampleFoXML: File = File("src/test/resources/sample-foxml")
 }

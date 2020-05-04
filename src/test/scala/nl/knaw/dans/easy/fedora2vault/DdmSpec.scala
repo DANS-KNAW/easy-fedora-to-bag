@@ -70,7 +70,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
       .split("\n") // TODO dropping a line that would not validate
       .filterNot(_.contains("""<dct:relation xsi:type="id-type:STREAMING_SURROGATE_RELATION">"""))
       .mkString("\n")
-    ) shouldBe Success(expectedDDM(file))
+    ) shouldBe Success(expectedDDM(file).trim)
   }
 
   "depositApi" should "produce the DDM provided by easy-deposit-api" in {

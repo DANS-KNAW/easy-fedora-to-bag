@@ -40,6 +40,28 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
     .newSchema(Array(new StreamSource("https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd")).toArray[Source])
   )
   private val emdUnMarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
+  private val minimalPart1 =
+      <emd:title>
+            <dc:title>XXX</dc:title>
+        </emd:title>
+        <emd:creator>
+            <eas:creator>
+                <eas:organization>DANS</eas:organization>
+                <eas:entityId eas:scheme="DAI"></eas:entityId>
+            </eas:creator>
+        </emd:creator>
+        <emd:subject></emd:subject>
+        <emd:description>
+            <dc:description>YYY</dc:description>
+        </emd:description>
+        <emd:date>
+            <eas:created eas:scheme="W3CDTF" eas:format="DAY">2017-09-30T00:00:00.000+02:00</eas:created>
+            <eas:available eas:scheme="W3CDTF" eas:format="DAY">2017-09-30T17:47:36.978+02:00</eas:available>
+        </emd:date>
+  private val minimalPart2 =
+        <emd:rights>
+            <dct:accessRights eas:schemeId="common.dcterms.accessrights">OPEN_ACCESS</dct:accessRights>
+        </emd:rights>
 
   "streaming" should "get a valid DDM out of its EMD" in {
     val file = "streaming.xml"
@@ -226,27 +248,25 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
          |""".stripMargin)
   }
 
-  "dates" should "use created for available" in {
-    implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
-    toEmdObject(
+  "spatial" should "render invalid DDM" in { // TODO until everything is implemented
+    val triedDdm = toEmdObject(
       <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
-          <emd:date>
-              <dct:created>03-2013</dct:created>
-          </emd:date>
+        { minimalPart1 }
+        <emd:coverage>
+          <eas:spatial>
+              <eas:place/>
+              <eas:point eas:scheme="RD">
+                  <eas:x>155000</eas:x>
+                  <eas:y>463000</eas:y>
+              </eas:point>
+          </eas:spatial>
+        </emd:coverage>
+        { minimalPart2 }
       </emd:easymetadata>
-    ).flatMap(DDM(_, Seq.empty)).map(toStripped) shouldBe Success(
-      s"""<ddm:DDM
-         |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
-         |  <ddm:profile>
-         |    <ddm:created>03-2013</ddm:created>
-         |    <ddm:available>03-2013</ddm:available>
-         |    <ddm:accessRights/>
-         |  </ddm:profile>
-         |  <ddm:dcmiMetadata>
-         |    <dct:license xsi:type="dct:URI">${ DDM.dansLicense }</dct:license>
-         |  </ddm:dcmiMetadata>
-         |</ddm:DDM>
-         |""".stripMargin)
+    ).flatMap(DDM(_, Seq("D13200")))
+    validate(triedDdm.map(toS)) should matchPattern {
+      case Failure(e) if e.getMessage.contains("not:implemented") =>
+    }
   }
 
   "subject" should "use created for available" in {
@@ -265,6 +285,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
          |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
          |  <ddm:profile>
          |    <ddm:accessRights/>
+         |    <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
          |  </ddm:profile>
          |  <ddm:dcmiMetadata>
          |    <dc:subject xsi:type="abr:ABRcomplex">DEPO</dc:subject>
@@ -340,6 +361,29 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
          |        <dcx-dai:ORCID>https://orcid.org/0000-0001-2281-955X</dcx-dai:ORCID>
          |      </dcx-dai:author>
          |    </dcx-dai:creatorDetails>
+         |    <ddm:accessRights/>
+         |  </ddm:profile>
+         |  <ddm:dcmiMetadata>
+         |    <dct:license xsi:type="dct:URI">${ DDM.dansLicense }</dct:license>
+         |  </ddm:dcmiMetadata>
+         |</ddm:DDM>
+         |""".stripMargin)
+  }
+
+  "dates" should "use created for available" in {
+    implicit val fedoraProvider: FedoraProvider = mock[FedoraProvider]
+    toEmdObject(
+      <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
+          <emd:date>
+              <dct:created>03-2013</dct:created>
+          </emd:date>
+      </emd:easymetadata>
+    ).flatMap(DDM(_, Seq.empty)).map(toStripped) shouldBe Success(
+      s"""<ddm:DDM
+         |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
+         |  <ddm:profile>
+         |    <ddm:created>03-2013</ddm:created>
+         |    <ddm:available>03-2013</ddm:available>
          |    <ddm:accessRights/>
          |  </ddm:profile>
          |  <ddm:dcmiMetadata>

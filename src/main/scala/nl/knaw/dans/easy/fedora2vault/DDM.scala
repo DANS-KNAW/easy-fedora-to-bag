@@ -100,7 +100,7 @@ object DDM extends DebugEnhancedLogging {
  }
 
   private def langType(bs: BasicString) = bs.getSchemeId match {
-    case "fra" |"fra/fre" | "deu" | "deu/ger" | "nld" | "nld/dut" | "eng" => "dct:ISO639-3"
+    case "fra" | "fra/fre" | "deu" | "deu/ger" | "nld" | "nld/dut" | "eng" => "dct:ISO639-3"
     case _ => null
   }
 
@@ -117,14 +117,14 @@ object DDM extends DebugEnhancedLogging {
   private def abrType(bs: BasicString) = bs.getSchemeId match {
     case "archaeology.dc.subject" => "abr:ABRcomplex"
     case "archaeology.dc.temporal" => "abr:ABRperiode"
-    case _ => notImplemented(s"ABR schemeId")(bs)
+    case _ => notImplementedAttribute(s"ABR schemeId")(bs)
       null
   }
 
   private def dcType(bs: BasicString) = {
     (bs.getScheme, bs.getSchemeId) match {
       case ("DCMI", "common.dc.type") => "dct:DCMIType"
-      case _ => notImplemented(s"dctType")(bs)
+      case _ => notImplementedAttribute(s"dctType")(bs)
         null
     }
   }
@@ -135,13 +135,18 @@ object DDM extends DebugEnhancedLogging {
     if (bs.getScheme != null && bs.getScheme.startsWith("id-type"))
       bs.getScheme
     else if (bs.getScheme != null || bs.getSchemeId != null)
-           notImplemented("")(bs)
+           notImplementedAttribute("")(bs)
     null
   }
 
-  private def notImplemented(msg: String)(data: Any): Unit = {
-    // TODO throw (and collect) before completing phase 1 of EASY-2410
+  private def notImplementedAttribute(msg: String)(data: Any): Unit = {
+    // TODO return something that won't pass validation
     logger.error(s"not implemented $msg [$data]")
+  }
+
+  private def notImplemented(msg: String)(data: Any): Elem = {
+    logger.error(s"not implemented $msg [$data]")
+    <not:implemented/>
   }
 
   /** a null value skips rendering the attribute */
@@ -256,4 +261,5 @@ object DDM extends DebugEnhancedLogging {
       }
     }
   }
+
 }

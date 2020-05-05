@@ -74,7 +74,7 @@ object DDM extends DebugEnhancedLogging {
        { emd.getEmdRelation.getRelationMap.asScala.map { case (key, values) => values.asScala.map(toRelationXml(key, _)) } }
        { emd.getEmdContributor.getDcContributor.asScala.map(bs => <dc:contributor>{ bs.getValue }</dc:contributor>) }
        { emd.getEmdContributor.getEasContributor.asScala.map(author => <dcx-dai:contributorDetails>{ toXml(author)} </dcx-dai:contributorDetails>) }
-       { emd.getEmdContributor.getEasContributor.asScala.filter(author => author.getRole.getRole == "RightsHolder").map(notImplemented("rightsHolder")) }
+       { emd.getEmdContributor.getEasContributor.asScala.filter(isRightsHolder).map(notImplemented("rightsHolder")) }
        { emd.getEmdPublisher.getDcPublisher.asScala.map(bs => <dct:publisher xml:lang={ lang(bs) }>{ bs.getValue }</dct:publisher>) }
        { emd.getEmdSource.getDcSource.asScala.map(bs => <dc:source xml:lang={ lang(bs) }>{ bs.getValue }</dc:source>) }
        { emd.getEmdType.getDcType.asScala.map(bs => <dct:type xsi:type={ dcType(bs) }>{ bs.getValue }</dct:type>) }
@@ -98,6 +98,10 @@ object DDM extends DebugEnhancedLogging {
      </ddm:dcmiMetadata>
    </ddm:DDM>
  }
+
+  private def isRightsHolder(author: Author) = {
+    Option(author.getRole).exists(_.getRole == "RightsHolder")
+  }
 
   private def langType(bs: BasicString): String = bs.getSchemeId match {
     case "fra" | "fra/fre" | "deu" | "deu/ger" | "nld" | "nld/dut" | "eng" => "dct:ISO639-3"

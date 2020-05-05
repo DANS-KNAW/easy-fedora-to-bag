@@ -81,15 +81,20 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
     triedDdm shouldBe a[Success[_]]
 
     // round trip test (foXml/EMD was created from the foXML/DDM by easy-ingest-flow)
-    triedDdm.map(normalize) shouldBe triedFoXml.map(foXml =>
+    triedDdm.map(normalize(_).split("\n")
+      .filterNot(_.contains("<not:implemented/>"))
+      .mkString("\n")
+    ) shouldBe triedFoXml.map(foXml =>
       normalize(toS((foXml \\ "DDM").head))
         .replaceAll("dcterms:", "dct:")
         .replaceAll("""<dcx-dai:name xml:lang="nld">""", """<dcx-dai:name>""") // TODO api bug? lang on title?
         .split("\n")
-        .filterNot(_.contains("<dct:rightsHolder>")) // TODO not yet implemented
-        .mkString("\n") + "\n"
+        .filterNot(_.contains("<dct:rightsHolder>"))// TODO matches the not implemented above
+        .mkString("\n")
     )
-    validate(triedDdm) shouldBe a[Success[_]]
+    validate(triedDdm) should matchPattern {
+      case Failure(e) if e.getMessage.contains("not:implemented") =>
+    }
   }
 
   "descriptions" should "all appear" in {

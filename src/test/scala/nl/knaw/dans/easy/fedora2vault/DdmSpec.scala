@@ -40,25 +40,33 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
     .newSchema(Array(new StreamSource("https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd")).toArray[Source])
   )
   private val emdUnMarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
-  private val minimalPart1 =
-      <emd:title>
+  private val emdTitle =
+        <emd:title>
             <dc:title>XXX</dc:title>
         </emd:title>
+  private val emdCreator =
         <emd:creator>
             <eas:creator>
                 <eas:organization>DANS</eas:organization>
                 <eas:entityId eas:scheme="DAI"></eas:entityId>
             </eas:creator>
         </emd:creator>
-        <emd:subject></emd:subject>
+  val ddmCreator = // resulting from emdCreator
+    """    <dcx-dai:creatorDetails>
+      |      <dcx-dai:organization>
+      |        <dcx-dai:name>DANS</dcx-dai:name>
+      |      </dcx-dai:organization>
+      |    </dcx-dai:creatorDetails>"""
+  private val emdDescription =
         <emd:description>
             <dc:description>YYY</dc:description>
         </emd:description>
+  private val emdDates =
         <emd:date>
             <eas:created eas:scheme="W3CDTF" eas:format="DAY">2017-09-30T00:00:00.000+02:00</eas:created>
             <eas:available eas:scheme="W3CDTF" eas:format="DAY">2017-09-30T17:47:36.978+02:00</eas:available>
         </emd:date>
-  private val minimalPart2 =
+  private val emdRights =
         <emd:rights>
             <dct:accessRights eas:schemeId="common.dcterms.accessrights">OPEN_ACCESS</dct:accessRights>
         </emd:rights>
@@ -256,7 +264,10 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
   "spatial" should "render invalid DDM" in { // TODO until everything is implemented
     val triedDdm = toEmdObject(
       <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
-        { minimalPart1 }
+        { emdTitle }
+        { emdCreator }
+        { emdDescription }
+        { emdDates }
         <emd:coverage>
           <eas:spatial>
               <eas:place/>
@@ -266,7 +277,7 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
               </eas:point>
           </eas:spatial>
         </emd:coverage>
-        { minimalPart2 }
+        { emdRights }
       </emd:easymetadata>
     ).flatMap(DDM(_, Seq("D13200")))
     validate(triedDdm.map(toS)) should matchPattern {
@@ -275,14 +286,48 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
   }
 
   "subject" should "succeed" in {
+    val triedString = toEmdObject(
+      <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
+        { emdTitle }
+        { emdCreator }
+        <emd:subject>
+            <dc:subject eas:scheme="ABR" eas:schemeId="archaeology.dc.subject">DEPO</dc:subject>
+            <dc:subject>hello world</dc:subject>
+        </emd:subject>
+        { emdDescription }
+        { emdDates }
+        { emdRights }
+      </emd:easymetadata>
+    ).flatMap(DDM(_, Seq("D35400"))).map(toS)
+    triedString.map(strip) shouldBe Success(
+      s"""<ddm:DDM
+         |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
+         |  <ddm:profile>
+         |    <dc:title>XXX</dc:title>
+         |    <dct:description>YYY</dct:description>
+         |$ddmCreator
+         |    <ddm:created>2017-09-30</ddm:created>
+         |    <ddm:available>2017-09-30</ddm:available>
+         |    <ddm:audience>D35400</ddm:audience>
+         |    <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
+         |  </ddm:profile>
+         |  <ddm:dcmiMetadata>
+         |    <dc:subject xsi:type="abr:ABRcomplex">DEPO</dc:subject>
+         |    <dc:subject>hello world</dc:subject>
+         |    <dct:license xsi:type="dct:URI">${ DDM.cc0 }</dct:license>
+         |  </ddm:dcmiMetadata>
+         |</ddm:DDM>
+         |""".stripMargin)
+    validate(triedString) shouldBe a[Success[_]]
+  }
+
+  it should "generate not-implemented" in {
     toEmdObject(
       <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
         <emd:subject>
-            <dc:subject eas:scheme="ABR" eas:schemeId="archaeology.dc.subject">DEPO</dc:subject>
             <dc:subject eas:scheme="BSS0" eas:schemeId="common.dc.type0" xml:lang="nld-NLD">subject 0</dc:subject>
             <dc:subject eas:scheme="BSS1" eas:schemeId="common.dc.type1" xml:lang="nld-NLD">subject 1</dc:subject>
             <dc:subject xml:lang="nld-NLD" eas:scheme="BSS0">subject zero</dc:subject>
-            <dc:subject>hello world</dc:subject>
         </emd:subject>
       </emd:easymetadata>
     ).flatMap(DDM(_, Seq.empty)).map(toStripped) shouldBe Success(
@@ -292,11 +337,9 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
          |    <ddm:accessRights/>
          |  </ddm:profile>
          |  <ddm:dcmiMetadata>
-         |    <dc:subject xsi:type="abr:ABRcomplex">DEPO</dc:subject>
-         |    <ddm:subject xml:lang="nld-NLD" subjectScheme="BSS0">subject 0</ddm:subject>
-         |    <ddm:subject xml:lang="nld-NLD" subjectScheme="BSS1">subject 1</ddm:subject>
-         |    <ddm:subject xml:lang="nld-NLD" subjectScheme="BSS0">subject zero</ddm:subject>
-         |    <ddm:subject>hello world</ddm:subject>
+         |    <not:implemented/>
+         |    <not:implemented/>
+         |    <not:implemented/>
          |    <dct:license xsi:type="dct:URI">${ DDM.dansLicense }</dct:license>
          |  </ddm:dcmiMetadata>
          |</ddm:DDM>
@@ -462,11 +505,13 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
          |""".stripMargin)
   }
 
-  private def toStripped(elem: Elem) = toS(elem)
+  private def toS(elem: Node) = printer.format(Utility.trim(elem))
+
+  private def toStripped(elem: Elem) = strip(toS(elem))
+
+  private def strip(str: String) = str
     .replaceAll(nameSpaceRegExp, "")
     .replaceAll(" \n", "\n")
-
-  private def toS(elem: Node) = printer.format(Utility.trim(elem))
 
   private def validate(triedString: Try[String]): Try[Unit] = {
     assume(schemaIsAvailable)

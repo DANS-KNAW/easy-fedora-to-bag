@@ -81,13 +81,13 @@ object DDM extends DebugEnhancedLogging {
        { emd.getEmdFormat.getDcFormat.asScala.map(bs => <dct:format>{ bs.getValue }</dct:format>) }
        { emd.getEmdFormat.getTermsExtent.asScala.map(notImplemented("extent format")) }
        { emd.getEmdFormat.getTermsMedium.asScala.map(notImplemented("medium formt")) }
-       { emd.getEmdSubject.getDcSubject.asScala.filter(isAbr).map(bs => <dc:subject xml:lang={ lang(bs) } xsi:type={ abrType(bs) }>{ bs.getValue }</dc:subject>) }
-       { emd.getEmdSubject.getDcSubject.asScala.filterNot(isAbr).map(bs => <ddm:subject xml:lang={ lang(bs) } subjectScheme={ bs.getScheme }>{ bs.getValue }</ddm:subject>) }
+       { emd.getEmdSubject.getDcSubject.asScala.filter(hasSimpleScheme).map(bs => <dc:subject xml:lang={ lang(bs) } xsi:type={ abrType(bs) }>{ bs.getValue }</dc:subject>) }
+       { emd.getEmdSubject.getDcSubject.asScala.filterNot(hasSimpleScheme).map(notImplemented("schemed subject")) }
        { emd.getEmdCoverage.getDcCoverage.asScala.map(bs => <dct:coverage xml:lang={ lang(bs) }>{ bs.getValue }</dct:coverage>) }
-       { emd.getEmdCoverage.getTermsSpatial.asScala.filter(isAbr).map(bs => <dct:spatial xml:lang={ lang(bs) } xsi:type={ abrType(bs) }>{ bs.getValue }</dct:spatial>) }
-       { emd.getEmdCoverage.getTermsSpatial.asScala.filterNot(isAbr).map(bs => <dct:spatial xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue }</dct:spatial>) }
-       { emd.getEmdCoverage.getTermsTemporal.asScala.filter(isAbr).map(bs => <dct:temporal xml:lang={ lang(bs) } xsi:type={ abrType(bs) }>{ bs.getValue }</dct:temporal>) }
-       { emd.getEmdCoverage.getTermsTemporal.asScala.filterNot(isAbr).map(bs => <dct:temporal xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue }</dct:temporal>) }
+       { emd.getEmdCoverage.getTermsSpatial.asScala.filter(hasSimpleScheme).map(bs => <dct:spatial xml:lang={ lang(bs) } xsi:type={ abrType(bs) }>{ bs.getValue }</dct:spatial>) }
+       { emd.getEmdCoverage.getTermsSpatial.asScala.filterNot(hasSimpleScheme).map(bs => <dct:spatial xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue }</dct:spatial>) }
+       { emd.getEmdCoverage.getTermsTemporal.asScala.filter(hasSimpleScheme).map(bs => <dct:temporal xml:lang={ lang(bs) } xsi:type={ abrType(bs) }>{ bs.getValue }</dct:temporal>) }
+       { emd.getEmdCoverage.getTermsTemporal.asScala.filterNot(hasSimpleScheme).map(bs => <dct:temporal xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue }</dct:temporal>) }
        { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getPlace == null).map(notImplemented("places")) }
        { dateMap.filter(isOtherDate).map { case (key, values) => values.map(_.withLabel(dateLabel(key))) } }
        { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getBox == null).map(notImplemented("boxes")) }
@@ -115,7 +115,12 @@ object DDM extends DebugEnhancedLogging {
     case s => s
   }
 
-  private def isAbr(string: BasicString): Boolean = Option(string.getScheme).exists(_.toUpperCase == "ABR")
+  private def hasSimpleScheme(string: BasicString): Boolean = {
+    Option(string.getScheme).map(_.toUpperCase()) match {
+      case Some("ABR") | None => true
+      case _ => false
+    }
+  }
 
   private def abrType(bs: BasicString): String = bs.getSchemeId match {
     case "archaeology.dc.subject" => "abr:ABRcomplex"

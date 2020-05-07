@@ -19,6 +19,7 @@ import java.nio.file.{ Path, Paths }
 
 import better.files.File
 import nl.knaw.dans.easy.fedora2vault.TransformationType.TransformationType
+import org.joda.time.DateTime
 import org.rogach.scallop.{ ScallopConf, ScallopOption, ValueConverter, singleArgConverter }
 
 import scala.xml.Properties
@@ -64,7 +65,7 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
     descr = "The depositor for these datasets. If provided, only datasets from this depositor are transformed.")
   private val logFilePath: ScallopOption[Path] = opt(name = "log-file", short = 'l',
     descr = "The name of the logfile in csv format. If not provided a file easy-fedora2vault-<timestamp>.csv will be created in the home-dir of the user.",
-    default = Some(Paths.get(Properties.userHome).resolve(s"easy-fedora2vault-$now.csv")))
+    default = Some(Paths.get(Properties.userHome).resolve(s"easy-fedora2vault-${ DateTime.now.toString("yyyy-MM-dd---hh-mm-ss") }.csv")))
   val logFile: ScallopOption[File] = logFilePath.map(File(_))
   val strictMode: ScallopOption[Boolean] = opt(name = "strict", short = 's',
     descr = "If provided, the transformation will check whether the datasets adhere to the requirements of the chosen transformation.")

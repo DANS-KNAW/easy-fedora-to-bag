@@ -17,11 +17,10 @@ package nl.knaw.dans.easy.fedora2vault
 
 import java.util.UUID
 
-import better.files.File
+import better.files.{ Dispose, File }
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.joda.time.DateTime
-import resource.managed
 
 import scala.language.reflectiveCalls
 import scala.util.Try
@@ -44,9 +43,9 @@ object Command extends App with DebugEnhancedLogging {
   private def runSubcommand(app: EasyFedora2vaultApp): Try[FeedBackMessage] = {
     val outputDir = commandLine.outputDir()
     implicit val logFile: File = commandLine.logFile.map(identity)
-        .getOrElse(File(s"easy-fedora2vault-${DateTime.now.toString("yyyy-MM-dd_mm-ss")}.csv"))
+      .getOrElse(File(s"easy-fedora2vault-${ DateTime.now.toString("yyyy-MM-dd_mm-ss") }.csv"))
     val appendable: Appendable = logFile.newFileWriter(append = true)
-    managed(CsvRecord.csvFormat.print(appendable)).apply{ implicit printer =>
+    new Dispose(CsvRecord.csvFormat.print(appendable)).apply { implicit printer =>
       commandLine.datasetId
         .map(app.simpleTransform(outputDir / UUID.randomUUID().toString))
         .getOrElse(app.simpleTransForms(commandLine.inputFile(), outputDir))

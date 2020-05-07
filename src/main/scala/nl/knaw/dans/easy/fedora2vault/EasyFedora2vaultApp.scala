@@ -16,7 +16,7 @@
 package nl.knaw.dans.easy.fedora2vault
 
 import java.io.{ IOException, InputStream }
-import java.nio.file.{ Path, Paths }
+import java.nio.file.Paths
 import java.util.UUID
 
 import better.files.{ File, StringExtensions }
@@ -35,7 +35,7 @@ import org.joda.time.DateTime
 
 import scala.collection.JavaConverters._
 import scala.util.{ Failure, Success, Try }
-import scala.xml.{ Elem, Node }
+import scala.xml.{ Elem, Node, NodeSeq }
 
 class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLogging {
   lazy val fedoraProvider: FedoraProvider = new FedoraProvider(new FedoraClient(configuration.fedoraCredentials))
@@ -106,7 +106,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
         .map(addXmlMetadata(bag, "depositor-info/message-from-depositor.txt"))
         .getOrElse(Success(())) // TODO EASY-2697: EMD/other/remark
       _ <- getFilesXml(foXml)
-        .map(addXmlMetadata(bag, "files.xml"))
+        .map(addXmlPayload(bag, "original-files.xml"))
         .getOrElse(Success(()))
       _ <- getAgreementsXml(foXml)
         .map(addAgreements(bag))
@@ -117,9 +117,10 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       _ <- managedMetadataStream(foXml, "DATASET_LICENSE", bag, "depositor-info/depositor-agreement") // TODO EASY-2697: older versions
         .getOrElse(Success(()))
       fedoraIDs <- fedoraProvider.getSubordinates(datasetId)
-      _ <- fedoraIDs.toStream
+      fileMetadata <- fedoraIDs.toStream
         .withFilter(_.startsWith("easy-file:"))
-        .map(addPayloadFileTo(bag)).failFastOr(Success(()))
+        .map(addPayloadFileTo(bag)).collectResults
+      _ <- addXmlMetadata(bag, "files.xml")(FileMetadata(fileMetadata))
       _ <- bag.save()
       _ <- getManifest(foXml)
         .map(compareManifest(bag))
@@ -151,16 +152,17 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
     bag.addTagFile(content.serialize.inputStream, Paths.get(path))
   }
 
-  private def addPayloadFileTo(bag: DansV0Bag)(fedoraFileId: String): Try[Path] = {
+  private def addPayloadFileTo(bag: DansV0Bag)(fedoraFileId: String): Try[NodeSeq] = {
     fedoraProvider.loadFoXml(fedoraFileId)
       .flatMap { foXml =>
-        val path = Paths.get((foXml \\ "file-item-md" \\ "path").text)
+        val metadata = foXml \\ "file-item-md"
+        val path = Paths.get((metadata \\ "path").text)
         logger.info(s"Adding $fedoraFileId to $path")
         fedoraProvider
           .disseminateDatastream(fedoraFileId, "EASY_FILE")
           .map(bag.addPayloadFile(_, path))
           .tried.flatten
-          .map(_ => path)
+          .map(_ => metadata)
       }
   }
 }

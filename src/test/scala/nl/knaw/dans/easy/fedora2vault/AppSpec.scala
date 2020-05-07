@@ -151,7 +151,7 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
     sb.toString.startsWith("easy-dataset:13\tnull\tuser001\tsimple\t")
     val bag = (testDir / "bags").children.next()
     (bag / "metadata").list.toSeq.map(_.name)
-      .sortBy(identity) shouldBe Seq("amd.xml", "dataset.xml", "depositor-info", "emd.xml")
+      .sortBy(identity) shouldBe Seq("amd.xml", "dataset.xml", "depositor-info", "emd.xml", "files.xml")
     (bag / "metadata" / "depositor-info").list.toSeq.map(_.name).sortBy(identity) shouldBe
       Seq("agreements.xml")
   }

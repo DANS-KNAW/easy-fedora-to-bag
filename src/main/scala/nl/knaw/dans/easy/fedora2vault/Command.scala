@@ -43,7 +43,7 @@ object Command extends App with DebugEnhancedLogging {
   private def runSubcommand(app: EasyFedora2vaultApp): Try[FeedBackMessage] = {
     val outputDir = commandLine.outputDir()
     implicit val logFile: File = commandLine.logFile.map(identity)
-      .getOrElse(File(s"easy-fedora2vault-${ DateTime.now.toString("yyyy-MM-dd_mm-ss") }.csv"))
+      .getOrElse(File(s"easy-fedora2vault-${ DateTime.now.toString("yyyy-MM-dd_hh-mm-ss") }.csv"))
     val appendable: Appendable = logFile.newFileWriter(append = true)
     new Dispose(CsvRecord.csvFormat.print(appendable)).apply { implicit printer =>
       commandLine.datasetId

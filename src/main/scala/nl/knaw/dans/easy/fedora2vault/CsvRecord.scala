@@ -29,11 +29,12 @@ case class CsvRecord(easyDatasetId: DatasetId,
                      transformationType: TransformationType,
                      uuid: UUID,
                      comment: String,
-                   ) {
+                    ) {
   def print(implicit printer: CSVPrinter): Try[FeedBackMessage] = Try(
     printer.printRecord(easyDatasetId, doi, depositor, transformationType, uuid, comment)
   ).map(_ => comment)
 }
+
 object CsvRecord {
   val csvFormat: CSVFormat = CSVFormat.RFC4180
     .withHeader("easyDatasetId", "doi", "depositor", "transformationType", "uuid", "comment")

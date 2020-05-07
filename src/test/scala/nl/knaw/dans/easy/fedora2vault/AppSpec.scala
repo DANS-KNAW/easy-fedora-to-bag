@@ -84,7 +84,7 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
         |success:1,,,simple,.*,OK
         |success:2,,,simple,.*,OK
         |""".stripMargin
-    )
+      )
   }
 
   it should "report failure" in {

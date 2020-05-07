@@ -44,7 +44,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
   private val emdUnmarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
 
   def simpleTransForms(input: File, outputDir: File)(implicit printer: CSVPrinter): Try[FeedBackMessage] = {
-    input.lineIterator.filterNot(_.startsWith("#")).map{datasetId =>
+    input.lineIterator.filterNot(_.startsWith("#")).map { datasetId =>
       val uuid = UUID.randomUUID
       simpleTransform(outputDir / uuid.toString)(datasetId)
         .doIfFailure { case t => logger.error(s"$datasetId -> $uuid failed: $t", t) }
@@ -54,12 +54,13 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
             datasetId, doi = "", depositor = "", SIMPLE, uuid, s"FAILED: $t"
           ).print
         }
-    }}.collectFirst { case f @ Failure(_) => f }
-      .getOrElse(Success(
-        s"""All datasets in $input
-           | saved as bags in $outputDir
-           | """.stripMargin
-      ))
+    }
+  }.collectFirst { case f @ Failure(_) => f }
+    .getOrElse(Success(
+      s"""All datasets in $input
+         | saved as bags in $outputDir
+         | """.stripMargin
+    ))
 
   def simpleTransform(bagDir: File)(datasetId: DatasetId)(implicit printer: CSVPrinter): Try[FeedBackMessage] = {
 

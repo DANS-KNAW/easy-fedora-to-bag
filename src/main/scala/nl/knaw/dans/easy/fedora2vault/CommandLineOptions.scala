@@ -84,8 +84,8 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
     if (dir.exists) {
       if (!dir.isDirectory) Left(s"outputDir $dir does not reference a directory")
       else if (dir.nonEmpty) Left(s"outputDir $dir exists but is not an empty directory")
-      else if (!dir.isWriteable) Left(s"outputDir $dir exists and is empty but is not writeable by the current user")
-      else Right(())
+           else if (!dir.isWriteable) Left(s"outputDir $dir exists and is empty but is not writeable by the current user")
+                else Right(())
     }
     else Right(())
   })

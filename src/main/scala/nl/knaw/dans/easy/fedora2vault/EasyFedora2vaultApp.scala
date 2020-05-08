@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.easy.fedora2vault
 
-import java.io.InputStream
+import java.io.{ IOException, InputStream }
 import java.nio.file.{ Path, Paths }
 import java.util.UUID
 
@@ -50,6 +50,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
         .doIfFailure { case t => logger.error(s"$datasetId -> $uuid failed: $t", t) }
         .recoverWith {
           case t: FedoraClientException if t.getStatus != 404 => Failure(t)
+          case t: Exception if t.asInstanceOf[IOException] => Failure(t)
           case t => CsvRecord(
             datasetId, doi = "", depositor = "", SIMPLE, uuid, s"FAILED: $t"
           ).print

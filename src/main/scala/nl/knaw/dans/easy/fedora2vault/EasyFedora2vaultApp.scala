@@ -152,7 +152,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
     bag.addTagFile(content.serialize.inputStream, Paths.get(path))
   }
 
-  private def addPayloadFileTo(bag: DansV0Bag)(fedoraFileId: String): Try[NodeSeq] = {
+  private def addPayloadFileTo(bag: DansV0Bag)(fedoraFileId: String): Try[Option[NodeSeq]] = {
     fedoraProvider.loadFoXml(fedoraFileId)
       .flatMap { foXml =>
         val metadata = foXml \\ "file-item-md"
@@ -162,7 +162,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
           .disseminateDatastream(fedoraFileId, "EASY_FILE")
           .map(bag.addPayloadFile(_, path))
           .tried.flatten
-          .map(_ => metadata)
+          .map(_ => FoXml.getStreamRoot("EASY_FILE_METADATA",foXml))
       }
   }
 }

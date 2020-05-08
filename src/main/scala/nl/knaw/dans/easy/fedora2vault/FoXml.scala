@@ -33,7 +33,7 @@ object FoXml {
       .last
   }
 
-  private def getStreamRoot(streamId: String, foXml: Node): Option[Node] = {
+  def getStreamRoot(streamId: String, foXml: Node): Option[Node] = {
     (foXml \ "datastream")
       .theSeq
       .filter(n => n \@ "ID" == streamId)

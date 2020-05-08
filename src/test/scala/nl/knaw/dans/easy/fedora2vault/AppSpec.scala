@@ -127,12 +127,12 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
     val sb = new JavaStringBuilder()
     app.simpleTransform(testDir / "bags" / UUID.randomUUID.toString)("easy-dataset:17")(csvPrinter(sb)) shouldBe Success("OK")
     sb.toString.startsWith("easy-dataset:17\t10.17026/test-Iiib-z9p-4ywa\tuser001\tsimple\t")
-    val bag = (testDir / "bags").children.next()
-    (bag / "metadata" / "depositor-info/depositor-agreement.pdf").contentAsString shouldBe "blablabla"
-    (bag / "metadata" / "license.pdf").contentAsString shouldBe "lalala"
-    (bag / "metadata").list.toSeq.map(_.name).sortBy(identity) shouldBe
+    val metadata = (testDir / "bags").children.next() / "metadata"
+    (metadata / "depositor-info/depositor-agreement.pdf").contentAsString shouldBe "blablabla"
+    (metadata / "license.pdf").contentAsString shouldBe "lalala"
+    metadata.list.toSeq.map(_.name).sortBy(identity) shouldBe
       Seq("amd.xml", "dataset.xml", "depositor-info", "emd.xml", "files.xml", "license.pdf")
-    (bag / "metadata" / "depositor-info").list.toSeq.map(_.name).sortBy(identity) shouldBe
+    (metadata / "depositor-info").list.toSeq.map(_.name).sortBy(identity) shouldBe
       Seq("agreements.xml", "depositor-agreement.pdf", "message-from-depositor.txt")
   }
 
@@ -144,16 +144,32 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
     ))
     expectAUser(app.ldapContext)
     expectedFoXmls(app.fedoraProvider, sampleFoXML / "streaming.xml")
-    expectedSubordinates(app.fedoraProvider)
+    expectedSubordinates(app.fedoraProvider, "easy-file:35")
+    expectedFoXmls(app.fedoraProvider, sampleFoXML / "easy-file-35.xml")
+    expectedManagedStreams(app.fedoraProvider,
+      (testDir / "something.txt").writeText("don't care")
+    )
 
     val sb = new JavaStringBuilder()
     app.simpleTransform(testDir / "bags" / UUID.randomUUID.toString)("easy-dataset:13")(csvPrinter(sb)) shouldBe Success("OK")
     sb.toString.startsWith("easy-dataset:13\tnull\tuser001\tsimple\t")
-    val bag = (testDir / "bags").children.next()
-    (bag / "metadata").list.toSeq.map(_.name)
+    val metadata = (testDir / "bags").children.next() / "metadata"
+    metadata.list.toSeq.map(_.name)
       .sortBy(identity) shouldBe Seq("amd.xml", "dataset.xml", "depositor-info", "emd.xml", "files.xml")
-    (bag / "metadata" / "depositor-info").list.toSeq.map(_.name).sortBy(identity) shouldBe
+    (metadata / "depositor-info").list.toSeq.map(_.name).sortBy(identity) shouldBe
       Seq("agreements.xml")
+    (metadata / "files.xml").contentAsString.split("\n").map(_.trim).mkString("\n") shouldBe
+      """<?xml version='1.0' encoding='UTF-8'?>
+        |<files
+        |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/bag/metadata/files/ https://easy.dans.knaw.nl/schemas/bag/metadata/files/files.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://easy.dans.knaw.nl/schemas/bag/metadata/files/" xmlns:dcterms="http://purl.org/dc/terms/">
+        |<file filepath="data/original/P1130783.JPG">
+        |<dcterms:title>P1130783.JPG</dcterms:title>
+        |<dcterms:format>image/jpeg</dcterms:format>
+        |<dcterms:created>2020-03-17T10:24:17.660Z</dcterms:created>
+        |<accessibleToRights>ANONYMOUS</accessibleToRights>
+        |<visibleToRights>RESTRICTED_REQUEST</visibleToRights>
+        |</file>
+        |</files>""".stripMargin
   }
 
   private def csvPrinter(sb: JavaStringBuilder): CSVPrinter = {

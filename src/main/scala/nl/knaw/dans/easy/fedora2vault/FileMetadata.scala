@@ -18,20 +18,20 @@ package nl.knaw.dans.easy.fedora2vault
 import scala.xml.{ Elem, NodeSeq }
 
 object FileMetadata {
-  def apply(nodes: Seq[NodeSeq]): Elem = {
+  def apply(dataStreams: Seq[Option[NodeSeq]]): Elem = {
     <files xmlns:dcterms="http://purl.org/dc/terms/" xmlns="http://easy.dans.knaw.nl/schemas/bag/metadata/files/"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/bag/metadata/files/ https://easy.dans.knaw.nl/schemas/bag/metadata/files/files.xsd">
       {
-        nodes.map(fileItemMd =>
-          <file filepath={ "data/" + (fileItemMd \ "path").text }>
-            <dcterms:title>{ (fileItemMd \ "name").text }</dcterms:title>
-            <dcterms:format>{ (fileItemMd \ "mimeType").text }</dcterms:format>
-            <dcterms:created>{ (fileItemMd \ "created").text }</dcterms:created>
-            <accessibleToRights>{ (fileItemMd \ "visibleTo").text }</accessibleToRights>
-            <visibleToRights>{ (fileItemMd \ "accessibleTo").text }</visibleToRights>
+        dataStreams.map(_.map(stream =>
+          <file filepath={ "data/" + (stream \\ "path").text }>
+            <dcterms:title>{ (stream \\ "name").text }</dcterms:title>
+            <dcterms:format>{ (stream \\ "mimeType").text }</dcterms:format>
+            <dcterms:created>{ (stream \\ "datastreamVersion").head.attribute("CREATED").map(_.text).getOrElse("") }</dcterms:created>
+            <accessibleToRights>{ (stream \\ "visibleTo").text }</accessibleToRights>
+            <visibleToRights>{ (stream \\ "accessibleTo").text }</visibleToRights>
           </file>
-        )
+        ).getOrElse(""))
       }
     </files>
   }

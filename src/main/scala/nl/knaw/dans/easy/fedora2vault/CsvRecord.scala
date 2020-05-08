@@ -34,6 +34,7 @@ case class CsvRecord(easyDatasetId: DatasetId,
     printer.printRecord(easyDatasetId, doi, depositor, transformationType, uuid, comment)
     comment
   }
+}
 
 object CsvRecord {
   val csvFormat: CSVFormat = CSVFormat.RFC4180

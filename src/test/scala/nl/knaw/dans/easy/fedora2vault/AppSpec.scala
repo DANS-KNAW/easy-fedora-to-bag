@@ -75,8 +75,7 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
     val sb = new JavaStringBuilder()
     new OverriddenApp().simpleTransForms(input, outputDir)(csvPrinter(sb)) shouldBe Success(
       s"""All datasets in $input
-         | saved as bags in $outputDir
-         | """.stripMargin
+         | saved as bags in $outputDir""".stripMargin
     )
     outputDir.list.toSeq should have length 2
     sb.toString should (fullyMatch regex

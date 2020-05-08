@@ -27,7 +27,7 @@ ARGUMENTS
                                Use either this or the dataset-id argument
      -l, --log-file  <arg>     The name of the logfile in csv format. If not provided a file
                                easy-fedora2vault-<timestamp>.csv will be created in the home-dir of the user.
-                               (default = /home/vagrant/easy-fedora2vault-2020-02-02T20-20-02-000Z.csv)
+                               (default = /home/vagrant/easy-fedora2vault-2020-02-02T20:20:02.000Z.csv)
      -o, --output-dir  <arg>   Empty directory in which to stage the created AIP bags. It will be created if it
                                doesn't exist.
      -s, --strict              If provided, the transformation will check whether the datasets adhere to the

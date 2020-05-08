@@ -30,10 +30,10 @@ case class CsvRecord(easyDatasetId: DatasetId,
                      uuid: UUID,
                      comment: String,
                     ) {
-  def print(implicit printer: CSVPrinter): Try[FeedBackMessage] = Try(
+  def print(implicit printer: CSVPrinter): Try[FeedBackMessage] = Try {
     printer.printRecord(easyDatasetId, doi, depositor, transformationType, uuid, comment)
-  ).map(_ => comment)
-}
+    comment
+  }
 
 object CsvRecord {
   val csvFormat: CSVFormat = CSVFormat.RFC4180

@@ -58,8 +58,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
   }.collectFirst { case f @ Failure(_) => f }
     .getOrElse(Success(
       s"""All datasets in $input
-         | saved as bags in $outputDir
-         | """.stripMargin
+         | saved as bags in $outputDir""".stripMargin
     ))
 
   def simpleTransform(bagDir: File)(datasetId: DatasetId)(implicit printer: CSVPrinter): Try[FeedBackMessage] = {

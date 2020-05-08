@@ -30,9 +30,7 @@ package object fedora2vault {
 
   val dateTimeFormatter: DateTimeFormatter = ISODateTimeFormat.dateTime()
 
-  def now: String = DateTime.now(DateTimeZone.UTC)
-    .toString(dateTimeFormatter)
-    .replaceAll("[:.]","-")
+  def now: String = DateTime.now(DateTimeZone.UTC).toString(dateTimeFormatter)
 
   val prologue = """<?xml version='1.0' encoding='UTF-8'?>"""
   val printer = new PrettyPrinter(160, 2)

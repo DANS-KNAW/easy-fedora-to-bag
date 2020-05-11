@@ -27,7 +27,6 @@ object FileMetadata {
           <file filepath={ "data/" + (stream \\ "path").text }>
             <dcterms:title>{ (stream \\ "name").text }</dcterms:title>
             <dcterms:format>{ (stream \\ "mimeType").text }</dcterms:format>
-            <dcterms:created>{ (stream \\ "datastreamVersion").head.attribute("CREATED").map(_.text).getOrElse("") }</dcterms:created>
             <accessibleToRights>{ (stream \\ "accessibleTo").text }</accessibleToRights>
             <visibleToRights>{ (stream \\ "visibleTo").text }</visibleToRights>
           </file>

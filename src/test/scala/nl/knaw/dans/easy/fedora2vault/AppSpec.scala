@@ -165,9 +165,8 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
         |<file filepath="data/original/P1130783.JPG">
         |<dcterms:title>P1130783.JPG</dcterms:title>
         |<dcterms:format>image/jpeg</dcterms:format>
-        |<dcterms:created>2020-03-17T10:24:17.660Z</dcterms:created>
-        |<accessibleToRights>ANONYMOUS</accessibleToRights>
-        |<visibleToRights>RESTRICTED_REQUEST</visibleToRights>
+        |<accessibleToRights>RESTRICTED_REQUEST</accessibleToRights>
+        |<visibleToRights>ANONYMOUS</visibleToRights>
         |</file>
         |</files>""".stripMargin
   }

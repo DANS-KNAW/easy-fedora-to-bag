@@ -28,8 +28,8 @@ object FileMetadata {
             <dcterms:title>{ (stream \\ "name").text }</dcterms:title>
             <dcterms:format>{ (stream \\ "mimeType").text }</dcterms:format>
             <dcterms:created>{ (stream \\ "datastreamVersion").head.attribute("CREATED").map(_.text).getOrElse("") }</dcterms:created>
-            <accessibleToRights>{ (stream \\ "visibleTo").text }</accessibleToRights>
-            <visibleToRights>{ (stream \\ "accessibleTo").text }</visibleToRights>
+            <accessibleToRights>{ (stream \\ "accessibleTo").text }</accessibleToRights>
+            <visibleToRights>{ (stream \\ "visibleTo").text }</visibleToRights>
           </file>
         ).getOrElse(""))
       }

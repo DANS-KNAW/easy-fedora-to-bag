@@ -27,11 +27,11 @@ case class CsvRecord(easyDatasetId: DatasetId,
                      doi: String,
                      depositor: Depositor,
                      transformationType: TransformationType,
-                     uuid: UUID,
+                     bagUUID: UUID,
                      comment: String,
                     ) {
   def print(implicit printer: CSVPrinter): Try[FeedBackMessage] = Try {
-    printer.printRecord(easyDatasetId, doi, depositor, transformationType, uuid, comment)
+    printer.printRecord(easyDatasetId, doi, depositor, transformationType, bagUUID, comment)
     comment
   }
 }

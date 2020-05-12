@@ -15,11 +15,11 @@
  */
 package nl.knaw.dans.easy.fedora2vault
 
-import java.io.{ IOException, InputStream }
+import java.io.{ IOException, InputStream, Writer }
 import java.nio.file.Paths
 import java.util.UUID
 
-import better.files.{ File, StringExtensions }
+import better.files.{ Dispose, File, StringExtensions }
 import com.yourmediashelf.fedora.client.{ FedoraClient, FedoraClientException }
 import javax.naming.ldap.InitialLdapContext
 import nl.knaw.dans.bag.v0.DansV0Bag
@@ -43,26 +43,30 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
   private lazy val ldap = new Ldap(ldapContext)
   private val emdUnmarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
 
-  def simpleTransForms(input: File, outputDir: File)(implicit printer: CSVPrinter): Try[FeedBackMessage] = {
-    input.lineIterator.filterNot(_.startsWith("#")).map { datasetId =>
-      val uuid = UUID.randomUUID
-      simpleTransform(outputDir / uuid.toString)(datasetId)
-        .doIfFailure { case t => logger.error(s"$datasetId -> $uuid failed: $t", t) }
-        .recoverWith {
-          case t: FedoraClientException if t.getStatus != 404 => Failure(t)
-          case t: Exception if t.isInstanceOf[IOException] => Failure(t)
-          case t => CsvRecord(
-            datasetId, doi = "", depositor = "", SIMPLE, uuid, s"FAILED: $t"
-          ).print
-        }
-    }
-  }.collectFirst { case f @ Failure(_) => f }
-    .getOrElse(Success(
-      s"""All datasets in $input
-         | saved as bags in $outputDir""".stripMargin
-    ))
+  def simpleTransForms(datasetIds: Iterator[DatasetId], outputDir: File, writer: Writer): Try[FeedBackMessage] = {
+    new Dispose(CsvRecord.csvFormat.print(writer))
+      .apply(simpleTransForms(datasetIds, outputDir))
+  }
 
-  def simpleTransform(bagDir: File)(datasetId: DatasetId)(implicit printer: CSVPrinter): Try[FeedBackMessage] = {
+  private def simpleTransForms(input: Iterator[DatasetId], outputDir: File)
+                              (printer: CSVPrinter): Try[FeedBackMessage] = input
+    .map(simpleTransform(_, outputDir / UUID.randomUUID.toString, printer))
+    .collectFirst { case f @ Failure(_) => f }
+    .getOrElse(Success("OK"))
+
+  private def simpleTransform(datasetId: DatasetId, bagDir: File, printer: CSVPrinter): Try[FeedBackMessage] = {
+    simpleTransform(datasetId, bagDir)
+      .doIfFailure { case t => logger.error(s"$datasetId -> $datasetId failed: $t", t) }
+      .recoverWith {
+        case t: FedoraClientException if t.getStatus != 404 => Failure(t)
+        case t: Exception if t.isInstanceOf[IOException] => Failure(t)
+        case t => Success(CsvRecord(
+          datasetId, doi = "", depositor = "", SIMPLE, UUID.fromString(bagDir.name), s"FAILED: $t"
+        ))
+      }.doIfSuccess(_.print(printer)).map(_.comment)
+  }
+
+  def simpleTransform(datasetId: DatasetId, bagDir: File): Try[CsvRecord] = {
 
     def managedMetadataStream(foXml: Elem, streamId: String, bag: DansV0Bag, metadataFile: String) = {
       managedStreamLabel(foXml, streamId)
@@ -126,8 +130,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
         .map(compareManifest(bag))
         .getOrElse(Success(())) // TODO check with sha's from fedora
       doi = emd.getEmdIdentifier.getDansManagedDoi
-      msg <- CsvRecord(datasetId, doi, depositor, SIMPLE, UUID.fromString(bagDir.name), "OK").print
-    } yield msg
+    } yield CsvRecord(datasetId, doi, depositor, SIMPLE, UUID.fromString(bagDir.name), "OK")
   }
 
   private def getAudience(id: String) = {
@@ -162,7 +165,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
           .disseminateDatastream(fedoraFileId, "EASY_FILE")
           .map(bag.addPayloadFile(_, path))
           .tried.flatten
-          .map(_ => FoXml.getStreamRoot("EASY_FILE_METADATA",foXml))
+          .map(_ => FoXml.getStreamRoot("EASY_FILE_METADATA", foXml))
       }
   }
 }

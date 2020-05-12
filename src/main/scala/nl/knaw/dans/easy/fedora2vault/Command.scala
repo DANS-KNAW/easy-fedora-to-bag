@@ -15,10 +15,8 @@
  */
 package nl.knaw.dans.easy.fedora2vault
 
-import java.io.FileWriter
-import java.util.UUID
-
-import better.files.{ Dispose, File }
+import better.files.File
+import nl.knaw.dans.easy.fedora2vault.TransformationType.SIMPLE
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
@@ -41,12 +39,16 @@ object Command extends App with DebugEnhancedLogging {
     .doIfFailure { case NonFatal(e) => println(s"FAILED: ${ e.getMessage }") }
 
   private def runSubcommand(app: EasyFedora2vaultApp): Try[FeedBackMessage] = {
-    val outputDir = commandLine.outputDir()
-    val logWriter: FileWriter = commandLine.logFile().newFileWriter(append = true)
-    new Dispose(CsvRecord.csvFormat.print(logWriter)).apply { implicit printer =>
-      commandLine.datasetId
-        .map(app.simpleTransform(outputDir / UUID.randomUUID().toString))
-        .getOrElse(app.simpleTransForms(commandLine.inputFile(), outputDir))
+    commandLine.transformation() match {
+      case SIMPLE => app.simpleTransForms(
+        commandLine
+          .datasetId.map(Iterator(_))
+          .getOrElse(commandLine.inputFile()
+            .lineIterator
+            .filterNot(_.startsWith("#"))
+          ),
+        commandLine.outputDir(),
+        commandLine.logFile().newFileWriter(append = true),
+      )
     }
   }
-}

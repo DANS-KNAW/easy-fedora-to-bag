@@ -52,3 +52,4 @@ object Command extends App with DebugEnhancedLogging {
       )
     }
   }
+}

@@ -18,19 +18,19 @@ package nl.knaw.dans.easy.fedora2vault
 import scala.xml.{ Elem, NodeSeq }
 
 object FileMetadata {
-  def apply(dataStreams: Seq[Option[NodeSeq]]): Elem = {
+  def apply(dataStreams: Seq[NodeSeq]): Elem = {
     <files xmlns:dcterms="http://purl.org/dc/terms/" xmlns="http://easy.dans.knaw.nl/schemas/bag/metadata/files/"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/bag/metadata/files/ https://easy.dans.knaw.nl/schemas/bag/metadata/files/files.xsd">
       {
-        dataStreams.map(_.map(stream =>
+        dataStreams.map(stream =>
           <file filepath={ "data/" + (stream \\ "path").text }>
             <dcterms:title>{ (stream \\ "name").text }</dcterms:title>
             <dcterms:format>{ (stream \\ "mimeType").text }</dcterms:format>
             <accessibleToRights>{ (stream \\ "accessibleTo").text }</accessibleToRights>
             <visibleToRights>{ (stream \\ "visibleTo").text }</visibleToRights>
           </file>
-        ).getOrElse(""))
+        )
       }
     </files>
   }

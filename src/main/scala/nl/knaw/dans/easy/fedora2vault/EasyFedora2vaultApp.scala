@@ -20,7 +20,7 @@ import java.nio.file.Paths
 import java.util.UUID
 
 import better.files.{ Dispose, File, StringExtensions }
-import cats.instances.either._
+import cats.instances.try_._
 import cats.instances.list._
 import cats.syntax.traverse._
 import com.yourmediashelf.fedora.client.{ FedoraClient, FedoraClientException }
@@ -38,7 +38,7 @@ import org.joda.time.DateTime
 
 import scala.collection.JavaConverters._
 import scala.util.{ Failure, Success, Try }
-import scala.xml.{ Elem, Node, NodeSeq }
+import scala.xml.{ Elem, Node }
 
 class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLogging {
   lazy val fedoraProvider: FedoraProvider = new FedoraProvider(new FedoraClient(configuration.fedoraCredentials))
@@ -124,8 +124,8 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       _ <- managedMetadataStream(foXml, "DATASET_LICENSE", bag, "depositor-info/depositor-agreement") // TODO EASY-2697: older versions
         .getOrElse(Success(()))
       fedoraIDs <- fedoraProvider.getSubordinates(datasetId)
-      fileMetadata <- fedoraIDs.filter(_.startsWith("easy-file:")).toList
-        .traverse(addPayloadFileTo(bag)).toTry
+      fileMetadata <- fedoraIDs.filter(_.startsWith("easy-file:"))
+        .toList.traverse(addPayloadFileTo(bag))
       _ <- addXmlMetadata(bag, "files.xml")(FileMetadata(fileMetadata))
       _ <- bag.save()
       _ <- getManifest(foXml)
@@ -157,7 +157,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
     bag.addTagFile(content.serialize.inputStream, Paths.get(path))
   }
 
-  private def addPayloadFileTo(bag: DansV0Bag)(fedoraFileId: String): Either[Throwable, NodeSeq] = {
+  private def addPayloadFileTo(bag: DansV0Bag)(fedoraFileId: String): Try[Node] = {
     fedoraProvider.loadFoXml(fedoraFileId)
       .flatMap { foXml =>
         val metadata = foXml \\ "file-item-md"
@@ -171,5 +171,5 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
             .getOrElse(throw new Exception(s"no EASY_FILE_METADATA for $fedoraFileId"))
           )
       }
-  }.toEither
+  }
 }

@@ -157,10 +157,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
     bag.addTagFile(content.serialize.inputStream, Paths.get(path))
   }
 
-
-  type FailFast[T] = Either[Throwable, T]
-
-  private def addPayloadFileTo(bag: DansV0Bag)(fedoraFileId: String): FailFast[NodeSeq] = {
+  private def addPayloadFileTo(bag: DansV0Bag)(fedoraFileId: String): Either[Throwable, NodeSeq] = {
     fedoraProvider.loadFoXml(fedoraFileId)
       .flatMap { foXml =>
         val metadata = foXml \\ "file-item-md"

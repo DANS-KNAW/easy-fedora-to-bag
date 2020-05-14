@@ -16,7 +16,6 @@
 package nl.knaw.dans.easy.fedora2vault
 
 import java.io.{ FileInputStream, StringWriter }
-import java.lang.{ StringBuilder => JavaStringBuilder }
 import java.util.UUID
 
 import better.files.File
@@ -26,7 +25,6 @@ import javax.naming.directory.{ BasicAttributes, SearchControls, SearchResult }
 import javax.naming.ldap.InitialLdapContext
 import nl.knaw.dans.easy.fedora2vault.TransformationType.SIMPLE
 import nl.knaw.dans.easy.fedora2vault.fixture.{ AudienceSupport, FileSystemSupport, TestSupportFixture }
-import org.apache.commons.csv.CSVPrinter
 import org.scalamock.scalatest.MockFactory
 import resource.managed
 
@@ -154,10 +152,6 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
         |<visibleToRights>ANONYMOUS</visibleToRights>
         |</file>
         |</files>""".stripMargin
-  }
-
-  private def csvPrinter(sb: JavaStringBuilder): CSVPrinter = {
-    CsvRecord.csvFormat.print(sb)
   }
 
   private def expectedSubordinates(fedoraProvider: => FedoraProvider, expectedIds: String*): Unit = {

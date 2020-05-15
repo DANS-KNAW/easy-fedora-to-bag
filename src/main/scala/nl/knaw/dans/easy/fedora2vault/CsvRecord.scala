@@ -41,4 +41,5 @@ object CsvRecord {
     .withHeader("easyDatasetId", "doi", "depositor", "transformationType", "uuid", "comment")
     .withDelimiter(',')
     .withRecordSeparator('\n')
+    .withAutoFlush(true)
 }

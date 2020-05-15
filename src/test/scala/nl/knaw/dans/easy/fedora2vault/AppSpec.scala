@@ -26,12 +26,13 @@ import javax.naming.ldap.InitialLdapContext
 import nl.knaw.dans.easy.fedora2vault.TransformationType.SIMPLE
 import nl.knaw.dans.easy.fedora2vault.fixture.{ AudienceSupport, FileSystemSupport, TestSupportFixture }
 import org.scalamock.scalatest.MockFactory
+import org.scalatest.TryValues
 import resource.managed
 
 import scala.util.{ Failure, Success, Try }
 import scala.xml.XML
 
-class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport with AudienceSupport {
+class AppSpec extends TestSupportFixture with TryValues with MockFactory with FileSystemSupport with AudienceSupport {
   implicit val logFile: File = testDir / "log.txt"
 
   override def beforeEach(): Unit = {

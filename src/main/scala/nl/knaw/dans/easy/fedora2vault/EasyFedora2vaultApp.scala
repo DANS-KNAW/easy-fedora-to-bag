@@ -67,7 +67,9 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
         case t => Success(CsvRecord(
           datasetId, doi = "", depositor = "", SIMPLE, UUID.fromString(bagDir.name), s"FAILED: $t"
         ))
-      }.doIfSuccess(_.print(printer)).map(_.comment)
+      }
+      .doIfSuccess(_.print(printer))
+      .map(_.comment)
   }
 
   def simpleTransform(datasetId: DatasetId, bagDir: File): Try[CsvRecord] = {

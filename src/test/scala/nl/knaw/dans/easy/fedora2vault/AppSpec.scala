@@ -126,9 +126,8 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
       "easy-discipline:6" -> "D35400",
     ))
     expectAUser(app.ldapContext)
-    expectedFoXmls(app.fedoraProvider, sampleFoXML / "streaming.xml")
+    expectedFoXmls(app.fedoraProvider, sampleFoXML / "streaming.xml", sampleFoXML / "easy-file-35.xml")
     expectedSubordinates(app.fedoraProvider, "easy-file:35")
-    expectedFoXmls(app.fedoraProvider, sampleFoXML / "easy-file-35.xml")
     expectedManagedStreams(app.fedoraProvider,
       (testDir / "something.txt").writeText("don't care")
     )
@@ -152,6 +151,32 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
         |<visibleToRights>ANONYMOUS</visibleToRights>
         |</file>
         |</files>""".stripMargin
+  }
+
+  it should "report invalid file metadata" in {
+    val app = new MockedApp()
+    implicit val fedoraProvider: FedoraProvider = app.fedoraProvider
+    expectedAudiences(Map(
+      "easy-discipline:6" -> "D35400",
+    ))
+
+    expectAUser(app.ldapContext)
+    expectedFoXmls(
+      app.fedoraProvider,
+      sampleFoXML / "streaming.xml",
+      (testDir / "easy-file-35.xml").writeText(
+        (sampleFoXML / "easy-file-35.xml").contentAsString.split("\n")
+          .filterNot(_.contains("<visibleTo>")).mkString("\n")
+      ),
+    )
+    expectedSubordinates(app.fedoraProvider, "easy-file:35")
+    expectedManagedStreams(app.fedoraProvider,
+      (testDir / "something.txt").writeText("don't care")
+    )
+
+    app.simpleTransform("easy-dataset:13", testDir / "bags" / UUID.randomUUID.toString) should matchPattern {
+      case Failure(e) if e.getMessage == "No <visibleTo> in EASY_FILE_METADATA for easy-file:35" =>
+    }
   }
 
   private def expectedSubordinates(fedoraProvider: => FedoraProvider, expectedIds: String*): Unit = {

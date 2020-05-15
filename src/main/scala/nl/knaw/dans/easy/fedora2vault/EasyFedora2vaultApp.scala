@@ -20,13 +20,14 @@ import java.nio.file.Paths
 import java.util.UUID
 
 import better.files.{ Dispose, File, StringExtensions }
-import cats.instances.try_._
 import cats.instances.list._
+import cats.instances.try_._
 import cats.syntax.traverse._
 import com.yourmediashelf.fedora.client.{ FedoraClient, FedoraClientException }
 import javax.naming.ldap.InitialLdapContext
 import nl.knaw.dans.bag.v0.DansV0Bag
 import nl.knaw.dans.easy.fedora2vault.Command.FeedBackMessage
+import nl.knaw.dans.easy.fedora2vault.FileItem.assemble
 import nl.knaw.dans.easy.fedora2vault.FoXml.{ getEmd, _ }
 import nl.knaw.dans.easy.fedora2vault.TransformationType.SIMPLE
 import nl.knaw.dans.lib.error._
@@ -124,9 +125,9 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       _ <- managedMetadataStream(foXml, "DATASET_LICENSE", bag, "depositor-info/depositor-agreement") // TODO EASY-2697: older versions
         .getOrElse(Success(()))
       fedoraIDs <- fedoraProvider.getSubordinates(datasetId)
-      fileMetadata <- fedoraIDs.filter(_.startsWith("easy-file:"))
+      fileItems <- fedoraIDs.filter(_.startsWith("easy-file:"))
         .toList.traverse(addPayloadFileTo(bag))
-      _ <- addXmlMetadata(bag, "files.xml")(FileMetadata(fileMetadata))
+      _ <- addXmlMetadata(bag, "files.xml")(assemble(fileItems))
       _ <- bag.save()
       _ <- getManifest(foXml)
         .map(compareManifest(bag))
@@ -157,7 +158,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
     bag.addTagFile(content.serialize.inputStream, Paths.get(path))
   }
 
-  private def addPayloadFileTo(bag: DansV0Bag)(fedoraFileId: String): Try[Node] = {
+  private def addPayloadFileTo(bag: DansV0Bag)(fedoraFileId: String): Try[FileItem] = {
     fedoraProvider.loadFoXml(fedoraFileId)
       .flatMap { foXml =>
         val metadata = foXml \\ "file-item-md"
@@ -167,9 +168,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
           .disseminateDatastream(fedoraFileId, "EASY_FILE")
           .map(bag.addPayloadFile(_, path))
           .tried.flatten
-          .map(_ => FoXml.getStreamRoot("EASY_FILE_METADATA", foXml)
-            .getOrElse(throw new Exception(s"no EASY_FILE_METADATA for $fedoraFileId"))
-          )
+          .flatMap(_ => FileItem(fedoraFileId, foXml))
       }
   }
 }

@@ -55,8 +55,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
   private def simpleTransForms(input: Iterator[DatasetId], outputDir: File)
                               (printer: CSVPrinter): Try[FeedBackMessage] = input
     .map(simpleTransform(_, outputDir / UUID.randomUUID.toString, printer))
-    .collectFirst { case f @ Failure(_) => f }
-    .getOrElse(Success("OK"))
+    .failFastOr(Success("OK"))
 
   private def simpleTransform(datasetId: DatasetId, bagDir: File, printer: CSVPrinter): Try[FeedBackMessage] = {
     simpleTransform(datasetId, bagDir)
@@ -83,14 +82,6 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
             .map(addMetadataStream(bag, bagFile))
             .tried.flatten
         }
-    }
-
-    def compareManifest(bag: DansV0Bag)(streamId: String): Try[Any] = {
-      fedoraProvider.disseminateDatastream(datasetId, streamId)
-        .map { inputStream: InputStream =>
-          val manifests = bag.payloadManifests
-          Success(()) // TODO EASY-2678
-        }.tried.flatten
     }
 
     for {
@@ -130,10 +121,9 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       fileItems <- fedoraIDs.filter(_.startsWith("easy-file:"))
         .toList.traverse(addPayloadFileTo(bag))
       _ <- addXmlMetadata(bag, "files.xml")(filesXml(fileItems))
+      _ <- fileItems.map(_.validateChecksum(bag)) // TODO refactor together with crating FileItem
+        .failFastOr(Success(()))
       _ <- bag.save()
-      _ <- getManifest(foXml)
-        .map(compareManifest(bag))
-        .getOrElse(Success(())) // TODO check with sha's from fedora
       doi = emd.getEmdIdentifier.getDansManagedDoi
     } yield CsvRecord(datasetId, doi, depositor, SIMPLE, UUID.fromString(bagDir.name), "OK")
   }
@@ -157,7 +147,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
   }
 
   private def addXmlPayload(bag: DansV0Bag, path: String)(content: Node): Try[Any] = {
-    bag.addTagFile(content.serialize.inputStream, Paths.get(path))
+    bag.addPayloadFile(content.serialize.inputStream, Paths.get(path))
   }
 
   private def addPayloadFileTo(bag: DansV0Bag)(fedoraFileId: String): Try[FileItem] = {

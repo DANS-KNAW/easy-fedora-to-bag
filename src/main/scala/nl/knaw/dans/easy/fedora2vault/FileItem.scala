@@ -15,7 +15,11 @@
  */
 package nl.knaw.dans.easy.fedora2vault
 
-import scala.util.Try
+import nl.knaw.dans.bag.ChecksumAlgorithm
+import nl.knaw.dans.bag.v0.DansV0Bag
+import nl.knaw.dans.easy.fedora2vault.FileItem.algorithms
+
+import scala.util.{ Failure, Success, Try }
 import scala.xml.{ Elem, Node }
 
 case class FileItem(fedoraFileId: String,
@@ -23,10 +27,28 @@ case class FileItem(fedoraFileId: String,
                     digestType: String,
                     xml: Node
                    ) {
-  val path: String = (xml \ "@filepath").text
+
+  val file: String = (xml \ "@filepath").text
+
+  def validateChecksum(bag: DansV0Bag): Try[Unit] = {
+    val maybeChecksum = for {
+      algorithm <- algorithms.get(digestType)
+      manifest <- bag.payloadManifests.get(algorithm)
+      checksum <- manifest.get(bag.baseDir / file)
+    } yield checksum
+    maybeChecksum.map(compareSha)
+      .getOrElse(Failure(new Exception(s"Could not find $digestType for $fedoraFileId $file in manifest")))
+  }
+
+  private def compareSha(sha: String) = {
+    if (sha == digestValue) Success(())
+    else Failure(new Exception(s"checksum error fedora[$digestValue] bag[$sha] $fedoraFileId $file"))
+  }
 }
 
 object FileItem {
+  private val algorithms = Map("SHA-1" -> ChecksumAlgorithm.SHA1)
+
   def filesXml(items: Seq[FileItem]): Elem =
     <files xmlns:dcterms="http://purl.org/dc/terms/"
            xmlns="http://easy.dans.knaw.nl/schemas/bag/metadata/files/"

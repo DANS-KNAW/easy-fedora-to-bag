@@ -104,7 +104,6 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
     expectedManagedStreams(app.fedoraProvider,
       (testDir / "additional-license").write("lalala"),
       (testDir / "dataset-license").write("blablabla"),
-      (testDir / "manifest-sha1.txt").write("rabarbera"),
     )
 
     app.simpleTransform("easy-dataset:17", testDir / "bags" / UUID.randomUUID.toString) should matchPattern {
@@ -129,11 +128,13 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
     expectedFoXmls(app.fedoraProvider, sampleFoXML / "streaming.xml", sampleFoXML / "easy-file-35.xml")
     expectedSubordinates(app.fedoraProvider, "easy-file:35")
     expectedManagedStreams(app.fedoraProvider,
-      (testDir / "something.txt").writeText("don't care")
+      (testDir / "something.txt").writeText("mocked content of easy-file:35")
     )
 
     app.simpleTransform("easy-dataset:13", testDir / "bags" / UUID.randomUUID.toString) should matchPattern {
-      case Success(CsvRecord("easy-dataset:13", null, "user001", SIMPLE, _, "OK")) =>
+      case Failure(e: Exception) if e.getMessage ==
+        // failure because the mocked data stream doesn't match the original fedora stream
+        "checksum error fedora[b5fbe5be379583d600f86610cf437c424567237e] bag[dd466d19481a28ba8577e7b3f029e496027a3309] easy-file:35 data/original/P1130783.JPG" =>
     }
     val metadata = (testDir / "bags").children.next() / "metadata"
     metadata.list.toSeq.map(_.name)

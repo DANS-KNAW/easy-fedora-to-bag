@@ -15,39 +15,12 @@
  */
 package nl.knaw.dans.easy.fedora2vault
 
-import nl.knaw.dans.bag.ChecksumAlgorithm
-import nl.knaw.dans.bag.v0.DansV0Bag
-import nl.knaw.dans.easy.fedora2vault.FileItem.algorithms
-
-import scala.util.{ Failure, Success, Try }
+import scala.util.Try
 import scala.xml.{ Elem, Node }
 
-case class FileItem(fedoraFileId: String,
-                    digestValue: String,
-                    digestType: String,
-                    xml: Node
-                   ) {
-
-  val file: String = (xml \ "@filepath").text
-
-  def validateChecksum(bag: DansV0Bag): Try[Unit] = {
-    val maybeChecksum = for {
-      algorithm <- algorithms.get(digestType)
-      manifest <- bag.payloadManifests.get(algorithm)
-      checksum <- manifest.get(bag.baseDir / file)
-    } yield checksum
-    maybeChecksum.map(compareSha)
-      .getOrElse(Failure(new Exception(s"Could not find $digestType for $fedoraFileId $file in manifest")))
-  }
-
-  private def compareSha(sha: String) = {
-    if (sha == digestValue) Success(())
-    else Failure(new Exception(s"checksum error fedora[$digestValue] bag[$sha] $fedoraFileId $file"))
-  }
-}
+case class FileItem(xml: Node)
 
 object FileItem {
-  private val algorithms = Map("SHA-1" -> ChecksumAlgorithm.SHA1)
 
   def filesXml(items: Seq[FileItem]): Elem =
     <files xmlns:dcterms="http://purl.org/dc/terms/"
@@ -72,13 +45,7 @@ object FileItem {
       strings.headOption.getOrElse("")
     }
 
-    // note that the contentDigest is found in different streams
-    // such as streamId: EASY_FILE and EASY_FILE_METADATA
-    val digest = foXml \ "datastream" \ "datastreamVersion" \ "contentDigest"
     new FileItem(
-      fedoraFileId,
-      (digest \ "@DIGEST").text,
-      (digest \ "@TYPE").text,
       <file filepath={ "data/" + get("path") }>
         <dcterms:title>{ get("name") }</dcterms:title>
         <dcterms:format>{ get("mimeType") }</dcterms:format>

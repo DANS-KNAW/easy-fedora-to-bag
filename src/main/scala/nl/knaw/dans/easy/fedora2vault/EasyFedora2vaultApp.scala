@@ -25,6 +25,7 @@ import cats.instances.try_._
 import cats.syntax.traverse._
 import com.yourmediashelf.fedora.client.{ FedoraClient, FedoraClientException }
 import javax.naming.ldap.InitialLdapContext
+import nl.knaw.dans.bag.ChecksumAlgorithm
 import nl.knaw.dans.bag.v0.DansV0Bag
 import nl.knaw.dans.easy.fedora2vault.Command.FeedBackMessage
 import nl.knaw.dans.easy.fedora2vault.FileItem.filesXml
@@ -39,7 +40,7 @@ import org.joda.time.DateTime
 
 import scala.collection.JavaConverters._
 import scala.util.{ Failure, Success, Try }
-import scala.xml.{ Elem, Node }
+import scala.xml.{ Elem, Node, NodeSeq }
 
 class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLogging {
   lazy val fedoraProvider: FedoraProvider = new FedoraProvider(new FedoraClient(configuration.fedoraCredentials))
@@ -121,8 +122,6 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       fileItems <- fedoraIDs.filter(_.startsWith("easy-file:"))
         .toList.traverse(addPayloadFileTo(bag))
       _ <- addXmlMetadata(bag, "files.xml")(filesXml(fileItems))
-      _ <- fileItems.map(_.validateChecksum(bag)) // TODO refactor together with crating FileItem
-        .failFastOr(Success(()))
       _ <- bag.save()
       doi = emd.getEmdIdentifier.getDansManagedDoi
     } yield CsvRecord(datasetId, doi, depositor, SIMPLE, UUID.fromString(bagDir.name), "OK")
@@ -151,16 +150,32 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
   }
 
   private def addPayloadFileTo(bag: DansV0Bag)(fedoraFileId: String): Try[FileItem] = {
-    fedoraProvider.loadFoXml(fedoraFileId)
-      .flatMap { foXml =>
-        val metadata = foXml \\ "file-item-md"
-        val path = Paths.get((metadata \\ "path").text)
-        logger.info(s"Adding $fedoraFileId to $path")
-        fedoraProvider
-          .disseminateDatastream(fedoraFileId, "EASY_FILE")
-          .map(bag.addPayloadFile(_, path))
-          .tried.flatten
-          .flatMap(_ => FileItem(fedoraFileId, foXml))
-      }
+    for {
+      foXml <- fedoraProvider.loadFoXml(fedoraFileId)
+      path = Paths.get((foXml \\ "file-item-md" \\ "path").text)
+      _ = logger.info(s"Adding $fedoraFileId to $path")
+      _ <- fedoraProvider
+        .disseminateDatastream(fedoraFileId, "EASY_FILE")
+        .map(bag.addPayloadFile(_, path))
+        .tried.flatten
+      digest = foXml \ "datastream" \ "datastreamVersion" \ "contentDigest"
+      _ <- validate(digest, bag.baseDir / s"data/$path", bag, fedoraFileId)
+      fileItem <- FileItem(fedoraFileId, foXml)
+    } yield fileItem
+  }
+
+  private def validate(digest: NodeSeq, file: File, bag: DansV0Bag, fedoraFileId: String) = Try {
+    // note that the contentDigest is found in different streams
+    // such as streamId: EASY_FILE and EASY_FILE_METADATA
+    val digestType = (digest \ "@TYPE").text
+    val digestValue = (digest \ "@DIGEST").text
+    val checksum = (for {
+      algorithm <- Map("SHA-1" -> ChecksumAlgorithm.SHA1).get(digestType) // extend map when fedora appears to have more
+      manifest <- bag.payloadManifests.get(algorithm)
+      checksum <- manifest.get(file)
+    } yield checksum)
+      .getOrElse(throw new Exception(s"Could not find $digestType for $fedoraFileId $file in manifest"))
+    if (checksum != digestValue)
+      throw new Exception(s"checksum error fedora[$digestValue] bag[$checksum] $fedoraFileId $file")
   }
 }

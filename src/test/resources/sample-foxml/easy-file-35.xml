@@ -12,7 +12,7 @@
     </foxml:objectProperties>
     <foxml:datastream ID="EASY_FILE" STATE="A" CONTROL_GROUP="M" VERSIONABLE="false">
         <foxml:datastreamVersion ID="EASY_FILE.0" LABEL="" CREATED="2020-03-17T10:24:17.542Z" MIMETYPE="image/jpeg" SIZE="7373312">
-            <foxml:contentDigest TYPE="SHA-1" DIGEST="dd466d19481a28ba8577e7b3f029e496027a3309"/>
+            <foxml:contentDigest TYPE="SHA-1" DIGEST="573f7d62276c4912e47323a53bc83e0ceadb073b"/>
             <foxml:contentLocation TYPE="INTERNAL_ID" REF="easy-file:35+EASY_FILE+EASY_FILE.0"/>
         </foxml:datastreamVersion>
     </foxml:datastream>

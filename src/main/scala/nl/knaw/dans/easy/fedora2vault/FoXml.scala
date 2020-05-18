@@ -22,9 +22,8 @@ object FoXml {
 
   private def getStream(streamId: String, rootTag: String, foXml: Node): Try[Node] = Try {
     val node = getStreamRoot(streamId, foXml)
-      .getOrElse(throw new Exception(s"Stream with ID $streamId not found"))
-    if (!controlGroup(node).contains("X"))
-      throw new Exception(s"Stream with ID $streamId does not have control group X")
+      .filter(hasControlGroup("X"))
+      .getOrElse(throw new Exception(s"Stream with ID=$streamId and CONTROL_GROUP=X not found"))
 
     (node \\ "xmlContent")
       .last
@@ -66,24 +65,22 @@ object FoXml {
 
   def managedStreamLabel(foXml: Node, id: String): Option[String] = {
     getStreamRoot(id, foXml)
-      .withFilter(controlGroup(_).contains("M"))
+      .withFilter(hasControlGroup("M"))
       .flatMap(getLabel)
   }
 
-  private def controlGroup(streamRoot: Node): Option[String] = {
-    streamRoot.attribute("CONTROL_GROUP").map(_.text)
+  private def hasControlGroup(controlGroup: String)(streamRoot: Node): Boolean = {
+    streamRoot.attribute("CONTROL_GROUP").map(_.text).contains(controlGroup)
   }
 
   def getLabel(streamRoot: Node): Option[String] = {
-    (streamRoot \ "datastreamVersion")
-      .flatMap(_.attribute("LABEL"))
-      .flatten.headOption.map(_.text)
+    (streamRoot \ "datastreamVersion" \ "@LABEL").headOption.map(_.text)
   }
 
   def getOwner(foXml: Node): Try[Depositor] = Try {
     (foXml \ "objectProperties" \ "property")
-      .filter(_.attribute("NAME").exists(_.map(_.text).exists(_.endsWith("#ownerId"))))
-      .flatMap(_.attribute("VALUE"))
+      .filter(prop => (prop \ "@NAME").text.endsWith("#ownerId"))
+      .flatMap(_ \ "@VALUE")
       .flatten.headOption.map(_.text)
       .getOrElse(throw new Exception("""FoXml has no <foxml:property NAME="info:fedora/fedora-system:def/model#ownerId" VALUE="???"/>"""))
   }

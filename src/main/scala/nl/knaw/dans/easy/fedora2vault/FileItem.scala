@@ -18,24 +18,28 @@ package nl.knaw.dans.easy.fedora2vault
 import scala.util.Try
 import scala.xml.{ Elem, Node }
 
-case class FileItem(fedoraFileId: String, sha: String, xml: Node) {
+case class FileItem(fedoraFileId: String,
+                    digestValue: String,
+                    digestType: String,
+                    xml: Node
+                   ) {
   val path: String = (xml \ "@filepath").text
 }
 
 object FileItem {
-  def assemble(items: Seq[FileItem]): Elem =
+  def filesXml(items: Seq[FileItem]): Elem =
     <files xmlns:dcterms="http://purl.org/dc/terms/"
            xmlns="http://easy.dans.knaw.nl/schemas/bag/metadata/files/"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/bag/metadata/files/ https://easy.dans.knaw.nl/schemas/bag/metadata/files/files.xsd"
     >
-      { items.map(_.xml) }
+    { items.map(_.xml) }
     </files>
 
   def apply(fedoraFileId: String, foXml: Node): Try[FileItem] = Try {
     val streamId = "EASY_FILE_METADATA"
     val fileMetadata = FoXml.getStreamRoot(streamId, foXml)
-      .getOrElse(throw new Exception(s"no $streamId for $fedoraFileId"))
+      .getOrElse(throw new Exception(s"No $streamId for $fedoraFileId"))
 
     def get(tag: DatasetId) = {
       val strings = (fileMetadata \\ tag).map(_.text)
@@ -48,9 +52,11 @@ object FileItem {
 
     // note that the contentDigest is found in different streams
     // such as streamId: EASY_FILE and EASY_FILE_METADATA
+    val digest = foXml \ "datastream" \ "datastreamVersion" \ "contentDigest"
     new FileItem(
       fedoraFileId,
-      (foXml \ "datastream" \ "datastreamVersion" \ "contentDigest" \ "@DIGEST").text,
+      (digest \ "@DIGEST").text,
+      (digest \ "@TYPE").text,
       <file filepath={ "data/" + get("path") }>
         <dcterms:title>{ get("name") }</dcterms:title>
         <dcterms:format>{ get("mimeType") }</dcterms:format>

@@ -27,7 +27,7 @@ import com.yourmediashelf.fedora.client.{ FedoraClient, FedoraClientException }
 import javax.naming.ldap.InitialLdapContext
 import nl.knaw.dans.bag.v0.DansV0Bag
 import nl.knaw.dans.easy.fedora2vault.Command.FeedBackMessage
-import nl.knaw.dans.easy.fedora2vault.FileItem.assemble
+import nl.knaw.dans.easy.fedora2vault.FileItem.filesXml
 import nl.knaw.dans.easy.fedora2vault.FoXml.{ getEmd, _ }
 import nl.knaw.dans.easy.fedora2vault.TransformationType.SIMPLE
 import nl.knaw.dans.lib.error._
@@ -129,7 +129,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       fedoraIDs <- fedoraProvider.getSubordinates(datasetId)
       fileItems <- fedoraIDs.filter(_.startsWith("easy-file:"))
         .toList.traverse(addPayloadFileTo(bag))
-      _ <- addXmlMetadata(bag, "files.xml")(assemble(fileItems))
+      _ <- addXmlMetadata(bag, "files.xml")(filesXml(fileItems))
       _ <- bag.save()
       _ <- getManifest(foXml)
         .map(compareManifest(bag))

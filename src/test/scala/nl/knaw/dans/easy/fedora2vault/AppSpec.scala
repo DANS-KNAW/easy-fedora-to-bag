@@ -106,9 +106,10 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
       (testDir / "dataset-license").write("blablabla"),
     )
 
-    app.simpleTransform("easy-dataset:17", testDir / "bags" / UUID.randomUUID.toString) should matchPattern {
-      case Success(CsvRecord("easy-dataset:17", "10.17026/test-Iiib-z9p-4ywa", "user001", SIMPLE, _, "OK")) =>
-    }
+    val uuid = UUID.randomUUID
+    app.simpleTransform("easy-dataset:17", testDir / "bags" / uuid.toString) shouldBe
+      Success(CsvRecord("easy-dataset:17", "10.17026/test-Iiib-z9p-4ywa", "user001", SIMPLE, uuid, "OK"))
+
     val metadata = (testDir / "bags").children.next() / "metadata"
     (metadata / "depositor-info/depositor-agreement.pdf").contentAsString shouldBe "blablabla"
     (metadata / "license.pdf").contentAsString shouldBe "lalala"
@@ -131,11 +132,10 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
       (testDir / "something.txt").writeText("mocked content of easy-file:35")
     )
 
-    app.simpleTransform("easy-dataset:13", testDir / "bags" / UUID.randomUUID.toString) should matchPattern {
-      case Failure(e: Exception) if e.getMessage ==
-        // failure because the mocked data stream doesn't match the original fedora stream
-        "checksum error fedora[b5fbe5be379583d600f86610cf437c424567237e] bag[dd466d19481a28ba8577e7b3f029e496027a3309] easy-file:35 data/original/P1130783.JPG" =>
-    }
+    val uuid = UUID.randomUUID
+    app.simpleTransform("easy-dataset:13", testDir / "bags" / uuid.toString) shouldBe
+      Success(CsvRecord("easy-dataset:13", null, "user001", SIMPLE, uuid, "OK"))
+
     val metadata = (testDir / "bags").children.next() / "metadata"
     metadata.list.toSeq.map(_.name)
       .sortBy(identity) shouldBe Seq("amd.xml", "dataset.xml", "depositor-info", "emd.xml", "files.xml")

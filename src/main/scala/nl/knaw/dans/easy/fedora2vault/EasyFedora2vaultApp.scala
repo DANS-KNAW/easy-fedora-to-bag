@@ -40,7 +40,7 @@ import org.joda.time.DateTime
 
 import scala.collection.JavaConverters._
 import scala.util.{ Failure, Success, Try }
-import scala.xml.{ Elem, Node, NodeSeq }
+import scala.xml.{ Elem, Node, PrettyPrinter }
 
 class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLogging {
   lazy val fedoraProvider: FedoraProvider = new FedoraProvider(new FedoraClient(configuration.fedoraCredentials))
@@ -149,32 +149,42 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
     bag.addPayloadFile(content.serialize.inputStream, Paths.get(path))
   }
 
+  // prints a one liner unlike the default printer
+  private val logPrinter = new PrettyPrinter(-1, 0)
+
   private def addPayloadFileTo(bag: DansV0Bag)(fedoraFileId: String): Try[FileItem] = {
+    val streamId = "EASY_FILE"
     for {
       foXml <- fedoraProvider.loadFoXml(fedoraFileId)
       path = Paths.get((foXml \\ "file-item-md" \\ "path").text)
       _ = logger.info(s"Adding $fedoraFileId to $path")
       _ <- fedoraProvider
-        .disseminateDatastream(fedoraFileId, "EASY_FILE")
+        .disseminateDatastream(fedoraFileId, streamId)
         .map(bag.addPayloadFile(_, path))
         .tried.flatten
-      digest = foXml \ "datastream" \ "datastreamVersion" \ "contentDigest"
-      _ <- validate(digest, bag.baseDir / s"data/$path", bag, fedoraFileId)
+      fileStream = getStreamRoot(streamId, foXml)
+      maybeDigest = fileStream.flatMap(n => (n \\ "contentDigest").theSeq.headOption)
+      _ <- maybeDigest.map(validate(bag.baseDir / s"data/$path", bag, fedoraFileId))
+        .getOrElse(Success(logger.warn(s"No digest found for $fedoraFileId ${ fileStream.map(logPrinter.format(_)).getOrElse("") }")))
       fileItem <- FileItem(fedoraFileId, foXml)
     } yield fileItem
   }
 
-  private def validate(digest: NodeSeq, file: File, bag: DansV0Bag, fedoraFileId: String) = Try {
-    // note that the contentDigest is found in different streams
-    // such as streamId: EASY_FILE and EASY_FILE_METADATA
-    val digestType = (digest \ "@TYPE").text
-    val digestValue = (digest \ "@DIGEST").text
+  private def validate(file: File, bag: DansV0Bag, fedoraFileId: String)(maybeDigest: Node) = Try {
+    val algorithms = Map(
+      "SHA-1" -> ChecksumAlgorithm.SHA1,
+      "MD-5" -> ChecksumAlgorithm.MD5,
+      "SHA-256" -> ChecksumAlgorithm.SHA256,
+      "SHA-256" -> ChecksumAlgorithm.SHA512,
+    )
+    val digestType = (maybeDigest \\ "@TYPE").text
+    val digestValue = (maybeDigest \\ "@DIGEST").text
     val checksum = (for {
-      algorithm <- Map("SHA-1" -> ChecksumAlgorithm.SHA1).get(digestType) // extend map when fedora appears to have more
+      algorithm <- algorithms.get(digestType)
       manifest <- bag.payloadManifests.get(algorithm)
       checksum <- manifest.get(file)
     } yield checksum)
-      .getOrElse(throw new Exception(s"Could not find $digestType for $fedoraFileId $file in manifest"))
+      .getOrElse(throw new Exception(s"Could not find digest [$digestType/$digestValue] for $fedoraFileId $file in manifest"))
     if (checksum != digestValue)
       throw new Exception(s"checksum error fedora[$digestValue] bag[$checksum] $fedoraFileId $file")
   }

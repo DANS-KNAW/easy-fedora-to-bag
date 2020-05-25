@@ -74,6 +74,7 @@ object DDM extends DebugEnhancedLogging {
        { emd.getEmdRelation.getRelationMap.asScala.map { case (key, values) => values.asScala.map(toRelationXml(key, _)) } }
        { emd.getEmdContributor.getDcContributor.asScala.map(bs => <dc:contributor>{ bs.getValue }</dc:contributor>) }
        { emd.getEmdContributor.getEasContributor.asScala.map(author => <dcx-dai:contributorDetails>{ toXml(author)} </dcx-dai:contributorDetails>) }
+       { emd.getEmdRights.getTermsRightsHolder.asScala.map(bs => <dct:rightsHolder>{ bs.toString }</dct:rightsHolder>) }
        { emd.getEmdContributor.getEasContributor.asScala.filter(isRightsHolder).map(author => <dct:rightsHolder>{ author.toString.replace(", RightsHolder","") }</dct:rightsHolder>) }
        { emd.getEmdPublisher.getDcPublisher.asScala.map(bs => <dct:publisher xml:lang={ lang(bs) }>{ bs.getValue }</dct:publisher>) }
        { emd.getEmdSource.getDcSource.asScala.map(bs => <dc:source xml:lang={ lang(bs) }>{ bs.getValue }</dc:source>) }

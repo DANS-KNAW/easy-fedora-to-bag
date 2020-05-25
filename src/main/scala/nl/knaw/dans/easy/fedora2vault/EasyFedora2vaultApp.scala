@@ -58,7 +58,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
     .map(simpleTransform(_, outputDir / UUID.randomUUID.toString, printer))
     .failFastOr(Success("OK"))
 
-  private def simpleTransform(datasetId: DatasetId, bagDir: File, printer: CSVPrinter): Try[FeedBackMessage] = {
+  private def simpleTransform(datasetId: DatasetId, bagDir: File, printer: CSVPrinter): Try[Any] = {
     simpleTransform(datasetId, bagDir)
       .doIfFailure { case t => logger.error(s"$datasetId -> $datasetId failed: $t", t) }
       .recoverWith {
@@ -69,7 +69,6 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
         ))
       }
       .doIfSuccess(_.print(printer))
-      .map(_.comment)
   }
 
   def simpleTransform(datasetId: DatasetId, bagDir: File): Try[CsvRecord] = {

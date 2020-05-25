@@ -161,6 +161,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
         .disseminateDatastream(fedoraFileId, streamId)
         .map(bag.addPayloadFile(_, path))
         .tried.flatten
+      _ <- bag.save()
       fileStream = getStreamRoot(streamId, foXml)
       maybeDigest = fileStream.flatMap(n => (n \\ "contentDigest").theSeq.headOption)
       _ <- maybeDigest.map(validate(bag.baseDir / s"data/$path", bag, fedoraFileId))

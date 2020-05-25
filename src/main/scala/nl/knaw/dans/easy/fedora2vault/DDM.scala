@@ -104,14 +104,14 @@ object DDM extends DebugEnhancedLogging {
   }
 
   private def langType(bs: BasicString): String = bs.getSchemeId match {
-    case "fra" | "fra/fre" | "deu" | "deu/ger" | "nld" | "nld/dut" | "eng" => "dct:ISO639-3"
+    case "fra" | "fra/fre" | "deu" | "deu/ger" | "nld" | "nld/dut" | "dut/nld" | "eng" => "dct:ISO639-3"
     case _ => null
   }
 
   private def langValue(bs: BasicString): String = bs.getValue match {
     case "fra/fre" => "fra"
     case "deu/ger" => "deu"
-    case "nld/dut" => "nld"
+    case "nld/dut" | "dut/nld" => "nld"
     case s => s
   }
 

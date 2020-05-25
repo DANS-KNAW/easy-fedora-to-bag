@@ -45,6 +45,8 @@ import scala.xml.{ Elem, Node, PrettyPrinter }
 class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLogging {
   lazy val fedoraProvider: FedoraProvider = new FedoraProvider(new FedoraClient(configuration.fedoraCredentials))
   lazy val ldapContext: InitialLdapContext = new InitialLdapContext(configuration.ldapEnv, null)
+  lazy val bagIndex: BagIndex = BagIndex(???)
+  private lazy val simpleChecker: SimpleChecker = SimpleChecker(bagIndex)
   private lazy val ldap = new Ldap(ldapContext)
   private val emdUnmarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
 
@@ -89,19 +91,21 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       depositor <- getOwner(foXml)
       msg = s"$bagDir from $datasetId with owner $depositor"
       _ = logger.info("Created " + msg)
+      emdXml <- getEmd(foXml)
+      emd <- Try(emdUnmarshaller.unmarshal(emdXml.serialize))
+      amd <- getAmd(foXml)
+      audiences <- emd.getEmdAudience.getDisciplines.asScala
+        .map(id => getAudience(id.getValue)).collectResults
+      ddm <- DDM(emd, audiences)
+      fedoraIDs <- fedoraProvider.getSubordinates(datasetId)
+      _ <- simpleChecker.isSimple(emd, ddm, amd, startWith("easy-jumpoff:", in = fedoraIDs))
       bag <- DansV0Bag.empty(bagDir)
         .map(_.withEasyUserAccount(depositor).withCreated(DateTime.now()))
-      emdXml <- getEmd(foXml)
       _ <- addXmlMetadata(bag, "emd.xml")(emdXml)
-      amd <- getAmd(foXml)
       _ <- addXmlMetadata(bag, "amd.xml")(amd)
       _ <- getDdm(foXml)
         .map(addXmlPayload(bag, "original-ddm.xml"))
         .getOrElse(Success(()))
-      emd <- Try(emdUnmarshaller.unmarshal(emdXml.serialize))
-      audiences <- emd.getEmdAudience.getDisciplines.asScala
-        .map(id => getAudience(id.getValue)).collectResults
-      ddm <- DDM(emd, audiences)
       _ <- addXmlMetadata(bag, "dataset.xml")(ddm)
       _ <- getMessageFromDepositor(foXml)
         .map(addXmlMetadata(bag, "depositor-info/message-from-depositor.txt"))
@@ -117,13 +121,16 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
         .getOrElse(Success(()))
       _ <- managedMetadataStream(foXml, "DATASET_LICENSE", bag, "depositor-info/depositor-agreement") // TODO EASY-2697: older versions
         .getOrElse(Success(()))
-      fedoraIDs <- fedoraProvider.getSubordinates(datasetId)
-      fileItems <- fedoraIDs.filter(_.startsWith("easy-file:"))
+      fileItems <- startWith("easy-file:", in = fedoraIDs)
         .toList.traverse(addPayloadFileTo(bag))
       _ <- addXmlMetadata(bag, "files.xml")(filesXml(fileItems))
       _ <- bag.save()
       doi = emd.getEmdIdentifier.getDansManagedDoi
     } yield CsvRecord(datasetId, doi, depositor, SIMPLE, UUID.fromString(bagDir.name), "OK")
+  }
+
+  private def startWith(searchValue: String, in: Seq[String]): Seq[String] = {
+    in.filter(_.startsWith(searchValue))
   }
 
   private def getAudience(id: String) = {

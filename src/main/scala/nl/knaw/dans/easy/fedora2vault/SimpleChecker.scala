@@ -31,7 +31,6 @@ case class SimpleChecker(bagIndex: BagIndex) {
 
     def emdAmdChecks = Try {
       if (doi == null) throw NotSimple("no DOI")
-      if ((amd \ "datasetState").text != "PUBLISHED") throw NotSimple("not published")
       if (jumpOff.nonEmpty) throw NotSimple("has " + jumpOff.mkString(", "))
       if (emd.getEmdTitle.getPreferredTitle.toLowerCase.contains("thematische collectie"))
         throw NotSimple("is a thematische collectie")
@@ -39,19 +38,20 @@ case class SimpleChecker(bagIndex: BagIndex) {
         case OPEN_ACCESS | REQUEST_PERMISSION =>
         case _ => throw NotSimple("AccessCategory is neither OPEN_ACCESS nor REQUEST_PERMISSION")
       }
+      if ((amd \ "datasetState").text != "PUBLISHED") throw NotSimple("not published")
     }
 
     def ddmRelation(qualifier: String): Seq[Node] = (ddm \ qualifier).theSeq
 
     def bagFoundFailure(bagInfo: String) = Failure(
-      NotSimple(s"dataset with DOI[$doi] found in vault - $bagInfo")
+      NotSimple(s"Dataset found in vault. DOI[$doi] ${ bagIndex.bagIndexUri } returned: $bagInfo")
     )
 
     for {
-      _ <- emdAmdChecks
       _ <- (ddmRelation("isVersionOf") ++ ddmRelation("replaces"))
         .map(internalRelationCheck)
         .failFastOr(Success(()))
+      _ <- emdAmdChecks
       maybeBagInfo <- bagIndex.bagByDoi(doi)
       _ <- maybeBagInfo.map(bagFoundFailure).getOrElse(Success(()))
     } yield ()
@@ -61,8 +61,8 @@ case class SimpleChecker(bagIndex: BagIndex) {
     // see both DDM.toRelationXml methods for what might occur
     lazy val hasInternal = Failure(NotSimple("has isVersionOf/replaces " + node.toString()))
     (node \@ "href", node.text) match {
-      case (h,_) if h.startsWith("https://doi.org/10.17026") => hasInternal
-      case ("",t) if t.startsWith("https://doi.org/10.17026") => hasInternal
+      case (h, _) if h.startsWith("https://doi.org/10.17026") => hasInternal
+      case ("", t) if t.startsWith("https://doi.org/10.17026") => hasInternal
       case _ => Success(())
     }
   }

@@ -45,7 +45,7 @@ import scala.xml.{ Elem, Node, PrettyPrinter }
 class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLogging {
   lazy val fedoraProvider: FedoraProvider = new FedoraProvider(new FedoraClient(configuration.fedoraCredentials))
   lazy val ldapContext: InitialLdapContext = new InitialLdapContext(configuration.ldapEnv, null)
-  lazy val bagIndex: BagIndex = BagIndex(???)
+  lazy val bagIndex: BagIndex = BagIndex(configuration.bagIndexUrl)
   private lazy val simpleChecker: SimpleChecker = SimpleChecker(bagIndex)
   private lazy val ldap = new Ldap(ldapContext)
   private val emdUnmarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])

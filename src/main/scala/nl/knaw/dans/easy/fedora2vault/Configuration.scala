@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.easy.fedora2vault
 
-import java.net.URL
+import java.net.{ URI, URL }
 
 import better.files.File
 import better.files.File.root
@@ -26,6 +26,7 @@ import org.apache.commons.configuration.PropertiesConfiguration
 case class Configuration(version: String,
                          fedoraCredentials: FedoraCredentials,
                          ldapEnv: LdapEnv,
+                         bagIndexUrl: URI,
                         )
 
 object Configuration {
@@ -54,7 +55,8 @@ object Configuration {
         put(Context.SECURITY_PRINCIPAL, properties.getString("auth.ldap.user"))
         put(Context.SECURITY_CREDENTIALS, properties.getString("auth.ldap.password"))
         put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
-      }
+      },
+      new URI (properties.getString("auth.ldap.url")),
     )
   }
 }

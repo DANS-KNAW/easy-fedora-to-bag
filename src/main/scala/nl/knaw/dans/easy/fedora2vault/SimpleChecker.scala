@@ -18,39 +18,43 @@ package nl.knaw.dans.easy.fedora2vault
 import nl.knaw.dans.common.lang.dataset.AccessCategory.{ OPEN_ACCESS, REQUEST_PERMISSION }
 import nl.knaw.dans.pf.language.emd.EasyMetadataImpl
 
-import scala.util.Try
+import scala.util.{ Failure, Success, Try }
 import scala.xml.Node
 
 case class SimpleChecker(bagIndex: BagIndex) {
   def isSimple(emd: EasyMetadataImpl, ddm: Node, amd: Node, jumpOff: Seq[String]): Try[Unit] = {
     val doi = emd.getEmdIdentifier.getDansManagedDoi
 
-    Try {
-      if (doi == null) throwException("no DOI")
-      if ((amd \ "datasetState").text == "PUBLISHED") throwException("not published")
-      if (jumpOff.nonEmpty) throwException("has " + jumpOff.mkString(", "))
-      if (!emd.getEmdTitle.getPreferredTitle.toLowerCase.contains("thematische collectie"))
-        throwException("is a thematische collectie")
+    def metadataChecks = Try {
+      if (doi == null) throw NotSimple("no DOI")
+      if ((amd \ "datasetState").text == "PUBLISHED") throw NotSimple("not published")
+      if (jumpOff.nonEmpty) throw NotSimple("has " + jumpOff.mkString(", "))
+      if (emd.getEmdTitle.getPreferredTitle.toLowerCase.contains("thematische collectie"))
+        throw NotSimple("is a thematische collectie")
       emd.getEmdRights.getAccessCategory match {
         case OPEN_ACCESS | REQUEST_PERMISSION =>
-        case _ => throwException("AccessCategory is neither OPEN_ACCESS nor REQUEST_PERMISSION")
+        case _ => throw NotSimple("AccessCategory is neither OPEN_ACCESS nor REQUEST_PERMISSION")
       }
 
       ((ddm \ "isVersionOf").theSeq ++ (ddm \ "replaces").theSeq)
         .foreach(node =>
           if (Seq("DOI", "URN").contains(node \@ "scheme") ||
             node.text.contains("easy-dataset:")
-          ) throwException("has isVersionOf/replaces " + node.toString())
+          ) throw NotSimple("has isVersionOf/replaces " + node.toString())
         )
-    }.flatMap(_ => shouldNotExist(doi))
+    }
+
+    for {
+      _ <- metadataChecks
+      maybe <- bagIndex.bagByDoi(doi)
+      _ <- maybe.map(failNotSimple(doi)).getOrElse(Success(()))
+    } yield ()
   }
 
-  private def shouldNotExist(doi: DatasetId) = {
-    bagIndex
-      .bagByDoi(doi)
-      .map(s => throwException(s"dataset with DOI[$doi] found in vault - $s"))
-  }
+  private def failNotSimple(doi: DatasetId)(responseBody: String) = Failure(
+    NotSimple(s"dataset with DOI[$doi] found in vault - $responseBody")
+  )
 
   /** An Exception that is fatal for the dataset but NOT fatal for a batch of datasets */
-  private def throwException(s: String) = throw new Exception(s"Not a simple dataset: $s")
+  case class NotSimple(s: String) extends Exception(s"Not a simple dataset: $s")
 }

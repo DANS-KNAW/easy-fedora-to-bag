@@ -16,6 +16,7 @@
 package nl.knaw.dans.easy.fedora2vault
 
 import java.io.{ FileInputStream, StringWriter }
+import java.net.URI
 import java.util.UUID
 
 import better.files.File
@@ -42,9 +43,12 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
 
   private class MockedLdapContext extends InitialLdapContext(new java.util.Hashtable[String, String](), null)
 
+  private class MockedBagIndex extends BagIndex(new URI("http://localhost:20120/"))
+
   private class MockedApp() extends EasyFedora2vaultApp(null) {
     override lazy val fedoraProvider: FedoraProvider = mock[FedoraProvider]
     override lazy val ldapContext: InitialLdapContext = mock[MockedLdapContext]
+    override lazy val bagIndex: BagIndex = mock[MockedBagIndex]
   }
 
   private class OverriddenApp extends MockedApp {
@@ -96,9 +100,8 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
   "simpleTransform" should "process DepositApi" in {
     val app = new MockedApp()
     implicit val fedoraProvider: FedoraProvider = app.fedoraProvider
-    expectedAudiences(Map(
-      "easy-discipline:77" -> "D13200",
-    ))
+    expectedAudiences(Map("easy-discipline:77" -> "D13200"))
+    expectNothingFrom(app.bagIndex)
     expectedSubordinates(app.fedoraProvider)
     expectedFoXmls(app.fedoraProvider, sampleFoXML / "DepositApi.xml")
     expectedManagedStreams(app.fedoraProvider,
@@ -183,6 +186,10 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
 
   private def expectedSubordinates(fedoraProvider: => FedoraProvider, expectedIds: String*): Unit = {
     (fedoraProvider.getSubordinates(_: String)) expects * once() returning Success(expectedIds)
+  }
+
+  private def expectNothingFrom(bagIndex: => BagIndex): Unit = {
+    (bagIndex.bagByDoi(_: String)) expects * once() returning Success(None)
   }
 
   private def expectedManagedStreams(fedoraProvider: => FedoraProvider, expectedObjects: File*): Unit = {

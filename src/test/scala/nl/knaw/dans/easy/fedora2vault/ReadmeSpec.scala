@@ -28,6 +28,7 @@ class ReadmeSpec extends TestSupportFixture with CustomMatchers with FixedCurren
     version = "my-version",
     fedoraCredentials = null,
     ldapEnv = null,
+    bagIndexUrl = null,
   )
   Properties.setProp("user.home", "/home/vagrant")
   private val clo = new CommandLineOptions(Array[String](), configuration) {

@@ -1,5 +1,6 @@
 package nl.knaw.dans.easy.fedora2vault
 
+import java.io.IOException
 import java.net.URI
 
 import scalaj.http.Http
@@ -8,10 +9,10 @@ import scala.util.{ Failure, Try }
 
 case class BagIndex(bagIndexUri: URI) {
 
-  /** An Exception that is both fatal for the dataset AND for a batch of datasets */
-  case class BagIndexException(msg: String, cause: Throwable) extends Exception(msg, cause)
+  /** An Exception that is fatal for the batch of datasets */
+  case class BagIndexException(msg: String, cause: Throwable) extends IOException(msg, cause)
 
-  val url: URI = bagIndexUri.resolve("search")
+  private val url: URI = bagIndexUri.resolve("search")
   def bagByDoi(doi: String): Try[Option[String]] = Try {
     Http(url.toString)
       .param("doi", doi)

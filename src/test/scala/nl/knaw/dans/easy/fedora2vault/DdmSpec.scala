@@ -31,10 +31,6 @@ import scala.xml._
 
 class DdmSpec extends TestSupportFixture with AudienceSupport {
 
-  private val emdNS = "http://easy.dans.knaw.nl/easy/easymetadata/"
-  private val easNS = "http://easy.dans.knaw.nl/easy/easymetadata/eas/"
-  private val dctNS = "http://purl.org/dc/terms/"
-  private val dcNS = "http://purl.org/dc/elements/1.1/"
   private lazy val triedSchema = Try(SchemaFactory
     .newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
     .newSchema(Array(new StreamSource("https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd")).toArray[Source])

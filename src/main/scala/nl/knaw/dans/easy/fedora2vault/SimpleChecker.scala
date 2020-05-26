@@ -41,7 +41,8 @@ case class SimpleChecker(bagIndex: BagIndex) {
       if ((amd \ "datasetState").text != "PUBLISHED") throw NotSimple("not published")
     }
 
-    def ddmRelation(qualifier: String): Seq[Node] = (ddm \ qualifier).theSeq
+    def ddmRelation(qualifier: String): Seq[Node] =
+      (ddm \\ qualifier).theSeq
 
     def bagFoundFailure(bagInfo: String) = Failure(
       NotSimple(s"Dataset found in vault. DOI[$doi] ${ bagIndex.bagIndexUri } returned: $bagInfo")
@@ -59,10 +60,10 @@ case class SimpleChecker(bagIndex: BagIndex) {
 
   private def internalRelationCheck(node: Node): Try[Unit] = {
     // see both DDM.toRelationXml methods for what might occur
-    lazy val hasInternal = Failure(NotSimple("has isVersionOf/replaces " + node.toString()))
+    lazy val hasInternal = Failure(NotSimple("invalid isVersionOf/replaces " + node.toString()))
     (node \@ "href", node.text) match {
       case (h, _) if h.startsWith("https://doi.org/10.17026") => hasInternal
-      case ("", t) if t.startsWith("https://doi.org/10.17026") => hasInternal
+      case (_, t) if t.startsWith("https://doi.org/10.17026") => hasInternal
       case _ => Success(())
     }
   }

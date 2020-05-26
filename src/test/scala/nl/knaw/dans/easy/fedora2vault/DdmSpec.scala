@@ -22,14 +22,14 @@ import javax.xml.XMLConstants
 import javax.xml.transform.Source
 import javax.xml.transform.stream.StreamSource
 import javax.xml.validation.SchemaFactory
-import nl.knaw.dans.easy.fedora2vault.fixture.{ AudienceSupport, TestSupportFixture }
+import nl.knaw.dans.easy.fedora2vault.fixture.{ AudienceSupport, EmdSupport, TestSupportFixture }
 import nl.knaw.dans.pf.language.emd.EasyMetadataImpl
 import nl.knaw.dans.pf.language.emd.binding.EmdUnmarshaller
 
 import scala.util.{ Failure, Success, Try }
 import scala.xml._
 
-class DdmSpec extends TestSupportFixture with AudienceSupport {
+class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport {
 
   private lazy val triedSchema = Try(SchemaFactory
     .newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
@@ -250,44 +250,34 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
   }
 
   "spatial" should "render invalid DDM" in { // TODO until everything is implemented
-    val triedDdm = toEmdObject(
-      <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
-        { emdTitle }
-        { emdCreator }
-        { emdDescription }
-        { emdDates }
-        <emd:coverage>
-          <eas:spatial>
-              <eas:place/>
-              <eas:point eas:scheme="RD">
-                  <eas:x>155000</eas:x>
-                  <eas:y>463000</eas:y>
-              </eas:point>
-          </eas:spatial>
-        </emd:coverage>
-        { emdRights }
-      </emd:easymetadata>
-    ).flatMap(DDM(_, Seq("D13200")))
-    validate(triedDdm.map(toS)) should matchPattern {
+    val emd = parseEmdContent(Seq(
+      emdTitle, emdCreator, emdDescription, emdDates,
+      <emd:coverage>
+        <eas:spatial>
+            <eas:place/>
+            <eas:point eas:scheme="RD">
+                <eas:x>155000</eas:x>
+                <eas:y>463000</eas:y>
+            </eas:point>
+        </eas:spatial>
+      </emd:coverage>,
+      emdRights,
+    ))
+    validate(DDM(emd, Seq("D13200")).map(toS)) should matchPattern {
       case Failure(e) if e.getMessage.contains("not:implemented") =>
     }
   }
 
   "subject" should "succeed" in {
-    val triedString = toEmdObject(
-      <emd:easymetadata xmlns:emd={ emdNS } xmlns:eas={ easNS } xmlns:dct={ dctNS } xmlns:dc={ dcNS } emd:version="0.1">
-        { emdTitle }
-        { emdCreator }
-        <emd:subject>
-            <dc:subject eas:scheme="ABR" eas:schemeId="archaeology.dc.subject">DEPO</dc:subject>
-            <dc:subject>hello world</dc:subject>
-        </emd:subject>
-        { emdDescription }
-        { emdDates }
-        { emdRights }
-      </emd:easymetadata>
-    ).flatMap(DDM(_, Seq("D35400"))).map(toS)
-    triedString.map(strip) shouldBe Success(
+    val emd = parseEmdContent(Seq(
+      emdTitle, emdCreator,
+      <emd:subject>
+          <dc:subject eas:scheme="ABR" eas:schemeId="archaeology.dc.subject">DEPO</dc:subject>
+          <dc:subject>hello world</dc:subject>
+      </emd:subject>,
+      emdDescription, emdDates, emdRights,
+    ))
+    DDM(emd, Seq("D35400")).map(toS).map(strip) shouldBe Success(
       s"""<ddm:DDM
          |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
          |  <ddm:profile>
@@ -306,7 +296,6 @@ class DdmSpec extends TestSupportFixture with AudienceSupport {
          |  </ddm:dcmiMetadata>
          |</ddm:DDM>
          |""".stripMargin)
-    validate(triedString) shouldBe a[Success[_]]
   }
 
   it should "generate not-implemented" in {

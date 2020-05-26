@@ -56,7 +56,7 @@ object Configuration {
         put(Context.SECURITY_CREDENTIALS, properties.getString("auth.ldap.password"))
         put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
       },
-      new URI (properties.getString("auth.ldap.url")),
+      new URI (properties.getString("bag-index.url")),
     )
   }
 }

@@ -121,7 +121,7 @@
         <foxml:datastreamVersion ID="AMD.0" LABEL="Administrative metadata for this dataset" CREATED="2020-03-17T10:24:17.268Z" MIMETYPE="text/xml" SIZE="4807">
             <foxml:xmlContent>
                 <damd:administrative-md xmlns:damd="http://easy.dans.knaw.nl/easy/dataset-administrative-metadata/" version="0.1">
-                    <datasetState>SUBMITTED</datasetState>
+                    <datasetState>PUBLISHED</datasetState>
                     <previousState>DRAFT</previousState>
                     <lastStateChange>2020-03-17T11:24:09.739+01:00</lastStateChange>
                     <depositorId>user001</depositorId>

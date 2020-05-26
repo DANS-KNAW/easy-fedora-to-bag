@@ -22,12 +22,16 @@ import scala.util.{ Failure, Success, Try }
 import scala.xml.Node
 
 case class SimpleChecker(bagIndex: BagIndex) {
+
+  /** An Exception that is fatal for the dataset but NOT fatal for a batch of datasets */
+  private case class NotSimple(s: String) extends Exception(s"Not a simple dataset: $s")
+
   def isSimple(emd: EasyMetadataImpl, ddm: Node, amd: Node, jumpOff: Seq[String]): Try[Unit] = {
     val doi = emd.getEmdIdentifier.getDansManagedDoi
 
-    def metadataChecks = Try {
+    def emdAmdChecks = Try {
       if (doi == null) throw NotSimple("no DOI")
-      if ((amd \ "datasetState").text == "PUBLISHED") throw NotSimple("not published")
+      if ((amd \ "datasetState").text != "PUBLISHED") throw NotSimple("not published")
       if (jumpOff.nonEmpty) throw NotSimple("has " + jumpOff.mkString(", "))
       if (emd.getEmdTitle.getPreferredTitle.toLowerCase.contains("thematische collectie"))
         throw NotSimple("is a thematische collectie")
@@ -35,26 +39,31 @@ case class SimpleChecker(bagIndex: BagIndex) {
         case OPEN_ACCESS | REQUEST_PERMISSION =>
         case _ => throw NotSimple("AccessCategory is neither OPEN_ACCESS nor REQUEST_PERMISSION")
       }
-
-      ((ddm \ "isVersionOf").theSeq ++ (ddm \ "replaces").theSeq)
-        .foreach(node =>
-          if (Seq("DOI", "URN").contains(node \@ "scheme") ||
-            node.text.contains("easy-dataset:")
-          ) throw NotSimple("has isVersionOf/replaces " + node.toString())
-        )
     }
 
+    def ddmRelation(qualifier: String): Seq[Node] = (ddm \ qualifier).theSeq
+
+    def bagFoundFailure(bagInfo: String) = Failure(
+      NotSimple(s"dataset with DOI[$doi] found in vault - $bagInfo")
+    )
+
     for {
-      _ <- metadataChecks
-      maybe <- bagIndex.bagByDoi(doi)
-      _ <- maybe.map(failNotSimple(doi)).getOrElse(Success(()))
+      _ <- emdAmdChecks
+      _ <- (ddmRelation("isVersionOf") ++ ddmRelation("replaces"))
+        .map(internalRelationCheck)
+        .failFastOr(Success(()))
+      maybeBagInfo <- bagIndex.bagByDoi(doi)
+      _ <- maybeBagInfo.map(bagFoundFailure).getOrElse(Success(()))
     } yield ()
   }
 
-  private def failNotSimple(doi: DatasetId)(responseBody: String) = Failure(
-    NotSimple(s"dataset with DOI[$doi] found in vault - $responseBody")
-  )
-
-  /** An Exception that is fatal for the dataset but NOT fatal for a batch of datasets */
-  case class NotSimple(s: String) extends Exception(s"Not a simple dataset: $s")
+  private def internalRelationCheck(node: Node): Try[Unit] = {
+    // see both DDM.toRelationXml methods for what might occur
+    lazy val hasInternal = Failure(NotSimple("has isVersionOf/replaces " + node.toString()))
+    (node \@ "href", node.text) match {
+      case (h,_) if h.startsWith("https://doi.org/10.17026") => hasInternal
+      case ("",t) if t.startsWith("https://doi.org/10.17026") => hasInternal
+      case _ => Success(())
+    }
+  }
 }

@@ -203,12 +203,6 @@ object DDM extends DebugEnhancedLogging {
       .mapValues(_.flatMap(_._2))
   }
 
-  private def getAudience(id: String)(implicit fedoraProvider: FedoraProvider): Try[String] = {
-    fedoraProvider.loadFoXml(id).map(foXml =>
-      (foXml \\ "discipline-md" \ "OICode").text
-    )
-  }
-
   private def toRelationXml(key: String, rel: Relation): Elem = {
     <label scheme={ relationType(rel) }
            href={ rel.getSubjectLink.toURL.toString }

@@ -130,13 +130,14 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
     ))
     expectAUser(app.ldapContext)
     expectedFoXmls(app.fedoraProvider, sampleFoXML / "streaming.xml", sampleFoXML / "easy-file-35.xml")
+    expectNothingFrom(app.bagIndex)
     expectedSubordinates(app.fedoraProvider, "easy-file:35")
     expectedManagedStreams(app.fedoraProvider, mockContentOfFile35)
 
     val uuid = UUID.randomUUID
     val triedRecord = app.simpleTransform("easy-dataset:13", testDir / "bags" / uuid.toString)
     triedRecord shouldBe
-      Success(CsvRecord("easy-dataset:13", null, "user001", SIMPLE, uuid, "OK"))
+      Success(CsvRecord("easy-dataset:13", "10.17026/mocked-Iiib-z9p-4ywa", "user001", SIMPLE, uuid, "OK"))
 
     val metadata = (testDir / "bags").children.next() / "metadata"
     metadata.list.toSeq.map(_.name)
@@ -172,6 +173,7 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
           .filterNot(_.contains("<visibleTo>")).mkString("\n")
       ),
     )
+    expectNothingFrom(app.bagIndex)
     expectedSubordinates(app.fedoraProvider, "easy-file:35")
     expectedManagedStreams(app.fedoraProvider, mockContentOfFile35)
 

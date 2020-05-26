@@ -13,6 +13,7 @@
         <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
     </ddm:profile>
     <ddm:dcmiMetadata>
+        <dct:identifier xsi:type="id-type:DOI">10.17026/mocked-Iiib-z9p-4ywa</dct:identifier>
         <dct:relation/>
         <dct:type xsi:type="dct:DCMIType">Dataset</dct:type>
         <dct:format>video/mpeg</dct:format>

@@ -48,69 +48,69 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
 
   it should "report missing DOI" in {
     implicit val mockedBagIndex: MockedBagIndex = mock[MockedBagIndex]
-    expectBagIndex never()
+    expectBagIndex once() returning Success(None)
 
     val emd = parseEmdContent(emdRights)
 
     SimpleChecker(mockedBagIndex)
       .isSimple(emd, emd2ddm(emd), amd("SUBMITTED"), Seq.empty) should matchPattern {
-      case Failure(t: Throwable) if t.getMessage == "Not a simple dataset: no DOI" =>
+      case Failure(t: Throwable) if t.getMessage == "Not a simple dataset. Violates rule 1, 5" =>
     }
   }
 
   it should "report thematische collectie" in {
     implicit val mockedBagIndex: MockedBagIndex = mock[MockedBagIndex]
-    expectBagIndex never()
+    expectBagIndex once() returning Success(None)
 
     val emdTitle = <emd:title><dc:title xml:lang="nld">thematische collectie</dc:title></emd:title>
     val emd = parseEmdContent(Seq(emdTitle, emdDoi))
 
     SimpleChecker(mockedBagIndex)
       .isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq()) should matchPattern {
-      case Failure(t: Throwable) if t.getMessage == "Not a simple dataset: is a thematische collectie" =>
+      case Failure(t: Throwable) if t.getMessage == "Not a simple dataset. Violates rule 3, 4" =>
     }
   }
 
   it should "report jump off" in {
     implicit val mockedBagIndex: MockedBagIndex = mock[MockedBagIndex]
-    expectBagIndex never()
+    expectBagIndex once() returning Success(None)
 
     val emdTitle = <emd:title><dc:title xml:lang="nld">thematische collectie</dc:title></emd:title>
     val emd = parseEmdContent(Seq(emdTitle, emdDoi))
 
     SimpleChecker(mockedBagIndex)
       .isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq("easy-jumpoff:123")) should matchPattern {
-      case Failure(t: Throwable) if t.getMessage == "Not a simple dataset: has easy-jumpoff:123" =>
+      case Failure(t: Throwable) if t.getMessage == "Not a simple dataset. Violates rule 2, 3, 4" =>
     }
   }
 
   it should "report invalid status" in {
     implicit val mockedBagIndex: MockedBagIndex = mock[MockedBagIndex]
-    expectBagIndex never()
+    expectBagIndex once() returning Success(None)
 
     val emd = parseEmdContent(emdDoi)
 
     SimpleChecker(mockedBagIndex)
       .isSimple(emd, emd2ddm(emd), amd("SUBMITTED"), Seq.empty) should matchPattern {
-      case Failure(t: Throwable) if t.getMessage == "Not a simple dataset: AccessCategory is neither OPEN_ACCESS nor REQUEST_PERMISSION" =>
+      case Failure(t: Throwable) if t.getMessage == "Not a simple dataset. Violates rule 4, 5" =>
     }
   }
 
   it should "report not published" in {
     implicit val mockedBagIndex: MockedBagIndex = mock[MockedBagIndex]
-    expectBagIndex never()
+    expectBagIndex once() returning Success(None)
 
     val emd = parseEmdContent(Seq(emdDoi, emdRights))
 
     SimpleChecker(mockedBagIndex)
       .isSimple(emd, emd2ddm(emd), amd("SUBMITTED"), Seq.empty) should matchPattern {
-      case Failure(t: Throwable) if t.getMessage == "Not a simple dataset: not published" =>
+      case Failure(t: Throwable) if t.getMessage == "Not a simple dataset. Violates rule 5" =>
     }
   }
 
   it should "report invalid relations" in {
     implicit val mockedBagIndex: MockedBagIndex = mock[MockedBagIndex]
-    expectBagIndex never()
+    expectBagIndex once() returning Success(None)
 
     val emd = parseEmdContent(Seq(emdDoi,
       <emd:relation>
@@ -128,11 +128,7 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
     val triedUnit = SimpleChecker(mockedBagIndex)
       .isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq.empty)
     triedUnit should matchPattern {
-      case Failure(t: Throwable) if t.getMessage ==
-        """Not a simple dataset: has DANS-id(s) in <dct:isVersionOf>https://doi.org/10.17026/test-123-456</dct:isVersionOf>
-          |<dct:isVersionOf>http://www.persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-2ajw-cq</dct:isVersionOf>
-          |<ddm:replaces scheme="id-type:URN" href="http://persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-aka-hff">Prehistorische bewoning op het World Forum gebied - Den Haag (replaces)</ddm:replaces>
-          |""".stripMargin.replaceAll("\n","") =>
+      case Failure(t: Throwable) if t.getMessage == "Not a simple dataset. Violates rule 6" =>
     }
   }
 
@@ -144,7 +140,7 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
 
     SimpleChecker(mockedBagIndex)
       .isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq.empty) should matchPattern {
-      case Failure(t: Throwable) if t.getMessage == "Not a simple dataset: Dataset found in vault. DOI[10.17026/test-Iiib-z9p-4ywa] http://localhost:20120/ returned: ---" =>
+      case Failure(t: Throwable) if t.getMessage == "Not a simple dataset. Violates rule 7" =>
     }
   }
 

@@ -16,49 +16,65 @@
 package nl.knaw.dans.easy.fedora2vault
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory.{ OPEN_ACCESS, REQUEST_PERMISSION }
+import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import nl.knaw.dans.pf.language.emd.EasyMetadataImpl
 
 import scala.util.{ Failure, Success, Try }
 import scala.xml.Node
 
-case class SimpleChecker(bagIndex: BagIndex) {
-
-  /** An Exception that is fatal for the dataset but NOT fatal for a batch of datasets */
-  private case class NotSimple(s: String) extends Exception(s"Not a simple dataset: $s")
+case class SimpleChecker(bagIndex: BagIndex) extends DebugEnhancedLogging {
 
   def isSimple(emd: EasyMetadataImpl, ddm: Node, amd: Node, jumpOff: Seq[String]): Try[Unit] = {
     val doi = emd.getEmdIdentifier.getDansManagedDoi
+    val triedMaybeVaultResponse = bagIndex.bagByDoi(doi).map(_.toSeq)
+    val violations = Seq(
+      "1: has no DANS DOI" -> (if (Option(doi).isEmpty) Seq("")
+                               else Seq[String]()),
+      "2: has jump off" -> jumpOff,
+      "3: title has 'thematische collectie'" -> Option(emd.getEmdTitle.getPreferredTitle)
+        .filter(_.toLowerCase.contains("thematische collectie")).toSeq,
+      "4: has invalid rights" -> findInvalidRights(emd),
+      "5: not published" -> findInvalidState(amd),
+      "6: DANS relations" -> findDansRelations(ddm),
+      "7: is in the vault" -> triedMaybeVaultResponse.getOrElse(Seq("IO exception")),
+    ).filter(_._2.nonEmpty).toMap
 
-    def emdAmdChecks = Try {
-      if (doi == null) throw NotSimple("no DOI")
-      if (jumpOff.nonEmpty) throw NotSimple("has " + jumpOff.mkString(", "))
-      if (emd.getEmdTitle.getPreferredTitle.toLowerCase.contains("thematische collectie"))
-        throw NotSimple("is a thematische collectie")
-      emd.getEmdRights.getAccessCategory match {
-        case OPEN_ACCESS | REQUEST_PERMISSION =>
-        case _ => throw NotSimple("AccessCategory is neither OPEN_ACCESS nor REQUEST_PERMISSION")
-      }
-      if ((amd \ "datasetState").text != "PUBLISHED") throw NotSimple("not published")
+    violations.foreach { case (rule, violations) =>
+      violations.map(s => logger.warn(s"violated $rule $s"))
     }
-
-    def ddmRelation(qualifier: String): Seq[Node] =
-      (ddm \\ qualifier).theSeq
-
-    def bagFoundFailure(bagInfo: String) = Failure(
-      NotSimple(s"Dataset found in vault. DOI[$doi] ${ bagIndex.bagIndexUri } returned: $bagInfo")
-    )
-
-    val dansRelations = Seq(
-      ddmRelation("isVersionOf"),
-      ddmRelation("replaces"),
-    ).flatten.filter(hasDansId)
+    lazy val errorMessage: String = violations.keys
+      .map(_.replaceAll(":.*", ""))
+      .mkString("Not a simple dataset. Violates rule ", ", ", "")
     for {
-      _ <- if (dansRelations.isEmpty) Success(())
-           else Failure(NotSimple("has DANS-id(s) in " + dansRelations.map(_.toOneLiner).mkString))
-      _ <- emdAmdChecks
-      maybeBagInfo <- bagIndex.bagByDoi(doi)
-      _ <- maybeBagInfo.map(bagFoundFailure).getOrElse(Success(()))
+      _ <- triedMaybeVaultResponse // an IOException is not a violation
+      _ <- if (violations.isEmpty) Success(())
+           else Failure(new Exception(errorMessage))
     } yield ()
+  }
+
+  private def findInvalidRights(emd: EasyMetadataImpl) = {
+    val maybe = Option(emd.getEmdRights.getAccessCategory)
+    if (maybe.isEmpty) Seq("not found")
+    else maybe
+      .withFilter(!Seq(OPEN_ACCESS, REQUEST_PERMISSION).contains(_))
+      .map(_.toString).toSeq
+  }
+
+  private def findInvalidState(amd: Node) = {
+    val seq = amd \ "datasetState"
+    if (seq.isEmpty) Seq("not found")
+    else seq
+      .withFilter(node => !(node.text == "PUBLISHED"))
+      .map(_.text)
+  }
+
+  private def findDansRelations(ddm: Node) = {
+    Seq(
+      (ddm \\ "isVersionOf").theSeq,
+      (ddm \\ "replaces").theSeq,
+    ).flatten
+      .withFilter(hasDansId)
+      .map(_.toOneLiner)
   }
 
   private def hasDansId(node: Node): Boolean = {

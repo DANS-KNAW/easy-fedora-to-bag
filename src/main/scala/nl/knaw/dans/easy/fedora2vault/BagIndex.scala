@@ -38,7 +38,7 @@ case class BagIndex(bagIndexUri: URI) {
     case t: Throwable => Failure(BagIndexException(s"DOI[$doi] url[$url]" + t.getMessage, t))
   }.map {
     case response if response.code == 400 => None
-    case response if response.code == 200 => Some(response.body)
+    case response if response.code == 200 => Some(s"$doi: ${response.body}")
     case response => throw BagIndexException(s"Not expected response code from bag-index. url='${ url } }', doi='$doi', response: ${ response.code } - ${ response.body }", null)
   }
 }

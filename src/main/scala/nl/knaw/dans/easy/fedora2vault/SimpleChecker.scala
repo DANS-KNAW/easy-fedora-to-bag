@@ -48,29 +48,31 @@ case class SimpleChecker(bagIndex: BagIndex) {
       NotSimple(s"Dataset found in vault. DOI[$doi] ${ bagIndex.bagIndexUri } returned: $bagInfo")
     )
 
+    val dansRelations = Seq(
+      ddmRelation("isVersionOf"),
+      ddmRelation("replaces"),
+    ).flatten.filter(hasDansId)
     for {
-      _ <- (ddmRelation("isVersionOf") ++ ddmRelation("replaces"))
-        .map(dansRelationCheck)
-        .failFastOr(Success(()))
+      _ <- if (dansRelations.isEmpty) Success(())
+           else Failure(NotSimple("has DANS-id(s) in " + dansRelations.map(_.toOneLiner).mkString))
       _ <- emdAmdChecks
       maybeBagInfo <- bagIndex.bagByDoi(doi)
       _ <- maybeBagInfo.map(bagFoundFailure).getOrElse(Success(()))
     } yield ()
   }
 
-  private def dansRelationCheck(node: Node): Try[Unit] = {
+  private def hasDansId(node: Node): Boolean = {
     // see both DDM.toRelationXml methods for what might occur
-    lazy val hasInternal = Failure(NotSimple("has DANS-id in " + node.toString().replaceAll("\n *","")))
     (node \@ "href", node.text) match {
-      case (h, _) if isDansId(h) => hasInternal
-      case (_, t) if isDansId(t) => hasInternal
-      case _ => Success(())
+      case (href, _) if isDansId(href) => true
+      case (_, text) if isDansId(text) => true
+      case _ => false
     }
   }
 
-  private def isDansId(h: String) = Seq(
-    "doi.org/10.17026",
+  private def isDansId(s: String) = Seq(
+    "doi.org/10.17026/",
     "easy-dataset:",
     "urn:nbn:nl:ui:13-",
-  ).exists(h.contains(_))
+  ).exists(s.contains(_))
 }

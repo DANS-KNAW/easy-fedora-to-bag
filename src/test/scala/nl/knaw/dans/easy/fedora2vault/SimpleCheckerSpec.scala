@@ -114,6 +114,7 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
 
     val emd = parseEmdContent(Seq(emdDoi,
       <emd:relation>
+          <dct:isVersionOf>https://doi.org/11.111/test-abc-123</dct:isVersionOf>
           <dct:isVersionOf>https://doi.org/10.17026/test-123-456</dct:isVersionOf>
           <dct:isVersionOf>http://www.persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-2ajw-cq</dct:isVersionOf>
           <eas:replaces>
@@ -124,9 +125,14 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
       </emd:relation>,
       emdRights
     ))
-    SimpleChecker(mockedBagIndex)
-      .isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq.empty) should matchPattern {
-      case Failure(t: Throwable) if t.getMessage == "Not a simple dataset: has DANS-id in <dct:isVersionOf>https://doi.org/10.17026/test-123-456</dct:isVersionOf>" =>
+    val triedUnit = SimpleChecker(mockedBagIndex)
+      .isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq.empty)
+    triedUnit should matchPattern {
+      case Failure(t: Throwable) if t.getMessage ==
+        """Not a simple dataset: has DANS-id(s) in <dct:isVersionOf>https://doi.org/10.17026/test-123-456</dct:isVersionOf>
+          |<dct:isVersionOf>http://www.persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-2ajw-cq</dct:isVersionOf>
+          |<ddm:replaces scheme="id-type:URN" href="http://persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-aka-hff">Prehistorische bewoning op het World Forum gebied - Den Haag (replaces)</ddm:replaces>
+          |""".stripMargin.replaceAll("\n","") =>
     }
   }
 

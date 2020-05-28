@@ -40,7 +40,7 @@ import org.joda.time.DateTime
 
 import scala.collection.JavaConverters._
 import scala.util.{ Failure, Success, Try }
-import scala.xml.{ Elem, Node, PrettyPrinter }
+import scala.xml.{ Elem, Node }
 
 class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLogging {
   lazy val fedoraProvider: FedoraProvider = new FedoraProvider(new FedoraClient(configuration.fedoraCredentials))
@@ -155,9 +155,6 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
     bag.addPayloadFile(content.serialize.inputStream, Paths.get(path))
   }
 
-  // prints a one liner unlike the default printer
-  private val logPrinter = new PrettyPrinter(-1, 0)
-
   private def addPayloadFileTo(bag: DansV0Bag)(fedoraFileId: String): Try[FileItem] = {
     val streamId = "EASY_FILE"
     for {
@@ -172,7 +169,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       fileStream = getStreamRoot(streamId, foXml)
       maybeDigest = fileStream.flatMap(n => (n \\ "contentDigest").theSeq.headOption)
       _ <- maybeDigest.map(validate(bag.baseDir / s"data/$path", bag, fedoraFileId))
-        .getOrElse(Success(logger.warn(s"No digest found for $fedoraFileId ${ fileStream.map(logPrinter.format(_)).getOrElse("") }")))
+        .getOrElse(Success(logger.warn(s"No digest found for $fedoraFileId ${ fileStream.map(_.toOneLiner).getOrElse("") }")))
       fileItem <- FileItem(fedoraFileId, foXml)
     } yield fileItem
   }

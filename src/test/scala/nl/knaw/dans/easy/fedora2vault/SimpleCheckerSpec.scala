@@ -18,29 +18,28 @@ package nl.knaw.dans.easy.fedora2vault
 import java.net.URI
 
 import nl.knaw.dans.easy.fedora2vault.fixture.{ EmdSupport, TestSupportFixture }
-import nl.knaw.dans.pf.language.emd.EasyMetadataImpl
-import nl.knaw.dans.pf.language.emd.binding.EmdUnmarshaller
 import org.scalamock.scalatest.MockFactory
 
 import scala.util.{ Failure, Success }
 
 class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupport {
-  private val emdUnmarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
-
   private class MockedBagIndex extends BagIndex(new URI("http://localhost:20120/"))
+  private val emdRights = <emd:rights>
+                            <dct:accessRights eas:schemeId="common.dcterms.accessrights"
+                                >REQUEST_PERMISSION</dct:accessRights>
+                          </emd:rights>
+  private val emdDoi = <emd:identifier>
+                         <dc:identifier eas:identification-system="https://doi.org"
+                                        eas:scheme="DOI"
+                         >10.17026/test-Iiib-z9p-4ywa</dc:identifier>
+                       </emd:identifier>
 
   "isSimple" should "succeed" in {
-    val emd = parseEmdContent(
-      <emd:title><dc:title xml:lang="nld"
-      >no theme</dc:title></emd:title>
-      <emd:identifier><dc:identifier eas:identification-system="https://doi.org"
-                                     eas:scheme="DOI"
-      >10.17026/test-Iiib-z9p-4ywa</dc:identifier></emd:identifier>
-      <emd:rights><dct:accessRights eas:schemeId="common.dcterms.accessrights"
-      >REQUEST_PERMISSION</dct:accessRights></emd:rights>
-    )
     implicit val mockedBagIndex: MockedBagIndex = mock[MockedBagIndex]
     expectBagIndex once() returning Success(None)
+
+    val emdTitle = <emd:title><dc:title xml:lang="nld">no theme</dc:title></emd:title>
+    val emd = parseEmdContent(Seq(emdTitle, emdDoi, emdRights))
 
     SimpleChecker(mockedBagIndex)
       .isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq.empty) shouldBe
@@ -48,12 +47,10 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
   }
 
   it should "report missing DOI" in {
-    val emd = parseEmdContent(
-      <emd:rights><dct:accessRights eas:schemeId="common.dcterms.accessrights"
-      >REQUEST_PERMISSION</dct:accessRights></emd:rights>
-    )
     implicit val mockedBagIndex: MockedBagIndex = mock[MockedBagIndex]
     expectBagIndex never()
+
+    val emd = parseEmdContent(emdRights)
 
     SimpleChecker(mockedBagIndex)
       .isSimple(emd, emd2ddm(emd), amd("SUBMITTED"), Seq.empty) should matchPattern {
@@ -62,15 +59,11 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
   }
 
   it should "report thematische collectie" in {
-    val emd = parseEmdContent(
-      <emd:title><dc:title xml:lang="nld"
-      >thematische collectie</dc:title></emd:title>
-      <emd:identifier><dc:identifier eas:identification-system="https://doi.org"
-                                     eas:scheme="DOI"
-      >10.17026/test-Iiib-z9p-4ywa</dc:identifier></emd:identifier>
-    )
     implicit val mockedBagIndex: MockedBagIndex = mock[MockedBagIndex]
     expectBagIndex never()
+
+    val emdTitle = <emd:title><dc:title xml:lang="nld">thematische collectie</dc:title></emd:title>
+    val emd = parseEmdContent(Seq(emdTitle, emdDoi))
 
     SimpleChecker(mockedBagIndex)
       .isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq()) should matchPattern {
@@ -79,15 +72,11 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
   }
 
   it should "report jump off" in {
-    val emd = parseEmdContent(
-      <emd:title><dc:title xml:lang="nld"
-      >thematische collectie</dc:title></emd:title>
-      <emd:identifier><dc:identifier eas:identification-system="https://doi.org"
-                                     eas:scheme="DOI"
-      >10.17026/test-Iiib-z9p-4ywa</dc:identifier></emd:identifier>
-    )
     implicit val mockedBagIndex: MockedBagIndex = mock[MockedBagIndex]
     expectBagIndex never()
+
+    val emdTitle = <emd:title><dc:title xml:lang="nld">thematische collectie</dc:title></emd:title>
+    val emd = parseEmdContent(Seq(emdTitle, emdDoi))
 
     SimpleChecker(mockedBagIndex)
       .isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq("easy-jumpoff:123")) should matchPattern {
@@ -96,13 +85,10 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
   }
 
   it should "report invalid status" in {
-    val emd = parseEmdContent(
-      <emd:identifier><dc:identifier eas:identification-system="https://doi.org"
-                                     eas:scheme="DOI"
-      >10.17026/test-Iiib-z9p-4ywa</dc:identifier></emd:identifier>
-    )
     implicit val mockedBagIndex: MockedBagIndex = mock[MockedBagIndex]
     expectBagIndex never()
+
+    val emd = parseEmdContent(emdDoi)
 
     SimpleChecker(mockedBagIndex)
       .isSimple(emd, emd2ddm(emd), amd("SUBMITTED"), Seq.empty) should matchPattern {
@@ -111,15 +97,10 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
   }
 
   it should "report not published" in {
-    val emd = parseEmdContent(
-      <emd:identifier><dc:identifier eas:identification-system="https://doi.org"
-                                     eas:scheme="DOI"
-      >10.17026/test-Iiib-z9p-4ywa</dc:identifier></emd:identifier>
-      <emd:rights><dct:accessRights eas:schemeId="common.dcterms.accessrights"
-      >REQUEST_PERMISSION</dct:accessRights></emd:rights>
-    )
     implicit val mockedBagIndex: MockedBagIndex = mock[MockedBagIndex]
     expectBagIndex never()
+
+    val emd = parseEmdContent(Seq(emdDoi, emdRights))
 
     SimpleChecker(mockedBagIndex)
       .isSimple(emd, emd2ddm(emd), amd("SUBMITTED"), Seq.empty) should matchPattern {
@@ -128,25 +109,21 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
   }
 
   it should "report invalid relations" in {
-    val emd = parseEmdContent(
-      <emd:identifier><dc:identifier eas:identification-system="https://doi.org"
-                                     eas:scheme="DOI"
-      >10.17026/test-Iiib-z9p-4ywa</dc:identifier></emd:identifier>
-    <emd:relation>
-        <dct:isVersionOf>https://doi.org/10.17026/test-123-456</dct:isVersionOf>
-        <dct:isVersionOf>http://www.persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-2ajw-cq</dct:isVersionOf>
-        <eas:replaces>
-            <eas:subject-title>Prehistorische bewoning op het World Forum gebied - Den Haag (replaces)</eas:subject-title>
-            <eas:subject-identifier eas:scheme="BID1" eas:identification-system="http://pid.org/sys1">ABC1</eas:subject-identifier>
-            <eas:subject-link>http://persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-aka-hff</eas:subject-link>
-        </eas:replaces>
-    </emd:relation>
-      <emd:rights><dct:accessRights eas:schemeId="common.dcterms.accessrights"
-      >REQUEST_PERMISSION</dct:accessRights></emd:rights>
-    )
     implicit val mockedBagIndex: MockedBagIndex = mock[MockedBagIndex]
     expectBagIndex never()
 
+    val emd = parseEmdContent(Seq(emdDoi,
+      <emd:relation>
+          <dct:isVersionOf>https://doi.org/10.17026/test-123-456</dct:isVersionOf>
+          <dct:isVersionOf>http://www.persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-2ajw-cq</dct:isVersionOf>
+          <eas:replaces>
+              <eas:subject-title>Prehistorische bewoning op het World Forum gebied - Den Haag (replaces)</eas:subject-title>
+              <eas:subject-identifier eas:scheme="BID1" eas:identification-system="http://pid.org/sys1">ABC1</eas:subject-identifier>
+              <eas:subject-link>http://persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-aka-hff</eas:subject-link>
+          </eas:replaces>
+      </emd:relation>,
+      emdRights
+    ))
     SimpleChecker(mockedBagIndex)
       .isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq.empty) should matchPattern {
       case Failure(t: Throwable) if t.getMessage == "Not a simple dataset: not published" =>
@@ -154,15 +131,10 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
   }
 
   it should "report existing bag" in {
-    val emd = parseEmdContent(
-      <emd:identifier><dc:identifier eas:identification-system="https://doi.org"
-                                     eas:scheme="DOI"
-      >10.17026/test-Iiib-z9p-4ywa</dc:identifier></emd:identifier>
-      <emd:rights><dct:accessRights eas:schemeId="common.dcterms.accessrights"
-      >REQUEST_PERMISSION</dct:accessRights></emd:rights>
-    )
     implicit val mockedBagIndex: MockedBagIndex = mock[MockedBagIndex]
     expectBagIndex once() returning Success(Some("---"))
+
+    val emd = parseEmdContent(Seq(emdDoi, emdRights))
 
     SimpleChecker(mockedBagIndex)
       .isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq.empty) should matchPattern {

@@ -54,14 +54,15 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
   private class OverriddenApp extends MockedApp {
     /** overrides the method called by the method under test */
     override def simpleTransform(datasetId: DatasetId, outputDir: File): Try[CsvRecord] = {
-      if (datasetId.startsWith("fatal"))
-        Failure(new FedoraClientException(300, "mocked exception"))
-      else if (!datasetId.startsWith("success")) {
-        outputDir.createFile().writeText(datasetId)
-        Failure(new Exception(datasetId))
-      } else {
-        outputDir.createFile().writeText(datasetId)
-        Success(CsvRecord(datasetId, "", "", SIMPLE, UUID.randomUUID(), "OK"))
+      datasetId match {
+        case _ if datasetId.startsWith("fatal") =>
+          Failure(new FedoraClientException(300, "mocked exception"))
+        case _ if (!datasetId.startsWith("success")) =>
+          outputDir.createFile().writeText(datasetId)
+          Failure(new Exception(datasetId))
+        case _ =>
+          outputDir.createFile().writeText(datasetId)
+          Success(CsvRecord(datasetId, "", "", SIMPLE, UUID.randomUUID(), "OK"))
       }
     }
   }

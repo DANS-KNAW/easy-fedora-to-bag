@@ -126,7 +126,7 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
     ))
     SimpleChecker(mockedBagIndex)
       .isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq.empty) should matchPattern {
-      case Failure(t: Throwable) if t.getMessage == "Not a simple dataset: not published" =>
+      case Failure(t: Throwable) if t.getMessage == "Not a simple dataset: invalid isVersionOf/replaces <dct:isVersionOf>https://doi.org/10.17026/test-123-456</dct:isVersionOf>" =>
     }
   }
 

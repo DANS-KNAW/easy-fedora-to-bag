@@ -50,7 +50,7 @@ case class SimpleChecker(bagIndex: BagIndex) {
 
     for {
       _ <- (ddmRelation("isVersionOf") ++ ddmRelation("replaces"))
-        .map(internalRelationCheck)
+        .map(dansRelationCheck)
         .failFastOr(Success(()))
       _ <- emdAmdChecks
       maybeBagInfo <- bagIndex.bagByDoi(doi)
@@ -58,13 +58,19 @@ case class SimpleChecker(bagIndex: BagIndex) {
     } yield ()
   }
 
-  private def internalRelationCheck(node: Node): Try[Unit] = {
+  private def dansRelationCheck(node: Node): Try[Unit] = {
     // see both DDM.toRelationXml methods for what might occur
-    lazy val hasInternal = Failure(NotSimple("invalid isVersionOf/replaces " + node.toString()))
+    lazy val hasInternal = Failure(NotSimple("has DANS-id in " + node.toString().replaceAll("\n *","")))
     (node \@ "href", node.text) match {
-      case (h, _) if h.startsWith("https://doi.org/10.17026") => hasInternal
-      case (_, t) if t.startsWith("https://doi.org/10.17026") => hasInternal
+      case (h, _) if isDansId(h) => hasInternal
+      case (_, t) if isDansId(t) => hasInternal
       case _ => Success(())
     }
   }
+
+  private def isDansId(h: String) = Seq(
+    "doi.org/10.17026",
+    "easy-dataset:",
+    "urn:nbn:nl:ui:13-",
+  ).exists(h.contains(_))
 }

@@ -13,7 +13,7 @@ trait EmdSupport {
 
   def parseEmdContent(xml: NodeSeq): EasyMetadataImpl = Try(
     emdUnmarshaller.unmarshal(
-        <emd:easymetadata xmlns:emd="http://easy.dans.knaw.nl/easy/easymetadata/"
+      <emd:easymetadata xmlns:emd="http://easy.dans.knaw.nl/easy/easymetadata/"
                           xmlns:eas="http://easy.dans.knaw.nl/easy/easymetadata/eas/"
                           xmlns:dct="http://purl.org/dc/terms/"
                           xmlns:dc="http://purl.org/dc/elements/1.1/"

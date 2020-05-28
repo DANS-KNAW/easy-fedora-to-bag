@@ -246,7 +246,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport {
 
   "spatial" should "render invalid DDM" in { // TODO until everything is implemented
     val emd = parseEmdContent(Seq(
-        emdTitle, emdCreator, emdDescription, emdDates,
+      emdTitle, emdCreator, emdDescription, emdDates,
         <emd:coverage>
           <eas:spatial>
               <eas:place/>
@@ -256,7 +256,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport {
               </eas:point>
           </eas:spatial>
         </emd:coverage>,
-        emdRights,
+      emdRights,
     ))
     validate(DDM(emd, Seq("D13200")).map(toS)) should matchPattern {
       case Failure(e) if e.getMessage.contains("not:implemented") =>
@@ -436,7 +436,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport {
               <eas:dateSubmitted eas:scheme="W3CDTF" eas:format="MONTH">1908-04-01T00:00:00.000+00:19:32</eas:dateSubmitted>
           </emd:date>
     ))
-    DDM(emd, Seq.empty).map(toS).map(strip)shouldBe Success(
+    DDM(emd, Seq.empty).map(toS).map(strip) shouldBe Success(
       s"""<ddm:DDM
          |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
          |  <ddm:profile>

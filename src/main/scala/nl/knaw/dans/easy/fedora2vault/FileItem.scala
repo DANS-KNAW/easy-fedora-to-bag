@@ -45,12 +45,17 @@ object FileItem {
       strings.headOption.getOrElse("")
     }
 
+    val visibleTo = get("visibleTo")
+    val accessibleTo = visibleTo.toUpperCase() match {
+      case "NONE" => "NONE"
+      case _ => get("accessibleTo")
+    }
     new FileItem(
       <file filepath={ "data/" + get("path") }>
         <dcterms:title>{ get("name") }</dcterms:title>
         <dcterms:format>{ get("mimeType") }</dcterms:format>
-        <accessibleToRights>{ get("accessibleTo") }</accessibleToRights>
-        <visibleToRights>{ get("visibleTo") }</visibleToRights>
+        <accessibleToRights>{ accessibleTo }</accessibleToRights>
+        <visibleToRights>{ visibleTo }</visibleToRights>
       </file>
     )
   }

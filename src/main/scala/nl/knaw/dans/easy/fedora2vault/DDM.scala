@@ -74,7 +74,7 @@ object DDM extends DebugEnhancedLogging {
        { emd.getEmdRelation.getRelationMap.asScala.map { case (key, values) => values.asScala.map(toRelationXml(key, _)) } }
        { emd.getEmdContributor.getDcContributor.asScala.map(bs => <dc:contributor>{ bs.getValue }</dc:contributor>) }
        { emd.getEmdContributor.getEasContributor.asScala.map(author => <dcx-dai:contributorDetails>{ toXml(author)} </dcx-dai:contributorDetails>) }
-       { emd.getEmdContributor.getEasContributor.asScala.filter(isRightsHolder).map(author => <dct:rightsHolder>{ author.toString.replace(", RightsHolder", "") }</dct:rightsHolder>) }
+       { emd.getEmdRights.getTermsRightsHolder.asScala.map(bs => <dct:rightsHolder>{ bs.toString }</dct:rightsHolder>) }
        { emd.getEmdPublisher.getDcPublisher.asScala.map(bs => <dct:publisher xml:lang={ lang(bs) }>{ bs.getValue }</dct:publisher>) }
        { emd.getEmdSource.getDcSource.asScala.map(bs => <dc:source xml:lang={ lang(bs) }>{ bs.getValue }</dc:source>) }
        { emd.getEmdType.getDcType.asScala.map(bs => <dct:type xsi:type={ dcType(bs) }>{ bs.getValue }</dct:type>) }
@@ -104,14 +104,14 @@ object DDM extends DebugEnhancedLogging {
   }
 
   private def langType(bs: BasicString): String = bs.getSchemeId match {
-    case "fra" | "fra/fre" | "deu" | "deu/ger" | "nld" | "nld/dut" | "eng" => "dct:ISO639-3"
+    case "fra" | "fra/fre" | "deu" | "deu/ger" | "nld" | "nld/dut" | "dut/nld" | "eng" => "dct:ISO639-3"
     case _ => null
   }
 
   private def langValue(bs: BasicString): String = bs.getValue match {
     case "fra/fre" => "fra"
     case "deu/ger" => "deu"
-    case "nld/dut" => "nld"
+    case "nld/dut" | "dut/nld" => "nld"
     case s => s
   }
 

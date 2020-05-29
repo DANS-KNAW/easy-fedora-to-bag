@@ -28,19 +28,19 @@ case class SimpleChecker(bagIndex: BagIndex) extends DebugEnhancedLogging {
     val doi = emd.getEmdIdentifier.getDansManagedDoi
     val triedMaybeVaultResponse = bagIndex.bagByDoi(doi).map(_.toSeq)
     val violations = Seq(
-      "1: has no DANS DOI" -> (if (Option(doi).isEmpty) Seq("")
+      "1: DANS DOI" -> (if (Option(doi).isEmpty) Seq("not found")
                                else Seq[String]()),
       "2: has jump off" -> jumpOff,
-      "3: title has 'thematische collectie'" -> Option(emd.getEmdTitle.getPreferredTitle)
+      "3: invalid title" -> Option(emd.getEmdTitle.getPreferredTitle)
         .filter(_.toLowerCase.contains("thematische collectie")).toSeq,
-      "4: has invalid rights" -> findInvalidRights(emd),
-      "5: not published" -> findInvalidState(amd),
+      "4: invalid rights" -> findInvalidRights(emd),
+      "5: invalid state" -> findInvalidState(amd),
       "6: DANS relations" -> findDansRelations(ddm),
       "7: is in the vault" -> triedMaybeVaultResponse.getOrElse(Seq("IO exception")),
     ).filter(_._2.nonEmpty).toMap
 
     violations.foreach { case (rule, violations) =>
-      violations.map(s => logger.warn(s"violated $rule $s"))
+      violations.foreach(s => mockFriendlyWarn(s"violated $rule $s"))
     }
     lazy val errorMessage: String = violations.keys
       .map(_.replaceAll(":.*", ""))
@@ -51,6 +51,8 @@ case class SimpleChecker(bagIndex: BagIndex) extends DebugEnhancedLogging {
            else Failure(new Exception(errorMessage))
     } yield ()
   }
+
+  private def mockFriendlyWarn(s: String): Unit = logger.warn(s)
 
   private def findInvalidRights(emd: EasyMetadataImpl) = {
     val maybe = Option(emd.getEmdRights.getAccessCategory)

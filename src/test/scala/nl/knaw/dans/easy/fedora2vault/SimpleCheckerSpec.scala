@@ -17,13 +17,17 @@ package nl.knaw.dans.easy.fedora2vault
 
 import java.net.URI
 
+import com.typesafe.scalalogging.Logger
 import nl.knaw.dans.easy.fedora2vault.fixture.{ EmdSupport, TestSupportFixture }
 import org.scalamock.scalatest.MockFactory
+import org.slf4j.{ Logger => UnderlyingLogger }
 
 import scala.util.{ Failure, Success }
 
 class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupport {
+
   private class MockedBagIndex extends BagIndex(new URI("http://localhost:20120/"))
+
   private val emdRights = <emd:rights>
                             <dct:accessRights eas:schemeId="common.dcterms.accessrights"
                                 >REQUEST_PERMISSION</dct:accessRights>
@@ -41,7 +45,7 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
     val emdTitle = <emd:title><dc:title xml:lang="nld">no theme</dc:title></emd:title>
     val emd = parseEmdContent(Seq(emdTitle, emdDoi, emdRights))
 
-    SimpleChecker(mockedBagIndex)
+    simpleCheckerWith(mockedBagIndex, expectedWarnings = Seq())
       .isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq.empty) shouldBe
       Success(())
   }
@@ -51,9 +55,10 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
     expectBagIndex once() returning Success(None)
 
     val emd = parseEmdContent(emdRights)
-
-    SimpleChecker(mockedBagIndex)
-      .isSimple(emd, emd2ddm(emd), amd("SUBMITTED"), Seq.empty) should matchPattern {
+    simpleCheckerWith(mockedBagIndex, expectedWarnings = Seq(
+        "violated 1: DANS DOI not found",
+        "violated 5: invalid state SUBMITTED",
+    )).isSimple(emd, emd2ddm(emd), amd("SUBMITTED"), Seq.empty) should matchPattern {
       case Failure(t: Throwable) if t.getMessage == "Not a simple dataset. Violates rule 1, 5" =>
     }
   }
@@ -65,8 +70,10 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
     val emdTitle = <emd:title><dc:title xml:lang="nld">thematische collectie</dc:title></emd:title>
     val emd = parseEmdContent(Seq(emdTitle, emdDoi))
 
-    SimpleChecker(mockedBagIndex)
-      .isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq()) should matchPattern {
+    simpleCheckerWith(mockedBagIndex, expectedWarnings = Seq(
+      "violated 3: invalid title thematische collectie",
+      "violated 4: invalid rights not found",
+    )).isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq()) should matchPattern {
       case Failure(t: Throwable) if t.getMessage == "Not a simple dataset. Violates rule 3, 4" =>
     }
   }
@@ -78,8 +85,11 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
     val emdTitle = <emd:title><dc:title xml:lang="nld">thematische collectie</dc:title></emd:title>
     val emd = parseEmdContent(Seq(emdTitle, emdDoi))
 
-    SimpleChecker(mockedBagIndex)
-      .isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq("easy-jumpoff:123")) should matchPattern {
+    simpleCheckerWith(mockedBagIndex, expectedWarnings = Seq(
+      "violated 2: has jump off easy-jumpoff:123",
+      "violated 3: invalid title thematische collectie",
+      "violated 4: invalid rights not found",
+    )).isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq("easy-jumpoff:123")) should matchPattern {
       case Failure(t: Throwable) if t.getMessage == "Not a simple dataset. Violates rule 2, 3, 4" =>
     }
   }
@@ -90,21 +100,11 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
 
     val emd = parseEmdContent(emdDoi)
 
-    SimpleChecker(mockedBagIndex)
-      .isSimple(emd, emd2ddm(emd), amd("SUBMITTED"), Seq.empty) should matchPattern {
+    simpleCheckerWith(mockedBagIndex, expectedWarnings = Seq(
+      "violated 4: invalid rights not found",
+      "violated 5: invalid state SUBMITTED",
+    )).isSimple(emd, emd2ddm(emd), amd("SUBMITTED"), Seq.empty) should matchPattern {
       case Failure(t: Throwable) if t.getMessage == "Not a simple dataset. Violates rule 4, 5" =>
-    }
-  }
-
-  it should "report not published" in {
-    implicit val mockedBagIndex: MockedBagIndex = mock[MockedBagIndex]
-    expectBagIndex once() returning Success(None)
-
-    val emd = parseEmdContent(Seq(emdDoi, emdRights))
-
-    SimpleChecker(mockedBagIndex)
-      .isSimple(emd, emd2ddm(emd), amd("SUBMITTED"), Seq.empty) should matchPattern {
-      case Failure(t: Throwable) if t.getMessage == "Not a simple dataset. Violates rule 5" =>
     }
   }
 
@@ -125,9 +125,11 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
       </emd:relation>,
       emdRights
     ))
-    val triedUnit = SimpleChecker(mockedBagIndex)
-      .isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq.empty)
-    triedUnit should matchPattern {
+    simpleCheckerWith(mockedBagIndex, expectedWarnings = Seq(
+      "violated 6: DANS relations <dct:isVersionOf>https://doi.org/10.17026/test-123-456</dct:isVersionOf>",
+      "violated 6: DANS relations <dct:isVersionOf>http://www.persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-2ajw-cq</dct:isVersionOf>",
+      """violated 6: DANS relations <ddm:replaces scheme="id-type:URN" href="http://persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-aka-hff">Prehistorische bewoning op het World Forum gebied - Den Haag (replaces)</ddm:replaces>""",
+    )).isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq.empty) should matchPattern {
       case Failure(t: Throwable) if t.getMessage == "Not a simple dataset. Violates rule 6" =>
     }
   }
@@ -138,8 +140,9 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
 
     val emd = parseEmdContent(Seq(emdDoi, emdRights))
 
-    SimpleChecker(mockedBagIndex)
-      .isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq.empty) should matchPattern {
+    simpleCheckerWith(mockedBagIndex, expectedWarnings = Seq(
+      "violated 7: is in the vault ---",
+    )).isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq.empty) should matchPattern {
       case Failure(t: Throwable) if t.getMessage == "Not a simple dataset. Violates rule 7" =>
     }
   }
@@ -152,4 +155,15 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
     <damd:administrative-md xmlns:damd="http://easy.dans.knaw.nl/easy/dataset-administrative-metadata/" version="0.1">
       <datasetState>{ state }</datasetState>
     </damd:administrative-md>
+
+  private def simpleCheckerWith(bagIndex: BagIndex, expectedWarnings: Seq[String]) = {
+    val mockLogger = mock[UnderlyingLogger]
+    (() => mockLogger.isWarnEnabled()) expects() anyNumberOfTimes() returning true
+    expectedWarnings.foreach(s =>
+      (mockLogger.warn(_: String)) expects s once()
+    )
+    new SimpleChecker(bagIndex) {
+      override lazy val logger: Logger = Logger(mockLogger)
+    }
+  }
 }

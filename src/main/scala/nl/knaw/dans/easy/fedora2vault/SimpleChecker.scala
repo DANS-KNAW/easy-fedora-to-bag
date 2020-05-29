@@ -52,6 +52,7 @@ case class SimpleChecker(bagIndex: BagIndex) extends DebugEnhancedLogging {
     } yield ()
   }
 
+  /** An interpolated string is a method. It needs evaluation before passing in to define expectations. */
   private def mockFriendlyWarn(s: String): Unit = logger.warn(s)
 
   private def findInvalidRights(emd: EasyMetadataImpl) = {

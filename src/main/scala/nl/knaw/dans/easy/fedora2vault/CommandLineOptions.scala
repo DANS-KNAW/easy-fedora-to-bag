@@ -31,9 +31,8 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   val description: String = s"""Tool for exporting datasets from Fedora and constructing AIP-bags to be stored in the bag stores"""
   val synopsis: String =
     s"""
-       |  easy-fedora2vault {-d <dataset-id> | -i <dataset-ids-file>} [-o <staged-AIP-dir>] [-f <file-metadata>] [-u <depositor>] [-s] [-l <log-file>] <transformation>
-       |  easy-fedora2vault -d <dataset-id> -o <staged-AIP-dir> <transformation>
-       |  easy-fedora2vault -s -u <depositor> -i <dataset-ids-file> -o <staged-AIP-dir> -l <log-file> <transformation>""".stripMargin
+       |  easy-fedora2vault {-d <dataset-id> | -i <dataset-ids-file>} [-o <staged-AIP-dir>] [-u <depositor>] [-s] [-l <log-file>] <transformation>
+     """.stripMargin
 
   version(s"$printedName v${ configuration.version }")
   banner(
@@ -54,9 +53,6 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   private val inputPath: ScallopOption[Path] = opt(name = "input-file", short = 'i',
     descr = "File containing a newline-separated list of easy-dataset-ids to be transformed. Use either this or the dataset-id argument")
   val inputFile: ScallopOption[File] = inputPath.map(File(_))
-  private val fileListPath: ScallopOption[Path] = opt(name = "file-list", short = 'f',
-    descr = "A csv-file with metadata about extra files to be added to the AIP bag")
-  val fileList: ScallopOption[File] = fileListPath.map(File(_))
   private val outputDirPath: ScallopOption[Path] = opt(name = "output-dir", short = 'o',
     descr = "Empty directory in which to stage the created AIP bags. It will be created if it doesn't exist.")
   val outputDir: ScallopOption[File] = outputDirPath.map(File(_))
@@ -75,9 +71,6 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
 
   validatePathExists(inputPath)
   validatePathIsFile(inputPath)
-
-  validatePathExists(fileListPath)
-  validatePathIsFile(fileListPath)
 
   validate(outputDir)(dir => {
     if (dir.exists) {

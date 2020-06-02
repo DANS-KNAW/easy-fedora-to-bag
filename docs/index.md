@@ -2,14 +2,12 @@ easy-fedora2vault
 ==============
 [![Build Status](https://travis-ci.org/DANS-KNAW/easy-fedora2vault.png?branch=master)](https://travis-ci.org/DANS-KNAW/easy-fedora2vault)
 
-Index a bag store
+Retrieves a dataset from Fedora and transforms it to an AIP bag conforming to DANS-BagIt-Profile v0
 
 SYNOPSIS
 --------
 
-    easy-fedora2vault {-d <dataset-id> | -i <dataset-ids-file>} [-o <staged-AIP-dir>] [-f <file-metadata>] [-u <depositor>] [-s] [-l <log-file>] <transformation>
-    easy-fedora2vault -d <dataset-id> -o <staged-AIP-dir> <transformation>
-    easy-fedora2vault -s -u <depositor> -i <dataset-ids-file> -o <staged-AIP-dir> -l <log-file> <transformation>
+    easy-fedora2vault {-d <dataset-id> | -i <dataset-ids-file>} [-o <staged-AIP-dir>] [-u <depositor>] [-s] [-l <log-file>] <transformation>
 
 DESCRIPTION
 -----------
@@ -22,7 +20,6 @@ ARGUMENTS
                                argument
      -u, --depositor  <arg>    The depositor for these datasets. If provided, only datasets from this depositor
                                are transformed.
-     -f, --file-list  <arg>    A csv-file with metadata about extra files to be added to the AIP bag
      -i, --input-file  <arg>   File containing a newline-separated list of easy-dataset-ids to be transformed.
                                Use either this or the dataset-id argument
      -l, --log-file  <arg>     The name of the logfile in csv format. If not provided a file
@@ -47,8 +44,36 @@ EXAMPLES
     $ easy-fedora2vault -d easy-dataset:1001 -s -o ~/stagedAIPs simple
         easy-dataset:1001 is transformed according to the simple transformation, but only if it fulfils the requirements. The AIP bag is generated in directory '~/stagedAIPs'.
     
-    $ easy-fedora2vault -s -u testDepositor -i dataset_ids.txt -o ./stagedAIPs -l ./outputLogfile.csv -f file-metadata.csv simple
-        creates a bag in './stagedAIPs' for each dataset in 'dataset_ids.txt' from depositor 'testDepositor' using the 'simple' transformation. If a dataset does not adhere to the 'simple' requirements, or is not deposited by 'testDepositor', it will not be considered and an explanation will be recorded in 'outputLogfile.csv'. If the dataset-id is present in the 'file-metadata.csv' the metadata will be added to the files.xml and the referenced file will be added to the bag's payload.
+    $ easy-fedora2vault -s -u testDepositor -i dataset_ids.txt -o ./stagedAIPs -l ./outputLogfile.csv simple
+        creates a bag in './stagedAIPs' for each dataset in 'dataset_ids.txt' from depositor 'testDepositor' using the 'simple' transformation. If a dataset does not adhere to the 'simple' requirements, or is not deposited by 'testDepositor', it will not be considered and an explanation will be recorded in 'outputLogfile.csv'. 
+
+
+RESULTING FILES
+---------------
+For every dataset in the output there is a bag-dir created in the `<output-dir>`. This bag-dir contains the transformed metadata and data in a DANS-Bagit-Profile AIP and is named with a UUID.
+Furthermore, a `<log-file>` is generated in csv format with the following headers:
+
+    easy-dataset-id  input easy-dataset-id
+    UUID             UUID created for the resulting AIP
+    doi              doi as it appears in the EMD
+    depositor        EASY-User-Account of the depositor of the dataset
+    transformation   transformation used
+    comments         if the dataset does not conform to the transformation-requirements, it is chronicled here
+
+
+TRANSFORMATIONS
+---------------
+### SIMPLE
+A simple transformation transforms the dataset, with no consideration of other datasets, 'thematische collecties' or external storage.  
+With the option `--strict` the transformation will check that the input dataset conforms to the following requirements. The dataset
+
+* has a DANS-DOI
+* is PUBLISHED
+* is REQUEST\_PERMISSION or OPEN\_ACCESS
+* has no Jumpoff page (i.e. there is no dans-jumpoff object in Fedora with a isJumpoffPageFor relation to this dataset)
+* has no `replaces` or `isVersionOf` relation that references a DANS-DOI, DANS-URN or easy-dataset-id
+* is no `thematische collectie` (i.e. the title does not contain `thematische collectie`)
+* is not in the vault already (i.e. check in `easy-bag-index`)
 
 
 INSTALLATION AND CONFIGURATION

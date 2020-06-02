@@ -24,21 +24,21 @@ import org.apache.commons.csv.{ CSVFormat, CSVPrinter }
 import scala.util.Try
 
 case class CsvRecord(easyDatasetId: DatasetId,
+                     bagUUID: UUID,
                      doi: String,
                      depositor: Depositor,
                      transformationType: TransformationType,
-                     bagUUID: UUID,
                      comment: String,
                     ) {
   def print(implicit printer: CSVPrinter): Try[FeedBackMessage] = Try {
-    printer.printRecord(easyDatasetId, doi, depositor, transformationType, bagUUID, comment)
+    printer.printRecord(easyDatasetId, bagUUID, doi, depositor, transformationType, comment)
     comment
   }
 }
 
 object CsvRecord {
   val csvFormat: CSVFormat = CSVFormat.RFC4180
-    .withHeader("easyDatasetId", "doi", "depositor", "transformationType", "uuid", "comment")
+    .withHeader("easyDatasetId", "uuid", "doi", "depositor", "transformationType", "comment")
     .withDelimiter(',')
     .withRecordSeparator('\n')
     .withAutoFlush(true)

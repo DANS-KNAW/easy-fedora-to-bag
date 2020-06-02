@@ -68,7 +68,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
         case t: FedoraClientException if t.getStatus != 404 => Failure(t)
         case t: Exception if t.isInstanceOf[IOException] => Failure(t)
         case t => Success(CsvRecord(
-          datasetId, doi = "", depositor = "", SIMPLE, UUID.fromString(bagDir.name), s"FAILED: $t"
+          datasetId, UUID.fromString(bagDir.name), doi = "", depositor = "", SIMPLE, s"FAILED: $t"
         ))
       }
       .doIfSuccess(_.print(printer))
@@ -127,7 +127,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       _ <- addXmlMetadata(bag, "files.xml")(filesXml(fileItems))
       _ <- bag.save()
       doi = emd.getEmdIdentifier.getDansManagedDoi
-    } yield CsvRecord(datasetId, doi, depositor, SIMPLE, UUID.fromString(bagDir.name), "OK")
+    } yield CsvRecord(datasetId, UUID.fromString(bagDir.name), doi, depositor, SIMPLE, "OK")
   }
 
   private def startWith(searchValue: String, in: Seq[String]): Seq[String] = {

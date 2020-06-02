@@ -57,12 +57,12 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
       datasetId match {
         case _ if datasetId.startsWith("fatal") =>
           Failure(new FedoraClientException(300, "mocked exception"))
-        case _ if (!datasetId.startsWith("success")) =>
+        case _ if !datasetId.startsWith("success") =>
           outputDir.createFile().writeText(datasetId)
           Failure(new Exception(datasetId))
         case _ =>
           outputDir.createFile().writeText(datasetId)
-          Success(CsvRecord(datasetId, "", "", SIMPLE, UUID.randomUUID(), "OK"))
+          Success(CsvRecord(datasetId, UUID.randomUUID(), "", "", SIMPLE, "OK"))
       }
     }
   }
@@ -73,9 +73,9 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
     val sw = new StringWriter()
     new OverriddenApp().simpleTransForms(ids, outputDir, sw) shouldBe Success("OK")
     sw.toString should (fullyMatch regex
-      """easyDatasetId,doi,depositor,transformationType,uuid,comment
-        |success:1,,,simple,.*,OK
-        |success:2,,,simple,.*,OK
+      """easyDatasetId,uuid,doi,depositor,transformationType,comment
+        |success:1,.*,,,simple,OK
+        |success:2,.*,,,simple,OK
         |""".stripMargin
       )
     outputDir.list.toSeq should have length 2
@@ -89,10 +89,10 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
       case Failure(t) if t.getMessage == "mocked exception" =>
     }
     sw.toString should (fullyMatch regex
-      """easyDatasetId,doi,depositor,transformationType,uuid,comment
-        |success:1,,,simple,.*,OK
-        |failure:2,,,simple,.*,FAILED: java.lang.Exception: failure:2
-        |success:3,,,simple,.*,OK
+      """easyDatasetId,uuid,doi,depositor,transformationType,comment
+        |success:1,.*,,,simple,OK
+        |failure:2,.*,,,simple,FAILED: java.lang.Exception: failure:2
+        |success:3,.*,,,simple,OK
         |""".stripMargin
       )
     outputDir.list.toSeq should have length 3
@@ -112,7 +112,7 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
 
     val uuid = UUID.randomUUID
     app.simpleTransform("easy-dataset:17", testDir / "bags" / uuid.toString) shouldBe
-      Success(CsvRecord("easy-dataset:17", "10.17026/test-Iiib-z9p-4ywa", "user001", SIMPLE, uuid, "OK"))
+      Success(CsvRecord("easy-dataset:17", uuid, "10.17026/test-Iiib-z9p-4ywa", "user001", SIMPLE, "OK"))
 
     val metadata = (testDir / "bags").children.next() / "metadata"
     (metadata / "depositor-info/depositor-agreement.pdf").contentAsString shouldBe "blablabla"
@@ -138,7 +138,7 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
     val uuid = UUID.randomUUID
     val triedRecord = app.simpleTransform("easy-dataset:13", testDir / "bags" / uuid.toString)
     triedRecord shouldBe
-      Success(CsvRecord("easy-dataset:13", "10.17026/mocked-Iiib-z9p-4ywa", "user001", SIMPLE, uuid, "OK"))
+      Success(CsvRecord("easy-dataset:13", uuid, "10.17026/mocked-Iiib-z9p-4ywa", "user001", SIMPLE, "OK"))
 
     val metadata = (testDir / "bags").children.next() / "metadata"
     metadata.list.toSeq.map(_.name)

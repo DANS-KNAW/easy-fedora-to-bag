@@ -22,21 +22,25 @@ import nl.knaw.dans.pf.language.emd.EasyMetadataImpl
 import scala.util.{ Failure, Success, Try }
 import scala.xml.Node
 
+case class NotSimpleException(msg: String) extends Exception(msg)
+
 case class SimpleChecker(bagIndex: BagIndex) extends DebugEnhancedLogging {
 
   def isSimple(emd: EasyMetadataImpl, ddm: Node, amd: Node, jumpOff: Seq[String]): Try[Unit] = {
-    val doi = emd.getEmdIdentifier.getDansManagedDoi
-    val triedMaybeVaultResponse = bagIndex.bagByDoi(doi).map(_.toSeq)
+    val maybeDoi = Option(emd.getEmdIdentifier.getDansManagedDoi)
+    val triedVaultResponses = maybeDoi
+      .map(bagIndex.bagByDoi(_).map(_.toSeq))
+      .getOrElse(Success(Seq.empty)) // no DOI => no bag found by DOI
     val violations = Seq(
-      "1: DANS DOI" -> (if (Option(doi).isEmpty) Seq("not found")
-                               else Seq[String]()),
+      "1: DANS DOI" -> (if (maybeDoi.isEmpty) Seq("not found")
+                        else Seq[String]()),
       "2: has jump off" -> jumpOff,
       "3: invalid title" -> Option(emd.getEmdTitle.getPreferredTitle)
         .filter(_.toLowerCase.contains("thematische collectie")).toSeq,
       "4: invalid rights" -> findInvalidRights(emd),
       "5: invalid state" -> findInvalidState(amd),
       "6: DANS relations" -> findDansRelations(ddm),
-      "7: is in the vault" -> triedMaybeVaultResponse.getOrElse(Seq("IO exception")),
+      "7: is in the vault" -> triedVaultResponses.getOrElse(Seq("IO exception")),
     ).filter(_._2.nonEmpty).toMap
 
     violations.foreach { case (rule, violations) =>
@@ -46,9 +50,9 @@ case class SimpleChecker(bagIndex: BagIndex) extends DebugEnhancedLogging {
       .map(_.replaceAll(":.*", ""))
       .mkString("Not a simple dataset. Violates rule ", ", ", "")
     for {
-      _ <- triedMaybeVaultResponse // an IOException is not a violation
+      _ <- triedVaultResponses // an IOException is not a violation
       _ <- if (violations.isEmpty) Success(())
-           else Failure(new Exception(errorMessage))
+           else Failure(NotSimpleException(errorMessage))
     } yield ()
   }
 

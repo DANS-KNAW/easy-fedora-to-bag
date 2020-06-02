@@ -45,7 +45,7 @@ EXAMPLES
         easy-dataset:1001 is transformed according to the simple transformation, but only if it fulfils the requirements. The AIP bag is generated in directory '~/stagedAIPs'.
     
     $ easy-fedora2vault -s -u testDepositor -i dataset_ids.txt -o ./stagedAIPs -l ./outputLogfile.csv simple
-        creates a bag in './stagedAIPs' for each dataset in 'dataset_ids.txt' from depositor 'testDepositor' using the 'simple' transformation. If a dataset does not adhere to the 'simple' requirements, or is not deposited by 'testDepositor', it will not be considered and an explanation will be recorded in 'outputLogfile.csv'. 
+        creates a bag in './stagedAIPs' for each dataset in 'dataset_ids.txt' deposited by 'testDepositor' using the 'simple' transformation. If a dataset does not adhere to the 'simple' requirements, or is not deposited by 'testDepositor', it will not be considered and an explanation will be recorded in 'outputLogfile.csv'. 
 
 
 RESULTING FILES

@@ -59,8 +59,8 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   val depositor: ScallopOption[Depositor] = opt(name = "depositor", short = 'u',
     descr = "The depositor for these datasets. If provided, only datasets from this depositor are transformed.")
   private val logFilePath: ScallopOption[Path] = opt(name = "log-file", short = 'l',
-    descr = "The name of the logfile in csv format. If not provided a file easy-fedora2vault-<timestamp>.csv will be created in the home-dir of the user.",
-    default = Some(Paths.get(Properties.userHome).resolve(s"easy-fedora2vault-$now.csv")))
+    descr = s"The name of the logfile in csv format. If not provided a file $printedName-<timestamp>.csv will be created in the home-dir of the user.",
+    default = Some(Paths.get(Properties.userHome).resolve(s"$printedName-$now.csv")))
   val logFile: ScallopOption[File] = logFilePath.map(File(_))
   val strictMode: ScallopOption[Boolean] = opt(name = "strict", short = 's',
     descr = "If provided, the transformation will check whether the datasets adhere to the requirements of the chosen transformation.")

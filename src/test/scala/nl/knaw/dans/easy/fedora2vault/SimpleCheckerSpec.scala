@@ -21,8 +21,9 @@ import com.typesafe.scalalogging.Logger
 import nl.knaw.dans.easy.fedora2vault.fixture.{ EmdSupport, TestSupportFixture }
 import org.scalamock.scalatest.MockFactory
 import org.slf4j.{ Logger => UnderlyingLogger }
+import scalaj.http.HttpResponse
 
-import scala.util.{ Failure, Success, Try }
+import scala.util.{ Failure, Success }
 import scala.xml.Elem
 
 class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupport {
@@ -39,26 +40,26 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
                          >10.17026/test-Iiib-z9p-4ywa</dc:identifier>
                        </emd:identifier>
 
-  private val noBagInTheVault = Some(Success(None))
-  private val aBagInTheVault = Some(Success(Some("---")))
-
   "isSimple" should "succeed" in {
     val emdTitle = <emd:title><dc:title xml:lang="nld">no theme</dc:title></emd:title>
     val emd = parseEmdContent(Seq(emdTitle, emdDoi, emdRights))
 
-    simpleCheckerExpecting(bagIndexExpects = noBagInTheVault, loggerWarnCalledWith = Seq())
-      .isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq.empty) shouldBe
+    simpleCheckerExpecting(
+      expectedBagIndexResponse = new HttpResponse[String](body = "", code = 400, headers = Map.empty),
+      loggerWarnCalledWith = Seq()
+    ).isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq.empty) shouldBe
       Success(())
   }
 
   it should "report missing DOI" in {
     val emd = parseEmdContent(emdRights)
     simpleCheckerExpecting(
-      bagIndexExpects = None, // no call expected
+      expectedBagIndexResponse = null, // no call expected
       loggerWarnCalledWith = Seq(
         "violated 1: DANS DOI not found",
         "violated 5: invalid state SUBMITTED",
-      )).isSimple(emd, emd2ddm(emd), amd("SUBMITTED"), Seq.empty) should matchPattern {
+      )
+    ).isSimple(emd, emd2ddm(emd), amd("SUBMITTED"), Seq.empty) should matchPattern {
       case Failure(t: Throwable) if t.getMessage == "Not a simple dataset. Violates rule 1, 5" =>
     }
   }
@@ -67,10 +68,13 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
     val emdTitle = <emd:title><dc:title xml:lang="nld">thematische collectie</dc:title></emd:title>
     val emd = parseEmdContent(Seq(emdTitle, emdDoi))
 
-    simpleCheckerExpecting(bagIndexExpects = noBagInTheVault, loggerWarnCalledWith = Seq(
-      "violated 3: invalid title thematische collectie",
-      "violated 4: invalid rights not found",
-    )).isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq()) should matchPattern {
+    simpleCheckerExpecting(
+      expectedBagIndexResponse = new HttpResponse[String](body = "", code = 400, headers = Map.empty),
+      loggerWarnCalledWith = Seq(
+        "violated 3: invalid title thematische collectie",
+        "violated 4: invalid rights not found",
+      )
+    ).isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq()) should matchPattern {
       case Failure(t: Throwable) if t.getMessage == "Not a simple dataset. Violates rule 3, 4" =>
     }
   }
@@ -79,11 +83,14 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
     val emdTitle = <emd:title><dc:title xml:lang="nld">thematische collectie</dc:title></emd:title>
     val emd = parseEmdContent(Seq(emdTitle, emdDoi))
 
-    simpleCheckerExpecting(bagIndexExpects = noBagInTheVault, loggerWarnCalledWith = Seq(
-      "violated 2: has jump off easy-jumpoff:123",
-      "violated 3: invalid title thematische collectie",
-      "violated 4: invalid rights not found",
-    )).isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq("easy-jumpoff:123")) should matchPattern {
+    simpleCheckerExpecting(expectedBagIndexResponse = new HttpResponse[String](
+      body = "", code = 400, headers = Map.empty),
+      loggerWarnCalledWith = Seq(
+        "violated 2: has jump off easy-jumpoff:123",
+        "violated 3: invalid title thematische collectie",
+        "violated 4: invalid rights not found",
+      )
+    ).isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq("easy-jumpoff:123")) should matchPattern {
       case Failure(t: Throwable) if t.getMessage == "Not a simple dataset. Violates rule 2, 3, 4" =>
     }
   }
@@ -91,10 +98,13 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
   it should "report invalid status" in {
     val emd = parseEmdContent(emdDoi)
 
-    simpleCheckerExpecting(bagIndexExpects = noBagInTheVault, loggerWarnCalledWith = Seq(
-      "violated 4: invalid rights not found",
-      "violated 5: invalid state SUBMITTED",
-    )).isSimple(emd, emd2ddm(emd), amd("SUBMITTED"), Seq.empty) should matchPattern {
+    simpleCheckerExpecting(
+      expectedBagIndexResponse = new HttpResponse[String](body = "", code = 400, headers = Map.empty),
+      loggerWarnCalledWith = Seq(
+        "violated 4: invalid rights not found",
+        "violated 5: invalid state SUBMITTED",
+      )
+    ).isSimple(emd, emd2ddm(emd), amd("SUBMITTED"), Seq.empty) should matchPattern {
       case Failure(t: Throwable) if t.getMessage == "Not a simple dataset. Violates rule 4, 5" =>
     }
   }
@@ -113,20 +123,24 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
       </emd:relation>,
       emdRights
     ))
-    simpleCheckerExpecting(bagIndexExpects = noBagInTheVault, loggerWarnCalledWith = Seq(
-      "violated 6: DANS relations <dct:isVersionOf>https://doi.org/10.17026/test-123-456</dct:isVersionOf>",
-      "violated 6: DANS relations <dct:isVersionOf>http://www.persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-2ajw-cq</dct:isVersionOf>",
-      """violated 6: DANS relations <ddm:replaces scheme="id-type:URN" href="http://persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-aka-hff">Prehistorische bewoning op het World Forum gebied - Den Haag (replaces)</ddm:replaces>""",
-    )).isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq.empty) should matchPattern {
+    simpleCheckerExpecting(
+      expectedBagIndexResponse = new HttpResponse[String](body = "", code = 400, headers = Map.empty),
+      loggerWarnCalledWith = Seq(
+        "violated 6: DANS relations <dct:isVersionOf>https://doi.org/10.17026/test-123-456</dct:isVersionOf>",
+        "violated 6: DANS relations <dct:isVersionOf>http://www.persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-2ajw-cq</dct:isVersionOf>",
+        """violated 6: DANS relations <ddm:replaces scheme="id-type:URN" href="http://persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-aka-hff">Prehistorische bewoning op het World Forum gebied - Den Haag (replaces)</ddm:replaces>""",
+      )
+    ).isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq.empty) should matchPattern {
       case Failure(t: Throwable) if t.getMessage == "Not a simple dataset. Violates rule 6" =>
     }
   }
 
   it should "report existing bag" in {
     val emd = parseEmdContent(Seq(emdDoi, emdRights))
+    val result = "<bag-info><bag-id>blabla</bag-id><doi>10.80270/test-zwu-cxjx</doi></bag-info>"
     simpleCheckerExpecting(
-      bagIndexExpects = aBagInTheVault,
-      loggerWarnCalledWith = Seq("violated 7: is in the vault ---")
+      expectedBagIndexResponse = new HttpResponse[String](body = s"<result>$result</result>", code = 200, headers = Map.empty),
+      loggerWarnCalledWith = Seq(s"violated 7: is in the vault $result")
     ).isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq.empty) should matchPattern {
       case Failure(t: Throwable) if t.getMessage == "Not a simple dataset. Violates rule 7" =>
     }
@@ -137,16 +151,13 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
       <datasetState>{ state }</datasetState>
     </damd:administrative-md>
 
-  private def simpleCheckerExpecting(bagIndexExpects: Option[Try[Option[String]]],
+  private def simpleCheckerExpecting(expectedBagIndexResponse: HttpResponse[String],
                                      loggerWarnCalledWith: Seq[String],
                                     ): SimpleChecker = {
-    val mockedBagIndex: MockedBagIndex = mock[MockedBagIndex]
-    bagIndexExpects.foreach(expected =>
-      (mockedBagIndex.bagByDoi(_: String)) expects * returning expected once()
-    )
-    bagIndexExpects.getOrElse(
-      (mockedBagIndex.bagByDoi(_: String)) expects * never()
-    )
+    val mockedBagIndex = new BagIndex(new URI("https://does.not.exist.dans.knaw.nl")) {
+      override def execute(doi: String): HttpResponse[String] =
+        expectedBagIndexResponse
+    }
 
     val mockLogger = mock[UnderlyingLogger]
     (() => mockLogger.isWarnEnabled()) expects() anyNumberOfTimes() returning true

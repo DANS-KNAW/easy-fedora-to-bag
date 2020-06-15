@@ -192,7 +192,7 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
   }
 
   private def expectNothingFrom(bagIndex: => BagIndex): Unit = {
-    (bagIndex.bagByDoi(_: String)) expects * once() returning Success(None)
+    (bagIndex.bagInfoByDoi(_: String)) expects * once() returning Success(None)
   }
 
   private def expectedManagedStreams(fedoraProvider: => FedoraProvider, expectedObjects: File*): Unit = {

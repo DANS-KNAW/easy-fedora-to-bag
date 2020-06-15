@@ -58,7 +58,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
   private def simpleTransForms(input: Iterator[DatasetId], outputDir: File)
                               (printer: CSVPrinter): Try[FeedBackMessage] = input
     .map(simpleTransform(_, outputDir / UUID.randomUUID.toString, printer))
-    .failFastOr(Success("OK"))
+    .failFastOr(Success("no fedora/IO errors"))
 
   private def simpleTransform(datasetId: DatasetId, bagDir: File, printer: CSVPrinter): Try[Any] = {
     simpleTransform(datasetId, bagDir)

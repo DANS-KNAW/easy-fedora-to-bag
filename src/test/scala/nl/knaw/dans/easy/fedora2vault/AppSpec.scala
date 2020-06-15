@@ -71,7 +71,7 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
     val ids = Iterator("success:1", "success:2")
     val outputDir = (testDir / "output").createDirectories()
     val sw = new StringWriter()
-    new OverriddenApp().simpleTransForms(ids, outputDir, sw) shouldBe Success("OK")
+    new OverriddenApp().simpleTransForms(ids, outputDir, sw) shouldBe Success("no fedora/IO errors")
     sw.toString should (fullyMatch regex
       """easyDatasetId,uuid,doi,depositor,transformationType,comment
         |success:1,.*,,,simple,OK

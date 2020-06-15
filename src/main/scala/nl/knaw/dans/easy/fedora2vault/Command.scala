@@ -49,7 +49,7 @@ object Command extends App with DebugEnhancedLogging {
           ),
         commandLine.outputDir(),
         commandLine.logFile().newFileWriter(append = true),
-      )
+      ).map(msg => s"$msg, for details see ${ commandLine.logFile().toJava.getAbsolutePath }")
     }
   }
 }

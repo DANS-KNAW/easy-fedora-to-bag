@@ -53,7 +53,7 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   private val inputPath: ScallopOption[Path] = opt(name = "input-file", short = 'i',
     descr = "File containing a newline-separated list of easy-dataset-ids to be transformed. Use either this or the dataset-id argument")
   val inputFile: ScallopOption[File] = inputPath.map(File(_))
-  private val outputDirPath: ScallopOption[Path] = opt(name = "output-dir", short = 'o',
+  private val outputDirPath: ScallopOption[Path] = opt(name = "output-dir", short = 'o', required = true,
     descr = "Empty directory in which to stage the created AIP bags. It will be created if it doesn't exist.")
   val outputDir: ScallopOption[File] = outputDirPath.map(File(_))
   val depositor: ScallopOption[Depositor] = opt(name = "depositor", short = 'u',

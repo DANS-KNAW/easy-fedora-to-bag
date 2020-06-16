@@ -53,7 +53,7 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
 
   private class OverriddenApp extends MockedApp {
     /** overrides the method called by the method under test */
-    override def simpleTransform(datasetId: DatasetId, outputDir: File): Try[CsvRecord] = {
+    override def simpleTransform(datasetId: DatasetId, outputDir: File, strict: Boolean): Try[CsvRecord] = {
       datasetId match {
         case _ if datasetId.startsWith("fatal") =>
           Failure(new FedoraClientException(300, "mocked exception"))
@@ -71,7 +71,7 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
     val ids = Iterator("success:1", "success:2")
     val outputDir = (testDir / "output").createDirectories()
     val sw = new StringWriter()
-    new OverriddenApp().simpleTransForms(ids, outputDir, sw) shouldBe Success("no fedora/IO errors")
+    new OverriddenApp().simpleTransForms(ids, outputDir, strict = true, sw) shouldBe Success("no fedora/IO errors")
     sw.toString should (fullyMatch regex
       """easyDatasetId,uuid,doi,depositor,transformationType,comment
         |success:1,.*,,,simple,OK
@@ -85,7 +85,7 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
     val ids = Iterator("success:1", "failure:2", "success:3", "fatal:4", "success:5")
     val outputDir = (testDir / "output").createDirectories()
     val sw = new StringWriter()
-    new OverriddenApp().simpleTransForms(ids, outputDir, sw) should matchPattern {
+    new OverriddenApp().simpleTransForms(ids, outputDir, strict = true, sw) should matchPattern {
       case Failure(t) if t.getMessage == "mocked exception" =>
     }
     sw.toString should (fullyMatch regex
@@ -111,7 +111,7 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
     )
 
     val uuid = UUID.randomUUID
-    app.simpleTransform("easy-dataset:17", testDir / "bags" / uuid.toString) shouldBe
+    app.simpleTransform("easy-dataset:17", testDir / "bags" / uuid.toString, strict = true) shouldBe
       Success(CsvRecord("easy-dataset:17", uuid, "10.17026/test-Iiib-z9p-4ywa", "user001", SIMPLE, "OK"))
 
     val metadata = (testDir / "bags").children.next() / "metadata"
@@ -136,7 +136,7 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
     expectedManagedStreams(app.fedoraProvider, mockContentOfFile35)
 
     val uuid = UUID.randomUUID
-    val triedRecord = app.simpleTransform("easy-dataset:13", testDir / "bags" / uuid.toString)
+    val triedRecord = app.simpleTransform("easy-dataset:13", testDir / "bags" / uuid.toString, strict = true)
     triedRecord shouldBe
       Success(CsvRecord("easy-dataset:13", uuid, "10.17026/mocked-Iiib-z9p-4ywa", "user001", SIMPLE, "OK"))
 
@@ -178,7 +178,7 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
     expectedSubordinates(app.fedoraProvider, "easy-file:35")
     expectedManagedStreams(app.fedoraProvider, mockContentOfFile35)
 
-    app.simpleTransform("easy-dataset:13", testDir / "bags" / UUID.randomUUID.toString) should matchPattern {
+    app.simpleTransform("easy-dataset:13", testDir / "bags" / UUID.randomUUID.toString, strict = true) should matchPattern {
       case Failure(e) if e.getMessage == "No <visibleTo> in EASY_FILE_METADATA for easy-file:35" =>
     }
   }

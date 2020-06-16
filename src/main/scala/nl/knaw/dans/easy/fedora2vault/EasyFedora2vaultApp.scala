@@ -50,18 +50,18 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
   private lazy val ldap = new Ldap(ldapContext)
   private val emdUnmarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
 
-  def simpleTransForms(datasetIds: Iterator[DatasetId], outputDir: File, writer: Writer): Try[FeedBackMessage] = {
+  def simpleTransForms(datasetIds: Iterator[DatasetId], outputDir: File, strict: Boolean, writer: Writer): Try[FeedBackMessage] = {
     new Dispose(CsvRecord.csvFormat.print(writer))
-      .apply(simpleTransForms(datasetIds, outputDir))
+      .apply(simpleTransForms(datasetIds, outputDir, strict))
   }
 
-  private def simpleTransForms(input: Iterator[DatasetId], outputDir: File)
+  private def simpleTransForms(input: Iterator[DatasetId], outputDir: File, strict: Boolean)
                               (printer: CSVPrinter): Try[FeedBackMessage] = input
-    .map(simpleTransform(_, outputDir / UUID.randomUUID.toString, printer))
+    .map(simpleTransform(_, outputDir / UUID.randomUUID.toString, strict, printer))
     .failFastOr(Success("no fedora/IO errors"))
 
-  private def simpleTransform(datasetId: DatasetId, bagDir: File, printer: CSVPrinter): Try[Any] = {
-    simpleTransform(datasetId, bagDir)
+  private def simpleTransform(datasetId: DatasetId, bagDir: File, strict: Boolean, printer: CSVPrinter): Try[Any] = {
+    simpleTransform(datasetId, bagDir, strict)
       .doIfFailure {
         case t: NotSimpleException => logger.warn(s"$datasetId -> $bagDir failed: ${t.getMessage}")
       }.recoverWith {
@@ -74,7 +74,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       .doIfSuccess(_.print(printer))
   }
 
-  def simpleTransform(datasetId: DatasetId, bagDir: File): Try[CsvRecord] = {
+  def simpleTransform(datasetId: DatasetId, bagDir: File, strict: Boolean): Try[CsvRecord] = {
 
     def managedMetadataStream(foXml: Elem, streamId: String, bag: DansV0Bag, metadataFile: String) = {
       managedStreamLabel(foXml, streamId)
@@ -99,7 +99,8 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
         .map(id => getAudience(id.getValue)).collectResults
       ddm <- DDM(emd, audiences)
       fedoraIDs <- fedoraProvider.getSubordinates(datasetId)
-      _ <- simpleChecker.isSimple(emd, ddm, amd, startWith("easy-jumpoff:", in = fedoraIDs))
+      _ <- if (strict) simpleChecker.isSimple(emd, ddm, amd, startWith("easy-jumpoff:", in = fedoraIDs))
+           else Success(()) // TODO perhaps log a warning if not strict?
       bag <- DansV0Bag.empty(bagDir)
         .map(_.withEasyUserAccount(depositor).withCreated(DateTime.now()))
       _ <- addXmlMetadata(bag, "emd.xml")(emdXml)

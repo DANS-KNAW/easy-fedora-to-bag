@@ -48,6 +48,7 @@ object Command extends App with DebugEnhancedLogging {
             .filterNot(_.startsWith("#"))
           ),
         commandLine.outputDir(),
+        commandLine.strictMode(),
         commandLine.logFile().newFileWriter(append = true),
       ).map(msg => s"$msg, for details see ${ commandLine.logFile().toJava.getAbsolutePath }")
     }

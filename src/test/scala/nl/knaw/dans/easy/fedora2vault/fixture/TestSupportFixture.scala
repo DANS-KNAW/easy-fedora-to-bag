@@ -29,9 +29,4 @@ trait TestSupportFixture extends AnyFlatSpec with TimeZoneFixture
   with Inspectors {
   val nameSpaceRegExp = """ xmlns:[a-z-]+="[^"]*"""" // these attributes have a variable order
   val sampleFoXML: File = File("src/test/resources/sample-foxml")
-
-  val emdNS = "http://easy.dans.knaw.nl/easy/easymetadata/"
-  val easNS = "http://easy.dans.knaw.nl/easy/easymetadata/eas/"
-  val dctNS = "http://purl.org/dc/terms/"
-  val dcNS = "http://purl.org/dc/elements/1.1/"
 }

@@ -63,14 +63,14 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
   private def simpleTransform(datasetId: DatasetId, bagDir: File, strict: Boolean, printer: CSVPrinter): Try[Any] = {
     simpleTransform(datasetId, bagDir, strict)
       .doIfFailure {
-        case t: NotSimpleException => logger.warn(s"$datasetId -> $bagDir failed: ${t.getMessage}")
+        case t: NotSimpleException => logger.warn(s"$datasetId -> $bagDir failed: ${ t.getMessage }")
       }.recoverWith {
-        case t: FedoraClientException if t.getStatus != 404 => Failure(t)
-        case t: Exception if t.isInstanceOf[IOException] => Failure(t)
-        case t => Success(CsvRecord(
-          datasetId, UUID.fromString(bagDir.name), doi = "", depositor = "", SIMPLE, s"FAILED: $t"
-        ))
-      }
+      case t: FedoraClientException if t.getStatus != 404 => Failure(t)
+      case t: Exception if t.isInstanceOf[IOException] => Failure(t)
+      case t => Success(CsvRecord(
+        datasetId, UUID.fromString(bagDir.name), doi = "", depositor = "", SIMPLE, s"FAILED: $t"
+      ))
+    }
       .doIfSuccess(_.print(printer))
   }
 

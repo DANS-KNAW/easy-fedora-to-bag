@@ -60,7 +60,7 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
         "violated 5: invalid state SUBMITTED",
       )
     ).isSimple(emd, emd2ddm(emd), amd("SUBMITTED"), Seq.empty) should matchPattern {
-      case Failure(t: Throwable) if t.getMessage == "Not a simple dataset. Violates rule 1, 5" =>
+      case Failure(t: Throwable) if t.getMessage == "Not a simple dataset. Violates rule 1: DANS DOI, 5: invalid state" =>
     }
   }
 
@@ -75,7 +75,7 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
         "violated 4: invalid rights not found",
       )
     ).isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq()) should matchPattern {
-      case Failure(t: Throwable) if t.getMessage == "Not a simple dataset. Violates rule 3, 4" =>
+      case Failure(t: Throwable) if t.getMessage == "Not a simple dataset. Violates rule 3: invalid title, 4: invalid rights" =>
     }
   }
 
@@ -91,7 +91,7 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
         "violated 4: invalid rights not found",
       )
     ).isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq("easy-jumpoff:123")) should matchPattern {
-      case Failure(t: Throwable) if t.getMessage == "Not a simple dataset. Violates rule 2, 3, 4" =>
+      case Failure(t: Throwable) if t.getMessage == "Not a simple dataset. Violates rule 2: has jump off, 3: invalid title, 4: invalid rights" =>
     }
   }
 
@@ -105,7 +105,7 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
         "violated 5: invalid state SUBMITTED",
       )
     ).isSimple(emd, emd2ddm(emd), amd("SUBMITTED"), Seq.empty) should matchPattern {
-      case Failure(t: Throwable) if t.getMessage == "Not a simple dataset. Violates rule 4, 5" =>
+      case Failure(t: Throwable) if t.getMessage == "Not a simple dataset. Violates rule 4: invalid rights, 5: invalid state" =>
     }
   }
 
@@ -131,7 +131,7 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
         """violated 6: DANS relations <ddm:replaces scheme="id-type:URN" href="http://persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-aka-hff">Prehistorische bewoning op het World Forum gebied - Den Haag (replaces)</ddm:replaces>""",
       )
     ).isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq.empty) should matchPattern {
-      case Failure(t: Throwable) if t.getMessage == "Not a simple dataset. Violates rule 6" =>
+      case Failure(t: Throwable) if t.getMessage == "Not a simple dataset. Violates rule 6: DANS relations" =>
     }
   }
 
@@ -142,7 +142,7 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
       expectedBagIndexResponse = new HttpResponse[String](body = s"<result>$result</result>", code = 200, headers = Map.empty),
       loggerWarnCalledWith = Seq(s"violated 7: is in the vault $result")
     ).isSimple(emd, emd2ddm(emd), amd("PUBLISHED"), Seq.empty) should matchPattern {
-      case Failure(t: Throwable) if t.getMessage == "Not a simple dataset. Violates rule 7" =>
+      case Failure(t: Throwable) if t.getMessage == "Not a simple dataset. Violates rule 7: is in the vault" =>
     }
   }
 

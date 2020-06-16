@@ -47,7 +47,7 @@ case class SimpleChecker(bagIndex: BagIndex) extends DebugEnhancedLogging {
       violations.foreach(s => mockFriendlyWarn(s"violated $rule $s"))
     }
     lazy val errorMessage: String = violations.keys
-      .map(_.replaceAll(":.*", ""))
+      //.map(_.replaceAll(":.*", ""))
       .mkString("Not a simple dataset. Violates rule ", ", ", "")
     for {
       _ <- triedMaybeVaultResponse // an IOException is not a violation

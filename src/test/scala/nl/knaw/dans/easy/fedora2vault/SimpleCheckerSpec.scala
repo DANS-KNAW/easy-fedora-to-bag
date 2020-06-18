@@ -60,7 +60,7 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
         "violated 5: invalid state SUBMITTED",
       )
     ).violations(emd, emd2ddm(emd), amd("SUBMITTED"), Seq.empty) shouldBe
-      Success(Some("Not simple, violates 1: DANS DOI; 5: invalid state"))
+      Success(Some("Violates 1: DANS DOI; 5: invalid state"))
   }
 
   it should "report thematische collectie" in {
@@ -74,7 +74,7 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
         "violated 4: invalid rights not found",
       )
     ).violations(emd, emd2ddm(emd), amd("PUBLISHED"), Seq()) shouldBe
-      Success(Some("Not simple, violates 3: invalid title; 4: invalid rights"))
+      Success(Some("Violates 3: invalid title; 4: invalid rights"))
   }
 
   it should "report jump off" in {
@@ -89,7 +89,7 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
         "violated 4: invalid rights not found",
       )
     ).violations(emd, emd2ddm(emd), amd("PUBLISHED"), Seq("easy-jumpoff:123")) shouldBe
-      Success(Some("Not simple, violates 2: has jump off; 3: invalid title; 4: invalid rights"))
+      Success(Some("Violates 2: has jump off; 3: invalid title; 4: invalid rights"))
   }
 
   it should "report invalid status" in {
@@ -102,7 +102,7 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
         "violated 5: invalid state SUBMITTED",
       )
     ).violations(emd, emd2ddm(emd), amd("SUBMITTED"), Seq.empty) shouldBe
-      Success(Some("Not simple, violates 4: invalid rights; 5: invalid state"))
+      Success(Some("Violates 4: invalid rights; 5: invalid state"))
   }
 
   it should "report invalid relations" in {
@@ -127,7 +127,7 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
         """violated 6: DANS relations <ddm:replaces scheme="id-type:URN" href="http://persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-aka-hff">Prehistorische bewoning op het World Forum gebied - Den Haag (replaces)</ddm:replaces>""",
       )
     ).violations(emd, emd2ddm(emd), amd("PUBLISHED"), Seq.empty) shouldBe
-      Success(Some("Not simple, violates 6: DANS relations"))
+      Success(Some("Violates 6: DANS relations"))
   }
 
   it should "report existing bag" in {
@@ -137,7 +137,7 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
       expectedBagIndexResponse = new HttpResponse[String](body = s"<result>$result</result>", code = 200, headers = Map.empty),
       loggerWarnCalledWith = Seq(s"violated 7: is in the vault $result")
     ).violations(emd, emd2ddm(emd), amd("PUBLISHED"), Seq.empty) shouldBe
-      Success(Some("Not simple, violates 7: is in the vault"))
+      Success(Some("Violates 7: is in the vault"))
   }
 
   private def amd(state: String): Elem =

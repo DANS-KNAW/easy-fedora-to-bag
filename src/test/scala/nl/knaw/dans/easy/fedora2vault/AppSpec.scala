@@ -140,7 +140,7 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
 
     val uuid = UUID.randomUUID
     app.simpleTransform("easy-dataset:17", testDir / "bags" / uuid.toString, strict = false) shouldBe
-      Success(CsvRecord("easy-dataset:17", uuid, "10.17026/test-Iiib-z9p-4ywa", "user001", "not strict simple", "Not simple, violates 2: has jump off"))
+      Success(CsvRecord("easy-dataset:17", uuid, "10.17026/test-Iiib-z9p-4ywa", "user001", "not strict simple", "Violates 2: has jump off"))
 
     val metadata = (testDir / "bags").children.next() / "metadata"
     (metadata / "depositor-info/depositor-agreement.pdf").contentAsString shouldBe "blablabla"

@@ -91,7 +91,6 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       foXml <- fedoraProvider.loadFoXml(datasetId)
       depositor <- getOwner(foXml)
       msg = s"$bagDir from $datasetId with owner $depositor"
-      _ = logger.info("Created " + msg)
       emdXml <- getEmd(foXml)
       emd <- Try(emdUnmarshaller.unmarshal(emdXml.serialize))
       amd <- getAmd(foXml)
@@ -103,6 +102,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       maybeSimpleViolations <- simpleChecker.violations(emd, ddm, amd, jumpOffIds)
       _ = println(s"maybeSimpleViolations=$maybeSimpleViolations")
       _ = if (strict) maybeSimpleViolations.foreach(msg => throw NotSimpleException(msg))
+      _ = logger.info("Creating " + msg)
       bag <- DansV0Bag.empty(bagDir)
         .map(_.withEasyUserAccount(depositor).withCreated(DateTime.now()))
       _ <- addXmlMetadata(bag, "emd.xml")(emdXml)

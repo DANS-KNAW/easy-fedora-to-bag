@@ -29,7 +29,7 @@ class BagIndexSpec extends TestSupportFixture with MockFactory {
   "bagInfoByDoi" should "return None" in {
     new BagIndex(new URI("https://does.not.exist.dans.knaw.nl")) {
       override def execute(doi: String): HttpResponse[String] =
-        new HttpResponse[String](body = "", code = 400, headers = Map.empty)
+        new HttpResponse[String](body = "", code = 404, headers = Map.empty)
     }.bagInfoByDoi("") shouldBe Success(None)
   }
 
@@ -63,7 +63,7 @@ class BagIndexSpec extends TestSupportFixture with MockFactory {
         new HttpResponse[String](body = "", code = 300, headers = Map.empty)
     }.bagInfoByDoi("") should matchPattern {
       case Failure(e: Exception) if e.getMessage ==
-        "Not expected response code from bag-index. url='https://does.not.exist.dans.knaw.nlsearch', doi='', response: 300 - " =>
+        "Not expected response code from bag-index. url='https://does.not.exist.dans.knaw.nl/search', doi='', response: 300 - " =>
     }
   }
 }

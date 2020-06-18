@@ -49,7 +49,7 @@ case class SimpleChecker(bagIndex: BagIndex) extends DebugEnhancedLogging {
 
     triedMaybeVaultResponse.map(_ =>
       if (violations.isEmpty) None
-      else Some(violations.keys.mkString("Not simple, violates ", "; ", ""))
+      else Some(violations.keys.mkString("Violates ", "; ", ""))
     )
   }
 

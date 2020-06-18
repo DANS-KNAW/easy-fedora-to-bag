@@ -29,7 +29,7 @@ case class BagIndex(bagIndexUri: URI) {
   /** An IOException is fatal for the batch of datasets */
   private case class BagIndexException(msg: String, cause: Throwable) extends IOException(msg, cause)
 
-  private val url: URI = bagIndexUri.resolve("search")
+  private val url: URI = bagIndexUri.resolve("/search")
 
   def bagInfoByDoi(doi: String): Try[Option[String]] = for {
     maybeString <- findBagInfo(doi)
@@ -42,7 +42,7 @@ case class BagIndex(bagIndexUri: URI) {
   }.recoverWith {
     case t: Throwable => Failure(BagIndexException(s"DOI[$doi] url[$url]" + t.getMessage, t))
   }.map {
-    case response if response.code == 400 => None
+    case response if response.code == 404 => None
     case response if response.code == 200 => Some(response.body)
     case response =>
       throw BagIndexException(s"Not expected response code from bag-index. url='${ url }', doi='$doi', response: ${ response.code } - ${ response.body }", null)

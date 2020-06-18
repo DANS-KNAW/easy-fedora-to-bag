@@ -99,11 +99,9 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
         .map(id => getAudience(id.getValue)).collectResults
       ddm <- DDM(emd, audiences)
       fedoraIDs <- fedoraProvider.getSubordinates(datasetId)
-      simpleViolations <- simpleChecker.simpleViolations(emd, ddm, amd, startWith("easy-jumpoff:", in = fedoraIDs))
-      comment = if (simpleViolations.isEmpty) "OK"
-                else simpleViolations.mkString("Not simple, violates ", "; ", "")
-      _ <- if (strict && simpleViolations.isEmpty) Success(())
-           else Failure(NotSimpleException(comment))
+      jumpOffIds = fedoraIDs.filter(_.startsWith("easy-jumpoff:"))
+      maybeSimpleViolations <- simpleChecker.violations(emd, ddm, amd, jumpOffIds)
+      _ = if (strict) maybeSimpleViolations.foreach(msg => throw NotSimpleException(msg))
       bag <- DansV0Bag.empty(bagDir)
         .map(_.withEasyUserAccount(depositor).withCreated(DateTime.now()))
       _ <- addXmlMetadata(bag, "emd.xml")(emdXml)
@@ -126,7 +124,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
         .getOrElse(Success(()))
       _ <- managedMetadataStream(foXml, "DATASET_LICENSE", bag, "depositor-info/depositor-agreement") // TODO EASY-2697: older versions
         .getOrElse(Success(()))
-      fileItems <- startWith("easy-file:", in = fedoraIDs)
+      fileItems <- fedoraIDs.filter(_.startsWith("easy-file:"))
         .toList.traverse(addPayloadFileTo(bag))
       _ <- addXmlMetadata(bag, "files.xml")(filesXml(fileItems))
       _ <- bag.save()
@@ -136,14 +134,9 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       UUID.fromString(bagDir.name),
       doi,
       depositor,
-      transformationType = if (simpleViolations.isEmpty) "simple"
-                           else "not strict simple",
-      comment,
+      transformationType = maybeSimpleViolations.map(_ => "not strict simple").getOrElse("simple"),
+      maybeSimpleViolations.getOrElse("OK"),
     )
-  }
-
-  private def startWith(searchValue: String, in: Seq[String]): Seq[String] = {
-    in.filter(_.startsWith(searchValue))
   }
 
   private def getAudience(id: String) = {

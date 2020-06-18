@@ -26,7 +26,7 @@ case class NotSimpleException(msg: String) extends Exception(msg)
 
 case class SimpleChecker(bagIndex: BagIndex) extends DebugEnhancedLogging {
 
-  def simpleViolations(emd: EasyMetadataImpl, ddm: Node, amd: Node, jumpOff: Seq[String]): Try[Seq[String]] = {
+  def violations(emd: EasyMetadataImpl, ddm: Node, amd: Node, jumpOff: Seq[String]): Try[Option[String]] = {
     val maybeDoi = Option(emd.getEmdIdentifier.getDansManagedDoi)
     val triedMaybeVaultResponse: Try[Option[String]] = maybeDoi
       .map(bagIndex.bagInfoByDoi)
@@ -46,8 +46,10 @@ case class SimpleChecker(bagIndex: BagIndex) extends DebugEnhancedLogging {
     violations.foreach { case (rule, violations) =>
       violations.foreach(s => mockFriendlyWarn(s"violated $rule $s"))
     }
+
     triedMaybeVaultResponse.map(_ =>
-      violations.keys.toSeq.filterNot(violations(_).isEmpty)
+      if (violations.isEmpty) None
+      else Some(violations.keys.mkString("Not simple, violates ", "; ", ""))
     )
   }
 

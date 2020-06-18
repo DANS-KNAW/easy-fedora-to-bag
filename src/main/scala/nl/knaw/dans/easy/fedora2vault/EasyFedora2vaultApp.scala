@@ -99,8 +99,11 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
         .map(id => getAudience(id.getValue)).collectResults
       ddm <- DDM(emd, audiences)
       fedoraIDs <- fedoraProvider.getSubordinates(datasetId)
-      _ <- if (strict) simpleChecker.isSimple(emd, ddm, amd, startWith("easy-jumpoff:", in = fedoraIDs))
-           else Success(()) // TODO perhaps log a warning if not strict?
+      simpleViolations <- simpleChecker.simpleViolations(emd, ddm, amd, startWith("easy-jumpoff:", in = fedoraIDs))
+      comment = if (simpleViolations.isEmpty) "OK"
+                else simpleViolations.mkString("Not simple, violates ", "; ", "")
+      _ <- if (strict && simpleViolations.isEmpty) Success(())
+           else Failure(NotSimpleException(comment))
       bag <- DansV0Bag.empty(bagDir)
         .map(_.withEasyUserAccount(depositor).withCreated(DateTime.now()))
       _ <- addXmlMetadata(bag, "emd.xml")(emdXml)
@@ -128,7 +131,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       _ <- addXmlMetadata(bag, "files.xml")(filesXml(fileItems))
       _ <- bag.save()
       doi = emd.getEmdIdentifier.getDansManagedDoi
-    } yield CsvRecord(datasetId, UUID.fromString(bagDir.name), doi, depositor, SIMPLE, "OK")
+    } yield CsvRecord(datasetId, UUID.fromString(bagDir.name), doi, depositor, SIMPLE, comment)
   }
 
   private def startWith(searchValue: String, in: Seq[String]): Seq[String] = {

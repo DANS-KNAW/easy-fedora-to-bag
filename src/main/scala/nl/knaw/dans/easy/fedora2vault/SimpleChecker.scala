@@ -19,14 +19,14 @@ import nl.knaw.dans.common.lang.dataset.AccessCategory.{ OPEN_ACCESS, REQUEST_PE
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import nl.knaw.dans.pf.language.emd.EasyMetadataImpl
 
-import scala.util.{ Failure, Success, Try }
+import scala.util.{ Success, Try }
 import scala.xml.Node
 
 case class NotSimpleException(msg: String) extends Exception(msg)
 
 case class SimpleChecker(bagIndex: BagIndex) extends DebugEnhancedLogging {
 
-  def isSimple(emd: EasyMetadataImpl, ddm: Node, amd: Node, jumpOff: Seq[String]): Try[Unit] = {
+  def simpleViolations(emd: EasyMetadataImpl, ddm: Node, amd: Node, jumpOff: Seq[String]): Try[Seq[String]] = {
     val maybeDoi = Option(emd.getEmdIdentifier.getDansManagedDoi)
     val triedMaybeVaultResponse: Try[Option[String]] = maybeDoi
       .map(bagIndex.bagInfoByDoi)
@@ -46,14 +46,9 @@ case class SimpleChecker(bagIndex: BagIndex) extends DebugEnhancedLogging {
     violations.foreach { case (rule, violations) =>
       violations.foreach(s => mockFriendlyWarn(s"violated $rule $s"))
     }
-    lazy val errorMessage: String = violations.keys
-      //.map(_.replaceAll(":.*", ""))
-      .mkString("Not a simple dataset. Violates rule ", ", ", "")
-    for {
-      _ <- triedMaybeVaultResponse // an IOException is not a violation
-      _ <- if (violations.isEmpty) Success(())
-           else Failure(NotSimpleException(errorMessage))
-    } yield ()
+    triedMaybeVaultResponse.map(_ =>
+      violations.keys.toSeq.filterNot(violations(_).isEmpty)
+    )
   }
 
   /** An interpolated string is a method. It needs evaluation before passing in to define expectations. */

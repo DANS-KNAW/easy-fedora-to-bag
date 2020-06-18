@@ -45,7 +45,7 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
     val emd = parseEmdContent(Seq(emdTitle, emdDoi, emdRights))
 
     simpleCheckerExpecting(
-      expectedBagIndexResponse = new HttpResponse[String](body = "", code = 400, headers = Map.empty),
+      expectedBagIndexResponse = new HttpResponse[String](body = "", code = 404, headers = Map.empty),
       loggerWarnCalledWith = Seq()
     ).violations(emd, emd2ddm(emd), amd("PUBLISHED"), Seq.empty) shouldBe
       Success(None)
@@ -68,7 +68,7 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
     val emd = parseEmdContent(Seq(emdTitle, emdDoi))
 
     simpleCheckerExpecting(
-      expectedBagIndexResponse = new HttpResponse[String](body = "", code = 400, headers = Map.empty),
+      expectedBagIndexResponse = new HttpResponse[String](body = "", code = 404, headers = Map.empty),
       loggerWarnCalledWith = Seq(
         "violated 3: invalid title thematische collectie",
         "violated 4: invalid rights not found",
@@ -82,7 +82,7 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
     val emd = parseEmdContent(Seq(emdTitle, emdDoi))
 
     simpleCheckerExpecting(expectedBagIndexResponse = new HttpResponse[String](
-      body = "", code = 400, headers = Map.empty),
+      body = "", code = 404, headers = Map.empty),
       loggerWarnCalledWith = Seq(
         "violated 2: has jump off easy-jumpoff:123",
         "violated 3: invalid title thematische collectie",
@@ -96,7 +96,7 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
     val emd = parseEmdContent(emdDoi)
 
     simpleCheckerExpecting(
-      expectedBagIndexResponse = new HttpResponse[String](body = "", code = 400, headers = Map.empty),
+      expectedBagIndexResponse = new HttpResponse[String](body = "", code = 404, headers = Map.empty),
       loggerWarnCalledWith = Seq(
         "violated 4: invalid rights not found",
         "violated 5: invalid state SUBMITTED",
@@ -120,7 +120,7 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
       emdRights
     ))
     simpleCheckerExpecting(
-      expectedBagIndexResponse = new HttpResponse[String](body = "", code = 400, headers = Map.empty),
+      expectedBagIndexResponse = new HttpResponse[String](body = "", code = 404, headers = Map.empty),
       loggerWarnCalledWith = Seq(
         "violated 6: DANS relations <dct:isVersionOf>https://doi.org/10.17026/test-123-456</dct:isVersionOf>",
         "violated 6: DANS relations <dct:isVersionOf>http://www.persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-2ajw-cq</dct:isVersionOf>",

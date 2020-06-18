@@ -56,6 +56,9 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
       datasetId match {
         case _ if datasetId.startsWith("fatal") =>
           Failure(new FedoraClientException(300, "mocked exception"))
+        case _ if datasetId.startsWith("notSimple") =>
+          outputDir.createFile().writeText(datasetId)
+          Failure(NotSimpleException("mocked"))
         case _ if !datasetId.startsWith("success") =>
           outputDir.createFile().writeText(datasetId)
           Failure(new Exception(datasetId))
@@ -81,7 +84,7 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
   }
 
   it should "report failure" in {
-    val ids = Iterator("success:1", "failure:2", "success:3", "fatal:4", "success:5")
+    val ids = Iterator("success:1", "failure:2", "notSimple:3", "success:4", "fatal:5", "success:6")
     val outputDir = (testDir / "output").createDirectories()
     val sw = new StringWriter()
     new OverriddenApp().simpleTransForms(ids, outputDir, strict = true, sw) should matchPattern {
@@ -91,10 +94,11 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
       """easyDatasetId,uuid,doi,depositor,transformationType,comment
         |success:1,.*,,,simple,OK
         |failure:2,.*,,,simple,FAILED: java.lang.Exception: failure:2
-        |success:3,.*,,,simple,OK
+        |notSimple:3,.*,,,simple,FAILED: nl.knaw.dans.easy.fedora2vault.NotSimpleException: mocked
+        |success:4,.*,,,simple,OK
         |""".stripMargin
       )
-    outputDir.list.toSeq should have length 3
+    outputDir.list.toSeq should have length 4
   }
 
   "simpleTransform" should "process DepositApi" in {
@@ -120,6 +124,47 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
       Seq("amd.xml", "dataset.xml", "depositor-info", "emd.xml", "files.xml", "license.pdf")
     (metadata / "depositor-info").list.toSeq.map(_.name).sortBy(identity) shouldBe
       Seq("agreements.xml", "depositor-agreement.pdf", "message-from-depositor.txt")
+  }
+
+  it should "report not strict simple violation" in {
+    val app = new MockedApp()
+    implicit val fedoraProvider: FedoraProvider = app.fedoraProvider
+    expectedAudiences(Map("easy-discipline:77" -> "D13200"))
+    expectNothingFrom(app.bagIndex)
+    expectedSubordinates(app.fedoraProvider, "easy-jumpoff:1")
+    expectedFoXmls(app.fedoraProvider, sampleFoXML / "DepositApi.xml")
+    expectedManagedStreams(app.fedoraProvider,
+      (testDir / "additional-license").write("lalala"),
+      (testDir / "dataset-license").write("blablabla"),
+    )
+
+    val uuid = UUID.randomUUID
+    app.simpleTransform("easy-dataset:17", testDir / "bags" / uuid.toString, strict = false) shouldBe
+      Success(CsvRecord("easy-dataset:17", uuid, "10.17026/test-Iiib-z9p-4ywa", "user001", "not strict simple", "Not simple, violates 2: has jump off"))
+
+    val metadata = (testDir / "bags").children.next() / "metadata"
+    (metadata / "depositor-info/depositor-agreement.pdf").contentAsString shouldBe "blablabla"
+    (metadata / "license.pdf").contentAsString shouldBe "lalala"
+    metadata.list.toSeq.map(_.name).sortBy(identity) shouldBe
+      Seq("amd.xml", "dataset.xml", "depositor-info", "emd.xml", "files.xml", "license.pdf")
+    (metadata / "depositor-info").list.toSeq.map(_.name).sortBy(identity) shouldBe
+      Seq("agreements.xml", "depositor-agreement.pdf", "message-from-depositor.txt")
+  }
+
+  it should "report strict simple violation" in {
+    val app = new MockedApp()
+    implicit val fedoraProvider: FedoraProvider = app.fedoraProvider
+    expectedAudiences(Map("easy-discipline:77" -> "D13200"))
+    expectNothingFrom(app.bagIndex)
+    expectedSubordinates(app.fedoraProvider, "easy-jumpoff:1")
+    expectedFoXmls(app.fedoraProvider, sampleFoXML / "DepositApi.xml")
+
+    val uuid = UUID.randomUUID
+    app.simpleTransform("easy-dataset:17", testDir / "bags" / uuid.toString, strict = true) should matchPattern {
+      case Failure(_: NotSimpleException) =>
+    }
+
+    (testDir / "bags") shouldNot exist
   }
 
   it should "process streaming" in {

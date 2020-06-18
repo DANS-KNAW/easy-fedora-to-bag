@@ -101,6 +101,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       fedoraIDs <- fedoraProvider.getSubordinates(datasetId)
       jumpOffIds = fedoraIDs.filter(_.startsWith("easy-jumpoff:"))
       maybeSimpleViolations <- simpleChecker.violations(emd, ddm, amd, jumpOffIds)
+      _ = println(s"maybeSimpleViolations=$maybeSimpleViolations")
       _ = if (strict) maybeSimpleViolations.foreach(msg => throw NotSimpleException(msg))
       bag <- DansV0Bag.empty(bagDir)
         .map(_.withEasyUserAccount(depositor).withCreated(DateTime.now()))

@@ -24,7 +24,6 @@ import com.yourmediashelf.fedora.client.FedoraClientException
 import javax.naming.NamingEnumeration
 import javax.naming.directory.{ BasicAttributes, SearchControls, SearchResult }
 import javax.naming.ldap.InitialLdapContext
-import nl.knaw.dans.easy.fedora2vault.TransformationType.SIMPLE
 import nl.knaw.dans.easy.fedora2vault.fixture.{ AudienceSupport, FileSystemSupport, TestSupportFixture }
 import org.scalamock.scalatest.MockFactory
 import resource.managed
@@ -62,7 +61,7 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
           Failure(new Exception(datasetId))
         case _ =>
           outputDir.createFile().writeText(datasetId)
-          Success(CsvRecord(datasetId, UUID.randomUUID(), "", "", SIMPLE, "OK"))
+          Success(CsvRecord(datasetId, UUID.randomUUID(), "", "", "simple", "OK"))
       }
     }
   }
@@ -112,7 +111,7 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
 
     val uuid = UUID.randomUUID
     app.simpleTransform("easy-dataset:17", testDir / "bags" / uuid.toString, strict = true) shouldBe
-      Success(CsvRecord("easy-dataset:17", uuid, "10.17026/test-Iiib-z9p-4ywa", "user001", SIMPLE, "OK"))
+      Success(CsvRecord("easy-dataset:17", uuid, "10.17026/test-Iiib-z9p-4ywa", "user001", "simple", "OK"))
 
     val metadata = (testDir / "bags").children.next() / "metadata"
     (metadata / "depositor-info/depositor-agreement.pdf").contentAsString shouldBe "blablabla"
@@ -138,7 +137,7 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
     val uuid = UUID.randomUUID
     val triedRecord = app.simpleTransform("easy-dataset:13", testDir / "bags" / uuid.toString, strict = true)
     triedRecord shouldBe
-      Success(CsvRecord("easy-dataset:13", uuid, "10.17026/mocked-Iiib-z9p-4ywa", "user001", SIMPLE, "OK"))
+      Success(CsvRecord("easy-dataset:13", uuid, "10.17026/mocked-Iiib-z9p-4ywa", "user001", "simple", "OK"))
 
     val metadata = (testDir / "bags").children.next() / "metadata"
     metadata.list.toSeq.map(_.name)

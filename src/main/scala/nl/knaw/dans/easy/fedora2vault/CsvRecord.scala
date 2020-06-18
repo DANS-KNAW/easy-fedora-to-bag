@@ -18,7 +18,6 @@ package nl.knaw.dans.easy.fedora2vault
 import java.util.UUID
 
 import nl.knaw.dans.easy.fedora2vault.Command.FeedBackMessage
-import nl.knaw.dans.easy.fedora2vault.TransformationType.TransformationType
 import org.apache.commons.csv.{ CSVFormat, CSVPrinter }
 
 import scala.util.Try
@@ -27,7 +26,7 @@ case class CsvRecord(easyDatasetId: DatasetId,
                      bagUUID: UUID,
                      doi: String,
                      depositor: Depositor,
-                     transformationType: TransformationType,
+                     transformationType: String,
                      comment: String,
                     ) {
   def print(implicit printer: CSVPrinter): Try[FeedBackMessage] = Try {

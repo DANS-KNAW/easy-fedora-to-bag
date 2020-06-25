@@ -194,6 +194,7 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
         |<files
         |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/bag/metadata/files/ https://easy.dans.knaw.nl/schemas/bag/metadata/files/files.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://easy.dans.knaw.nl/schemas/bag/metadata/files/" xmlns:dcterms="http://purl.org/dc/terms/">
         |<file filepath="data/original/something.txt">
+        |<dcterms:identifier>easy-file:35</dcterms:identifier>
         |<dcterms:title>something.txt</dcterms:title>
         |<dcterms:format>text/plain</dcterms:format>
         |<accessibleToRights>RESTRICTED_REQUEST</accessibleToRights>

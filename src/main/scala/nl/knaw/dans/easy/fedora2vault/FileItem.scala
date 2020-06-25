@@ -36,7 +36,7 @@ object FileItem {
     val fileMetadata = FoXml.getStreamRoot(streamId, foXml)
       .getOrElse(throw new Exception(s"No $streamId for $fedoraFileId"))
 
-    def get(tag: DatasetId) = {
+    def get(tag: String) = {
       val strings = (fileMetadata \\ tag).map(_.text)
       if (strings.isEmpty)
         throw new Exception(s"No <$tag> in $streamId for $fedoraFileId")
@@ -52,6 +52,7 @@ object FileItem {
     }
     new FileItem(
       <file filepath={ "data/" + get("path") }>
+        <dcterms:identifier>{ fedoraFileId }</dcterms:identifier>
         <dcterms:title>{ get("name") }</dcterms:title>
         <dcterms:format>{ get("mimeType") }</dcterms:format>
         <accessibleToRights>{ accessibleTo }</accessibleToRights>

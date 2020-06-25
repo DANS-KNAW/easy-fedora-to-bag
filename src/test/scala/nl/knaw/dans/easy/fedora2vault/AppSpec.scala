@@ -189,7 +189,7 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
       .sortBy(identity) shouldBe Seq("amd.xml", "dataset.xml", "depositor-info", "emd.xml", "files.xml")
     (metadata / "depositor-info").list.toSeq.map(_.name).sortBy(identity) shouldBe
       Seq("agreements.xml")
-    (metadata / "files.xml").contentAsString.split("\n").map(_.trim).mkString("\n") shouldBe
+    (metadata / "files.xml").lines.map(_.trim).mkString("\n") shouldBe
       """<?xml version='1.0' encoding='UTF-8'?>
         |<files
         |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/bag/metadata/files/ https://easy.dans.knaw.nl/schemas/bag/metadata/files/files.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://easy.dans.knaw.nl/schemas/bag/metadata/files/" xmlns:dcterms="http://purl.org/dc/terms/">

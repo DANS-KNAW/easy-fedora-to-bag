@@ -18,23 +18,22 @@ package nl.knaw.dans.easy.fedora2vault
 import scala.util.Try
 import scala.xml.{ Elem, Node }
 
-case class FileItem(xml: Node)
-
 object FileItem {
 
-  def filesXml(items: Seq[FileItem]): Elem =
+  def filesXml(items: Seq[Node]): Elem =
     <files xmlns:dcterms="http://purl.org/dc/terms/"
            xmlns="http://easy.dans.knaw.nl/schemas/bag/metadata/files/"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/bag/metadata/files/ https://easy.dans.knaw.nl/schemas/bag/metadata/files/files.xsd"
     >
-    { items.map(_.xml) }
+    { items }
     </files>
 
-  def apply(fedoraFileId: String, foXml: Node): Try[FileItem] = Try {
+  def apply(foXml: Node): Try[Node] = Try {
+    val fedoraFileId = foXml \@ "PID"
     val streamId = "EASY_FILE_METADATA"
-    val fileMetadata = FoXml.getStreamRoot(streamId, foXml)
-      .getOrElse(throw new Exception(s"No $streamId for $fedoraFileId"))
+    val maybeNode = FoXml.getStreamRoot(streamId, foXml)
+    val fileMetadata = maybeNode.get
 
     def get(tag: String) = {
       val strings = (fileMetadata \\ tag).map(_.text)
@@ -50,14 +49,12 @@ object FileItem {
       case "NONE" => "NONE"
       case _ => get("accessibleTo")
     }
-    new FileItem(
-      <file filepath={ "data/" + get("path") }>
-        <dcterms:identifier>{ fedoraFileId }</dcterms:identifier>
-        <dcterms:title>{ get("name") }</dcterms:title>
-        <dcterms:format>{ get("mimeType") }</dcterms:format>
-        <accessibleToRights>{ accessibleTo }</accessibleToRights>
-        <visibleToRights>{ visibleTo }</visibleToRights>
-      </file>
-    )
+    <file filepath={ "data/" + get("path") }>
+      <dcterms:identifier>{ fedoraFileId }</dcterms:identifier>
+      <dcterms:title>{ get("name") }</dcterms:title>
+      <dcterms:format>{ get("mimeType") }</dcterms:format>
+      <accessibleToRights>{ accessibleTo }</accessibleToRights>
+      <visibleToRights>{ visibleTo }</visibleToRights>
+    </file>
   }
 }

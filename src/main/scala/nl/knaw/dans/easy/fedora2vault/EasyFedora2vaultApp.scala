@@ -162,7 +162,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
     bag.addPayloadFile(content.serialize.inputStream, Paths.get(path))
   }
 
-  private def addPayloadFileTo(bag: DansV0Bag)(fedoraFileId: String): Try[FileItem] = {
+  private def addPayloadFileTo(bag: DansV0Bag)(fedoraFileId: String): Try[Node] = {
     val streamId = "EASY_FILE"
     for {
       foXml <- fedoraProvider.loadFoXml(fedoraFileId)
@@ -177,7 +177,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       maybeDigest = fileStream.flatMap(n => (n \\ "contentDigest").theSeq.headOption)
       _ <- maybeDigest.map(validate(bag.baseDir / s"data/$path", bag, fedoraFileId))
         .getOrElse(Success(logger.warn(s"No digest found for $fedoraFileId ${ fileStream.map(_.toOneLiner).getOrElse("") }")))
-      fileItem <- FileItem(fedoraFileId, foXml)
+      fileItem <- FileItem(foXml)
     } yield fileItem
   }
 

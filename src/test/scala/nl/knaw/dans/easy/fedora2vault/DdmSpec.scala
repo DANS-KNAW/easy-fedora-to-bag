@@ -27,8 +27,9 @@ import nl.knaw.dans.pf.language.emd.EasyMetadataImpl
 import nl.knaw.dans.pf.language.emd.binding.EmdUnmarshaller
 
 import scala.util.{ Failure, Success, Try }
-import scala.xml._
 import scala.xml.Utility.trim
+import scala.xml._
+
 class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport {
 
   private lazy val triedSchema = Try(SchemaFactory

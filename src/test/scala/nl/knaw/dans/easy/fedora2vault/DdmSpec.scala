@@ -28,7 +28,7 @@ import nl.knaw.dans.pf.language.emd.binding.EmdUnmarshaller
 
 import scala.util.{ Failure, Success, Try }
 import scala.xml._
-
+import scala.xml.Utility.trim
 class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport {
 
   private lazy val triedSchema = Try(SchemaFactory
@@ -103,22 +103,21 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport {
           <dct:abstract>blabl</dct:abstract>
         </emd:description>
     ))
-    DDM(emd, Seq.empty).map(toStripped) shouldBe Success(
-      s"""<ddm:DDM
-         |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
-         |  <ddm:profile>
-         |    <dct:description>abstract</dct:description>
-         |    <dct:description>Suggestions for data usage: remark1</dct:description>
-         |    <dct:description>beschrijving</dct:description>
-         |    <ddm:accessRights/>
-         |  </ddm:profile>
-         |  <ddm:dcmiMetadata>
-         |    <ddm:description descriptionType="Abstract">blabl</ddm:description>
-         |    <ddm:description descriptionType="TableOfContent">rabar</ddm:description>
-         |    <dct:license xsi:type="dct:URI">${ DDM.dansLicense }</dct:license>
-         |  </ddm:dcmiMetadata>
-         |</ddm:DDM>
-         |""".stripMargin)
+    DDM(emd, Seq.empty).map(trim) shouldBe Success(trim(
+      <ddm:DDM xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
+         <ddm:profile>
+           <dct:description>abstract</dct:description>
+           <dct:description>Suggestions for data usage: remark1</dct:description>
+           <dct:description>beschrijving</dct:description>
+           <ddm:accessRights/>
+         </ddm:profile>
+         <ddm:dcmiMetadata>
+           <ddm:description descriptionType="Abstract">blabl</ddm:description>
+           <ddm:description descriptionType="TableOfContent">rabar</ddm:description>
+           <dct:license xsi:type="dct:URI">{ DDM.dansLicense }</dct:license>
+         </ddm:dcmiMetadata>
+       </ddm:DDM>
+     ))
   }
 
   "relations" should "all appear" in {
@@ -154,34 +153,33 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport {
           </eas:isFormatOf>
         </emd:relation>
     ))
-    DDM(emd, Seq.empty).map(toStripped) shouldBe Success( // TODO implemented quick and dirty
-      s"""<ddm:DDM
-         |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
-         |  <ddm:profile>
-         |    <ddm:accessRights/>
-         |  </ddm:profile>
-         |  <ddm:dcmiMetadata>
-         |    <dct:isFormatOf xsi:type="id-type:NWO-PROJECTNR">my-nwo-related-identifier</dct:isFormatOf>
-         |    <dct:isFormatOf xsi:type="id-type:ISBN">my-isbn-alternative-identifier</dct:isFormatOf>
-         |    <dct:isFormatOf xsi:type="id-type:ISSN">my-issn-alternative-identifier</dct:isFormatOf>
-         |    <dct:isFormatOf xsi:type="id-type:NWO-PROJECTNR">my-nwo-alternative-identifier</dct:isFormatOf>
-         |    <dct:isFormatOf>my own alternative identifier</dct:isFormatOf>
-         |    <dct:hasVersion xsi:type="id-type:ISSN">my-issn-related-identifier</dct:hasVersion>
-         |    <dct:isPartOf>my own related identifier</dct:isPartOf>
-         |    <dct:requires xsi:type="id-type:ISBN">my-isbn-related-identifier</dct:requires>
-         |    <ddm:relation href="https://www.google.com" xml:lang="eng">Google</ddm:relation>
-         |    <ddm:isFormatOf scheme="id-type:DOI" href="https://doi.org/10.17026/test-doi-alternative-identifier">10.17026/test-doi-alternative-identifier</ddm:isFormatOf>
-         |    <ddm:isFormatOf scheme="id-type:URN" href="http://persistent-identifier.nl/urn:nbn:nl:ui:test-urn-alternative-identifier">
-         |      urn:nbn:nl:ui:test-urn-alternative-identifier
-         |    </ddm:isFormatOf>
-         |    <ddm:references scheme="id-type:DOI" href="https://doi.org/10.17026/test-doi-related-identifier">10.17026/test-doi-related-identifier</ddm:references>
-         |    <ddm:replaces scheme="id-type:URN" href="http://persistent-identifier.nl/urn:nbn:nl:ui:test-urn-related-identifier">
-         |      urn:nbn:nl:ui:test-urn-related-identifier
-         |    </ddm:replaces>
-         |    <dct:license xsi:type="dct:URI">${ DDM.dansLicense }</dct:license>
-         |  </ddm:dcmiMetadata>
-         |</ddm:DDM>
-         |""".stripMargin)
+    DDM(emd, Seq.empty).map(trim) shouldBe Success(trim( // TODO implemented quick and dirty
+      <ddm:DDM xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
+        <ddm:profile>
+          <ddm:accessRights/>
+        </ddm:profile>
+        <ddm:dcmiMetadata>
+          <dct:isFormatOf xsi:type="id-type:NWO-PROJECTNR">my-nwo-related-identifier</dct:isFormatOf>
+          <dct:isFormatOf xsi:type="id-type:ISBN">my-isbn-alternative-identifier</dct:isFormatOf>
+          <dct:isFormatOf xsi:type="id-type:ISSN">my-issn-alternative-identifier</dct:isFormatOf>
+          <dct:isFormatOf xsi:type="id-type:NWO-PROJECTNR">my-nwo-alternative-identifier</dct:isFormatOf>
+          <dct:isFormatOf>my own alternative identifier</dct:isFormatOf>
+          <dct:hasVersion xsi:type="id-type:ISSN">my-issn-related-identifier</dct:hasVersion>
+          <dct:isPartOf>my own related identifier</dct:isPartOf>
+          <dct:requires xsi:type="id-type:ISBN">my-isbn-related-identifier</dct:requires>
+          <ddm:relation href="https://www.google.com" xml:lang="eng">Google</ddm:relation>
+          <ddm:isFormatOf scheme="id-type:DOI" href="https://doi.org/10.17026/test-doi-alternative-identifier">10.17026/test-doi-alternative-identifier</ddm:isFormatOf>
+          <ddm:isFormatOf scheme="id-type:URN" href="http://persistent-identifier.nl/urn:nbn:nl:ui:test-urn-alternative-identifier">
+            urn:nbn:nl:ui:test-urn-alternative-identifier
+          </ddm:isFormatOf>
+          <ddm:references scheme="id-type:DOI" href="https://doi.org/10.17026/test-doi-related-identifier">10.17026/test-doi-related-identifier</ddm:references>
+          <ddm:replaces scheme="id-type:URN" href="http://persistent-identifier.nl/urn:nbn:nl:ui:test-urn-related-identifier">
+            urn:nbn:nl:ui:test-urn-related-identifier
+          </ddm:replaces>
+          <dct:license xsi:type="dct:URI">{ DDM.dansLicense }</dct:license>
+        </ddm:dcmiMetadata>
+      </ddm:DDM>
+    ))
   }
 
   "license" should "be copied from <dct:license>" in {
@@ -192,6 +190,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport {
             <dct:license eas:scheme="Easy2 version 1">accept</dct:license>
         </emd:rights>
     ))
+    // TODO namespace attributes in random order get in the way of trimmed comparison as above
     DDM(emd, Seq.empty).map(toStripped) shouldBe Success(
       s"""<ddm:DDM
          |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">

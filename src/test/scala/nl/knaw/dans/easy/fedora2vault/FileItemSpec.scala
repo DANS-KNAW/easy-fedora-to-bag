@@ -1,11 +1,15 @@
 package nl.knaw.dans.easy.fedora2vault
 
+import com.typesafe.scalalogging.Logger
 import nl.knaw.dans.easy.fedora2vault.fixture.TestSupportFixture
+import org.scalamock.scalatest.MockFactory
+import org.slf4j.{ Logger => UnderlyingLogger }
 
 import scala.util.{ Failure, Success }
 import scala.xml.NodeBuffer
+import scala.xml.Utility.trim
 
-class FileItemSpec extends TestSupportFixture {
+class FileItemSpec extends TestSupportFixture with MockFactory {
   "apply" should "copy both types of rights" in {
     val fileMetadata = <name>something.txt</name>
                        <path>original/something.txt</path>
@@ -15,15 +19,15 @@ class FileItemSpec extends TestSupportFixture {
                        <visibleTo>ANONYMOUS</visibleTo>
                        <accessibleTo>RESTRICTED_REQUEST</accessibleTo>
 
-    FileItem(fileFoXml(fileMetadata)) shouldBe Success(
-    <file filepath="data/original/something.txt">
-      <dcterms:identifier>easy-file:35</dcterms:identifier>
-      <dcterms:title>something.txt</dcterms:title>
-      <dcterms:format>text/plain</dcterms:format>
-      <accessibleToRights>RESTRICTED_REQUEST</accessibleToRights>
-      <visibleToRights>ANONYMOUS</visibleToRights>
-    </file>
-    )
+    FileItem(fileFoXml(fileMetadata)).map(trim) shouldBe Success(trim(
+      <file filepath="data/original/something.txt">
+        <dcterms:identifier>easy-file:35</dcterms:identifier>
+        <dcterms:title>something.txt</dcterms:title>
+        <dcterms:format>text/plain</dcterms:format>
+        <accessibleToRights>RESTRICTED_REQUEST</accessibleToRights>
+        <visibleToRights>ANONYMOUS</visibleToRights>
+      </file>
+    ))
   }
 
   it should "use a default for accessibleTo" in {
@@ -32,15 +36,15 @@ class FileItemSpec extends TestSupportFixture {
                        <mimeType>text/plain</mimeType>
                        <visibleTo>NONE</visibleTo>
 
-    FileItem(fileFoXml(fileMetadata)) shouldBe Success(
-    <file filepath="data/original/something.txt">
-      <dcterms:identifier>easy-file:35</dcterms:identifier>
-      <dcterms:title>something.txt</dcterms:title>
-      <dcterms:format>text/plain</dcterms:format>
-      <accessibleToRights>NONE</accessibleToRights>
-      <visibleToRights>NONE</visibleToRights>
-    </file>
-    )
+    FileItem(fileFoXml(fileMetadata)).map(trim) shouldBe Success(trim(
+      <file filepath="data/original/something.txt">
+        <dcterms:identifier>easy-file:35</dcterms:identifier>
+        <dcterms:title>something.txt</dcterms:title>
+        <dcterms:format>text/plain</dcterms:format>
+        <accessibleToRights>NONE</accessibleToRights>
+        <visibleToRights>NONE</visibleToRights>
+      </file>
+    ))
   }
 
   it should "report a missing tag (this time no default for accessibleTo)" in {
@@ -51,7 +55,7 @@ class FileItemSpec extends TestSupportFixture {
 
     FileItem(fileFoXml(fileMetadata)) should matchPattern {
       case Failure(e: Exception) if e.getMessage ==
-        "No <accessibleTo> in EASY_FILE_METADATA for easy-file:35" =>
+        "<accessibleTo> not found" =>
     }
   }
 
@@ -63,7 +67,7 @@ class FileItemSpec extends TestSupportFixture {
 
     FileItem(fileFoXml(fileMetadata)) should matchPattern {
       case Failure(e: Exception) if e.getMessage ==
-        "Multiple times <name> in EASY_FILE_METADATA for easy-file:35" =>
+        "Multiple times <name>" =>
     }
   }
 
@@ -94,23 +98,53 @@ class FileItemSpec extends TestSupportFixture {
         </addmd:additional>
       </addmd:additional-metadata>
 
-    FileItem(fileFoXml(fileMetadata)) shouldBe Success(
-    <file filepath="data/GIS/SKKJ6_spoor.mif">
-      <dcterms:identifier>easy-file:35</dcterms:identifier>
-      <dcterms:title>SKKJ6_spoor.mif</dcterms:title>
-      <dcterms:format>application/x-framemaker</dcterms:format>
-      <accessibleToRights>KNOWN</accessibleToRights>
-      <visibleToRights>ANONYMOUS</visibleToRights>
-      <zz>GIS</zz>
-      <dcterms:isFormatOf>Skkj6_spoor.TAB</dcterms:isFormatOf>
-      <dcterms:abstract>Alle sporenkwaart</dcterms:abstract>
-      <dcterms:requires>SKKJ6_spoor.mid</dcterms:requires>
-      <dcterms:description>This file was created with MapInfo</dcterms:description>
-      <xx>antropogene en natuurlijke sporen</xx>
-      <yy>non-earth (in m.), met de waarden van het RD-stelsel</yy>
-      <dcterms:description>alle sporen samen vormen de putomtrek</dcterms:description>
-    </file>
-    )
+    FileItem(fileFoXml(fileMetadata)).map(trim) shouldBe Success(trim(
+      <file filepath="data/GIS/SKKJ6_spoor.mif">
+        <dcterms:identifier>easy-file:35</dcterms:identifier>
+        <dcterms:title>SKKJ6_spoor.mif</dcterms:title>
+        <dcterms:format>application/x-framemaker</dcterms:format>
+        <accessibleToRights>KNOWN</accessibleToRights>
+        <visibleToRights>ANONYMOUS</visibleToRights>
+        <dcterms:type>GIS</dcterms:type>
+        <dcterms:isFormatOf>Skkj6_spoor.TAB</dcterms:isFormatOf>
+        <dcterms:abstract>Alle sporenkwaart</dcterms:abstract>
+        <dcterms:requires>SKKJ6_spoor.mid</dcterms:requires>
+        <dcterms:description>This file was created with MapInfo</dcterms:description>
+        <notImplemented>analytic_units: antropogene en natuurlijke sporen</notImplemented>
+        <notImplemented>mapprojection: non-earth (in m.), met de waarden van het RD-stelsel</notImplemented>
+        <dcterms:description>alle sporen samen vormen de putomtrek</dcterms:description>
+      </file>
+    ))
+  }
+
+  "checkNotImplemented" should "report items once" in {
+    val items =
+      <file filepath="data/GIS/SKKJ6_spoor.mif">
+        <dcterms:identifier>easy-file:35</dcterms:identifier>
+        <notImplemented>analytic_units: abc</notImplemented>
+        <notImplemented>mapprojection: xyz</notImplemented>
+      </file>
+      <file filepath="rabarbera.txt">
+        <dcterms:identifier>easy-file:78</dcterms:identifier>
+      </file>
+      <file filepath="blabla.txt">
+        <dcterms:identifier>easy-file:78</dcterms:identifier>
+        <notImplemented>analytic_units: blabla</notImplemented>
+        <notImplemented>opmerkingen: rabarbera</notImplemented>
+      </file>
+
+    val mockLogger = mock[UnderlyingLogger]
+    Seq(
+      "easy-file:35 (data/GIS/SKKJ6_spoor.mif) NOT IMPLEMENTED: analytic_units: abc",
+      "easy-file:35 (data/GIS/SKKJ6_spoor.mif) NOT IMPLEMENTED: mapprojection: xyz",
+      "easy-file:78 (blabla.txt) NOT IMPLEMENTED: analytic_units: blabla",
+      "easy-file:78 (blabla.txt) NOT IMPLEMENTED: opmerkingen: rabarbera",
+    ).foreach(s => (mockLogger.warn(_: String)) expects s once())
+    (() => mockLogger.isWarnEnabled()) expects() anyNumberOfTimes() returning true
+
+    FileItem.checkNotImplemented(items.toList, Logger(mockLogger)) should matchPattern {
+      case Failure(e) if e.getMessage == "2 file(s) with not implemented additional file metadata: List(analytic_units, mapprojection, opmerkingen)" =>
+    }
   }
 
   private def fileFoXml(fileMetadata: NodeBuffer) = {

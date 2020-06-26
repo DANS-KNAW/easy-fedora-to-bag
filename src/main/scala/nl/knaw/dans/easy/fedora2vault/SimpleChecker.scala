@@ -44,7 +44,7 @@ case class SimpleChecker(bagIndex: BagIndex) extends DebugEnhancedLogging {
     ).filter(_._2.nonEmpty).toMap
 
     violations.foreach { case (rule, violations) =>
-      violations.foreach(s => mockFriendlyWarn(s"violated $rule $s"))
+      violations.foreach(s => logger.warn(mockFriendly(s"violated $rule $s")))
     }
 
     triedMaybeVaultResponse.map(_ =>
@@ -52,9 +52,6 @@ case class SimpleChecker(bagIndex: BagIndex) extends DebugEnhancedLogging {
       else Some(violations.keys.mkString("Violates ", "; ", ""))
     )
   }
-
-  /** An interpolated string is a method. It needs evaluation before passing in to define expectations. */
-  private def mockFriendlyWarn(s: String): Unit = logger.warn(s)
 
   private def findInvalidRights(emd: EasyMetadataImpl) = {
     val maybe = Option(emd.getEmdRights.getAccessCategory)

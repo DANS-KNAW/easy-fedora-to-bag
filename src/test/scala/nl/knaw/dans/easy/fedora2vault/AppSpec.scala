@@ -224,7 +224,7 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
     expectedManagedStreams(app.fedoraProvider, mockContentOfFile35)
 
     app.simpleTransform("easy-dataset:13", testDir / "bags" / UUID.randomUUID.toString, strict = true) should matchPattern {
-      case Failure(e) if e.getMessage == "No <visibleTo> in EASY_FILE_METADATA for easy-file:35" =>
+      case Failure(e) if e.getMessage == "easy-file:35 <visibleTo> not found" =>
     }
   }
 

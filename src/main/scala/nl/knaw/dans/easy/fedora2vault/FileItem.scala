@@ -15,8 +15,10 @@
  */
 package nl.knaw.dans.easy.fedora2vault
 
-import scala.util.Try
-import scala.xml.{ Elem, Node }
+import com.typesafe.scalalogging.Logger
+
+import scala.util.{ Failure, Success, Try }
+import scala.xml.{ Elem, Node, NodeSeq, Text }
 
 object FileItem {
 
@@ -29,32 +31,63 @@ object FileItem {
     { items }
     </files>
 
-  def apply(foXml: Node): Try[Node] = Try {
-    val fedoraFileId = foXml \@ "PID"
-    val streamId = "EASY_FILE_METADATA"
-    val maybeNode = FoXml.getStreamRoot(streamId, foXml)
-    val fileMetadata = maybeNode.get
+  def checkNotImplemented(fileItems: List[Node], logger: Logger): Try[Unit] = {
+    val incompleteItems = fileItems.filter(item => (item \ "notImplemented").nonEmpty)
+    incompleteItems.foreach(item =>
+      (item \ "notImplemented").foreach(tag =>
+        logger.warn(mockFriendly(s"${ (item \ "identifier").text } (${ item \@ "filepath" }) NOT IMPLEMENTED: ${ tag.text }"))
+      )
+    )
 
-    def get(tag: String) = {
-      val strings = (fileMetadata \\ tag).map(_.text)
-      if (strings.isEmpty)
-        throw new Exception(s"No <$tag> in $streamId for $fedoraFileId")
-      if (strings.tail.nonEmpty)
-        throw new Exception(s"Multiple times <$tag> in $streamId for $fedoraFileId")
-      strings.headOption.getOrElse("")
-    }
+    lazy val tags = incompleteItems.flatMap(item =>
+      (item \ "notImplemented").map(_.text.replaceAll(":.*", ""))
+    ).distinct
 
-    val visibleTo = get("visibleTo")
-    val accessibleTo = visibleTo.toUpperCase() match {
-      case "NONE" => "NONE"
-      case _ => get("accessibleTo")
+    if (incompleteItems.isEmpty) Success(())
+    else Failure(new Exception(s"${ incompleteItems.size } file(s) with not implemented additional file metadata: $tags"))
+  }
+
+  def apply(foXml: Node): Try[Node] = {
+    FoXml.getFileMD(foXml).map { fileMetadata =>
+      def get(tag: String) = {
+        val strings = (fileMetadata \\ tag).map(_.text)
+        if (strings.isEmpty) throw new Exception(s"<$tag> not found")
+        if (strings.tail.nonEmpty) throw new Exception(s"Multiple times <$tag>")
+        strings.headOption.getOrElse("")
+      }
+
+      val visibleTo = get("visibleTo")
+      val accessibleTo = visibleTo.toUpperCase() match {
+        case "NONE" => "NONE"
+        case _ => get("accessibleTo")
+      }
+      <file filepath={ "data/" + get("path") }>
+        <dcterms:identifier>{ foXml \@ "PID" }</dcterms:identifier>
+        <dcterms:title>{ get("name") }</dcterms:title>
+        <dcterms:format>{ get("mimeType") }</dcterms:format>
+        <accessibleToRights>{ accessibleTo }</accessibleToRights>
+        <visibleToRights>{ visibleTo }</visibleToRights>
+        { (fileMetadata \ "additional-metadata" \ "additional" \ "content").flatMap(convert) }
+      </file>
     }
-    <file filepath={ "data/" + get("path") }>
-      <dcterms:identifier>{ fedoraFileId }</dcterms:identifier>
-      <dcterms:title>{ get("name") }</dcterms:title>
-      <dcterms:format>{ get("mimeType") }</dcterms:format>
-      <accessibleToRights>{ accessibleTo }</accessibleToRights>
-      <visibleToRights>{ visibleTo }</visibleToRights>
-    </file>
+  }
+
+  def convert(additionalContent: Node): NodeSeq = {
+    additionalContent.nonEmptyChildren.map {
+      // TODO analytic_units, mapprojection, case_quantity (skip if value is one), data_format
+      case Elem(_, "file_category", _, _, Text(value)) => <dcterms:type>{ value }</dcterms:type>
+      case Elem(_, "original_file", _, _, Text(value)) => <dcterms:isFormatOf>{ value }</dcterms:isFormatOf>
+      case Elem(_, "file_content", _, _, Text(value)) => <dcterms:abstract>{ value }</dcterms:abstract>
+      case Elem(_, "file_required", _, _, Text(value)) => <dcterms:requires>{ value }</dcterms:requires>
+      case Elem(_, "software", _, _, Text(value)) => <dcterms:description>{ s"This file was created with $value" }</dcterms:description>
+      case Elem(_, label, _, _, Text(value)) if isNotes(label) => <dcterms:description>{ value }</dcterms:description>
+      case Elem(_, "file_name", _, _, _) => Text("")
+      case Elem(_, label, _, _, Text(value)) => <notImplemented>{ s"$label: $value" }</notImplemented>
+      case node => node // white space
+    }
+  }
+
+  private def isNotes(label: String) = {
+    Seq("notes", "remarks", "file_notes", "file_remarks").contains(label)
   }
 }

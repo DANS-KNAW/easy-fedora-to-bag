@@ -180,27 +180,20 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
     expectedManagedStreams(app.fedoraProvider, mockContentOfFile35)
 
     val uuid = UUID.randomUUID
-    val triedRecord = app.simpleTransform("easy-dataset:13", testDir / "bags" / uuid.toString, strict = true)
-    triedRecord shouldBe
+    app.simpleTransform("easy-dataset:13", testDir / "bags" / uuid.toString, strict = true) shouldBe
       Success(CsvRecord("easy-dataset:13", uuid, "10.17026/mocked-Iiib-z9p-4ywa", "user001", "simple", "OK"))
 
     val metadata = (testDir / "bags").children.next() / "metadata"
+
     metadata.list.toSeq.map(_.name)
       .sortBy(identity) shouldBe Seq("amd.xml", "dataset.xml", "depositor-info", "emd.xml", "files.xml")
+
     (metadata / "depositor-info").list.toSeq.map(_.name).sortBy(identity) shouldBe
       Seq("agreements.xml")
-    (metadata / "files.xml").lines.map(_.trim).mkString("\n") shouldBe
-      """<?xml version='1.0' encoding='UTF-8'?>
-        |<files
-        |xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/bag/metadata/files/ https://easy.dans.knaw.nl/schemas/bag/metadata/files/files.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://easy.dans.knaw.nl/schemas/bag/metadata/files/" xmlns:dcterms="http://purl.org/dc/terms/">
-        |<file filepath="data/original/something.txt">
-        |<dcterms:identifier>easy-file:35</dcterms:identifier>
-        |<dcterms:title>something.txt</dcterms:title>
-        |<dcterms:format>text/plain</dcterms:format>
-        |<accessibleToRights>RESTRICTED_REQUEST</accessibleToRights>
-        |<visibleToRights>ANONYMOUS</visibleToRights>
-        |</file>
-        |</files>""".stripMargin
+
+    // the rest of the content is tested in FileItemSpec
+    (metadata / "files.xml").lines.map(_.trim).mkString("\n") should
+      include("<dcterms:identifier>easy-file:35</dcterms:identifier>")
   }
 
   it should "report invalid file metadata" in {

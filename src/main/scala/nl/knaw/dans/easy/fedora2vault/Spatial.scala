@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2018 DANS - Data Archiving and Networked Services (info@dans.knaw.nl)
+ * Copyright (C) 2020 DANS - Data Archiving and Networked Services (info@dans.knaw.nl)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,13 @@
  */
 package nl.knaw.dans.easy.fedora2vault
 
+import scala.xml.Elem
+
 // TODO copied from easy-deposit-api
-
-trait OptionalValue {
-  val value: Option[String]
-
-  lazy val hasValue: Boolean = value.exists(_.trim.nonEmpty)
-}
+//  which in turn was a (better isolated) variation of
+//  easy-split-multi-deposit/AddDatasetMetadataToDeposit
+//  dropped the trait OptionalValue from easy-deposit-api
+//  added an xml field as that also was a common factor in all projects
 
 object SpatialNames {
   /** coordinate order y, x = latitude (DCX_SPATIAL_Y), longitude (DCX_SPATIAL_X) */
@@ -31,8 +31,9 @@ object SpatialNames {
   val RD_SRS_NAME = "http://www.opengis.net/def/crs/EPSG/0/28992"
 }
 
-trait SchemedSpatial extends OptionalValue {
+trait SchemedSpatial {
   val scheme: Option[String]
+  val value: Option[String]
 
   lazy val srsName: String = {
     scheme match {
@@ -60,6 +61,14 @@ case class SpatialPoint(scheme: Option[String],
     (x ++ y).headOption
       .map(_ => pos)
   }
+
+  lazy val xml: Option[Elem] = value.map(value =>
+    <dcx-gml:spatial srsName={ srsName }>
+      <Point xmlns="http://www.opengis.net/gml">
+        <pos>{ value }</pos>
+      </Point>
+    </dcx-gml:spatial>
+  )
 }
 
 case class SpatialBox(scheme: Option[String],
@@ -103,4 +112,15 @@ case class SpatialBox(scheme: Option[String],
     (north ++ east ++ south++ west).headOption
       .map(_ => s"($lower) ($upper)")
   }
+
+  lazy val xml: Option[Elem] = value.map(value =>
+    <dcx-gml:spatial>
+      <boundedBy xmlns="http://www.opengis.net/gml">
+          <Envelope srsName={ srsName }>
+              <lowerCorner>{ lower }</lowerCorner>
+              <upperCorner>{ upper }</upperCorner>
+          </Envelope>
+      </boundedBy>
+    </dcx-gml:spatial>
+  )
 }

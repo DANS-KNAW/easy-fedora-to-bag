@@ -180,26 +180,59 @@ object DDM extends DebugEnhancedLogging {
   }
 
   private def toXml(spatial: Spatial.Point): Elem = {
-    val point = SpatialPoint(
-      Option(spatial.getScheme).filter(_.trim.nonEmpty),
-      Option(spatial.getX).filter(_.trim.nonEmpty),
-      Option(spatial.getY).filter(_.trim.nonEmpty),
-    )
-    point.value.map(value =>
-      <dcx-gml:spatial srsName={ point.srsName }>
-        <Point xmlns="http://www.opengis.net/gml">
-          <pos>{ value }</pos>
-        </Point>
-      </dcx-gml:spatial>
-    ).getOrElse(notImplemented("invalid point")(spatial))
+    SpatialPoint(
+      optional(spatial.getScheme),
+      optional(spatial.getX),
+      optional(spatial.getY),
+    ).xml.getOrElse(notImplemented("invalid point")(spatial))
   }
 
-  private def toXml(box: Spatial.Box): Elem = {
-    notImplemented("box")(box)
+  private def toXml(spatial: Spatial.Box): Elem = {
+    SpatialBox(
+      optional(spatial.getScheme),
+      optional(spatial.getNorth),
+      optional(spatial.getEast),
+      optional(spatial.getSouth),
+      optional(spatial.getWest),
+    ).xml.getOrElse(notImplemented("invalid point")(spatial))
   }
 
-  private def toXml(polygon: Seq[Polygon]): Elem = {
-    notImplemented("polygons")(polygon)
+  private def toXml(polygons: Seq[Polygon]): Seq[Node] = polygons.map { polygon =>
+    val maybeScheme: Option[String] = optional(polygon.getScheme)
+    val srsName = new SchemedSpatial {
+      override val scheme: Option[String] = maybeScheme
+      override val value: Option[String] = None
+    }.srsName
+    val place = optional(polygon.getPlace)
+      .map(place => <description>{ place }</description>)
+      .getOrElse(Text(""))
+    val exterior = Option(polygon.getExterior)
+      .map(part => <exterior>{ toXml(part, maybeScheme) }</exterior>)
+      .getOrElse(Text(""))
+    val interiors = Option(polygon.getExterior).toSeq
+      .flatMap(part => <interior>{ toXml(part, maybeScheme) }</interior>)
+    <dcx-gml:spatial>
+        <Polygon xmlns='http://www.opengis.net/gml' srsName={ srsName }>
+            { place }
+            { exterior }
+            { interiors }
+        </Polygon>
+    </dcx-gml:spatial>
+  }
+
+  private def toXml(part: PolygonPart, maybeScheme: Option[String]): Node = {
+    val place = optional(part.getPlace)
+      .map(s => <description>{ s }</description>)
+      .getOrElse(Text(""))
+    val points = part.getPoints.asScala.map { polygonPoint =>
+      val x = optional(polygonPoint.getX)
+      val y = optional(polygonPoint.getY)
+      SpatialPoint(maybeScheme, x, y).pos
+    }
+    <LinearRing>
+        { place }
+        { <posList>{ points.mkString(" ") }</posList> }
+    </LinearRing>
   }
 
   private def toXml(value: IsoDate): Elem = <label xsi:type={ orNull(value.getScheme) }>{ value }</label>
@@ -208,7 +241,9 @@ object DDM extends DebugEnhancedLogging {
 
   def orNull(dateScheme: DateScheme): String = Option(dateScheme).map("dct:" + _.toString).orNull
 
-  def orNull(s: String): String = Option(s).filter(_.nonEmpty).orNull
+  private def optional(s: String) = Option(s).filterNot(_.trim.isEmpty)
+
+  def orNull(s: String): String = optional(s).orNull
 
   private def isOtherDate(kv: (String, Iterable[Elem])): Boolean = !Seq("created", "available").contains(kv._1)
 

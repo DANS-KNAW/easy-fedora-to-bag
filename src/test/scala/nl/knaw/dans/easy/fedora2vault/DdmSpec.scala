@@ -63,6 +63,23 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport {
             <dct:accessRights eas:schemeId="common.dcterms.accessrights">OPEN_ACCESS</dct:accessRights>
         </emd:rights>
 
+  /** result of the emd values above */
+  private def ddmProfile(audience: String) =
+       <ddm:profile>
+          <dc:title>XXX</dc:title>
+          <dct:description>YYY</dct:description>
+          <dcx-dai:creatorDetails>
+            <dcx-dai:organization>
+              <dcx-dai:name>DANS</dcx-dai:name>
+            </dcx-dai:organization>
+          </dcx-dai:creatorDetails>
+          <ddm:created>2017-09-30</ddm:created>
+          <ddm:available>2017-09-30</ddm:available>
+          <ddm:audience>{ audience }</ddm:audience>
+          <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
+        </ddm:profile>
+
+
   "streaming" should "get a valid DDM out of its EMD" in {
     val file = "streaming.xml"
     val triedDdm = getEmd(file).flatMap(DDM(_, Seq("D35400")))
@@ -232,23 +249,61 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport {
     ))
   }
 
-  "spatial" should "render invalid DDM" in { // TODO until everything is implemented
+  "spatial" should "render a point" in {
     val emd = parseEmdContent(Seq(
       emdTitle, emdCreator, emdDescription, emdDates,
         <emd:coverage>
           <eas:spatial>
-              <eas:place/>
-              <eas:point eas:scheme="RD">
-                  <eas:x>155000</eas:x>
-                  <eas:y>463000</eas:y>
-              </eas:point>
+              <eas:point eas:scheme="RD"><eas:x>700</eas:x><eas:y>456000</eas:y></eas:point>
           </eas:spatial>
+          <eas:spatial>
+              <eas:point eas:scheme="degrees"><eas:x>52.08110</eas:x><eas:y>4.34521</eas:y></eas:point>
+          </eas:spatial>
+          <eas:spatial><eas:point><eas:x>1</eas:x><eas:y>2</eas:y></eas:point></eas:spatial>
+          <eas:spatial><eas:point><eas:x>1</eas:x></eas:point></eas:spatial>
+          <eas:spatial><eas:point><eas:y>2</eas:y></eas:point></eas:spatial>
         </emd:coverage>,
       emdRights,
     ))
-    validate(DDM(emd, Seq("D13200")).map(toS)) should matchPattern {
-      case Failure(e) if e.getMessage.contains("not:implemented") =>
-    }
+    val triedDDM = DDM(emd, Seq("D35400")).map(toS)
+    triedDDM.map(normalize) shouldBe Success(normalized(
+      <ddm:DDM xsi:schemaLocation={ schemaLocation }>
+        { ddmProfile("D35400") }
+        <ddm:dcmiMetadata>
+           <dcx-gml:spatial srsName="http://www.opengis.net/def/crs/EPSG/0/28992">
+             <Point xmlns="http://www.opengis.net/gml"><pos>700 456000</pos></Point>
+           </dcx-gml:spatial>
+           <dcx-gml:spatial srsName="http://www.opengis.net/def/crs/EPSG/0/4326">
+             <Point xmlns="http://www.opengis.net/gml"><pos>4.34521 52.08110</pos></Point>
+           </dcx-gml:spatial>
+           <dcx-gml:spatial><Point xmlns="http://www.opengis.net/gml"><pos>2 1</pos></Point></dcx-gml:spatial>
+           <dcx-gml:spatial><Point xmlns="http://www.opengis.net/gml"><pos>0 1</pos></Point></dcx-gml:spatial>
+           <dcx-gml:spatial><Point xmlns="http://www.opengis.net/gml"><pos>2 0</pos></Point></dcx-gml:spatial>
+           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
+        </ddm:dcmiMetadata>
+      </ddm:DDM>
+    )) // note that a missing x or y defaults to zero
+    validate(triedDDM) shouldBe Success(())
+  }
+
+  it should "report a point without coordinates" in {
+    val emd = parseEmdContent(Seq(
+      emdTitle, emdCreator, emdDescription, emdDates,
+        <emd:coverage>
+          <eas:spatial><eas:point eas:scheme="RD"></eas:point></eas:spatial>
+        </emd:coverage>,
+      emdRights,
+    ))
+    val triedDDM = DDM(emd, Seq("D35400")).map(toS)
+    triedDDM.map(normalize) shouldBe Success(normalized(
+      <ddm:DDM xsi:schemaLocation={ schemaLocation }>
+        { ddmProfile("D35400") }
+        <ddm:dcmiMetadata>
+          <not:implemented/>
+          <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
+        </ddm:dcmiMetadata>
+      </ddm:DDM>
+    )) // logging explains the not implemented
   }
 
   "subject" should "succeed" in {
@@ -260,21 +315,9 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport {
       </emd:subject>,
       emdDescription, emdDates, emdRights,
     ))
-    DDM(emd, Seq("D35400")).map(normalized) shouldBe Success(normalized(
+    DDM(emd, Seq("D13200")).map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
-        <ddm:profile>
-          <dc:title>XXX</dc:title>
-          <dct:description>YYY</dct:description>
-          <dcx-dai:creatorDetails>
-            <dcx-dai:organization>
-              <dcx-dai:name>DANS</dcx-dai:name>
-            </dcx-dai:organization>
-          </dcx-dai:creatorDetails>
-          <ddm:created>2017-09-30</ddm:created>
-          <ddm:available>2017-09-30</ddm:available>
-          <ddm:audience>D35400</ddm:audience>
-          <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
-        </ddm:profile>
+        { ddmProfile("D13200") }
         <ddm:dcmiMetadata>
           <dc:subject xsi:type="abr:ABRcomplex">DEPO</dc:subject>
           <dc:subject>hello world</dc:subject>

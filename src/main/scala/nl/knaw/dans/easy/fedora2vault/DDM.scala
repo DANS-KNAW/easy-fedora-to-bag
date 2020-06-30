@@ -90,18 +90,14 @@ object DDM extends DebugEnhancedLogging {
        { emd.getEmdCoverage.getTermsTemporal.asScala.filterNot(hasSimpleScheme).map(bs => <dct:temporal xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue }</dct:temporal>) }
        { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getPlace == null).map(notImplemented("places")) }
        { dateMap.filter(isOtherDate).map { case (key, values) => values.map(_.withLabel(dateLabel(key))) } }
-       { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getBox == null).map(notImplemented("boxes")) }
-       { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getPoint == null).map(notImplemented("points")) }
-       { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getPolygons == null).map(notImplemented("polygons")) }
+       { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getBox == null).map(spatial => toXml(spatial.getBox))}
+       { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getPoint == null).map(spatial => toXml(spatial.getPoint))}
+       { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getPolygons == null).map(spatial => toXml(spatial.getPolygons.asScala))}
        <dct:license xsi:type="dct:URI">{ toLicenseUrl(emd.getEmdRights) }</dct:license>
        { emd.getEmdLanguage.getDcLanguage.asScala.map(bs => <dct:language xsi:type={langType(bs)}>{ langValue(bs) }</dct:language>) }
      </ddm:dcmiMetadata>
    </ddm:DDM>
  }
-
-  private def isRightsHolder(author: Author) = {
-    Option(author.getRole).exists(_.getRole == "RightsHolder")
-  }
 
   private def langType(bs: BasicString): String = bs.getSchemeId match {
     case "fra" | "fra/fre" | "deu" | "deu/ger" | "nld" | "nld/dut" | "dut/nld" | "eng" => "dct:ISO639-3"
@@ -183,11 +179,36 @@ object DDM extends DebugEnhancedLogging {
     s"$uri/${ id.getEntityId }"
   }
 
+  private def toXml(spatial: Spatial.Point): Elem = {
+    val point = SpatialPoint(
+      Option(spatial.getScheme).filter(_.trim.nonEmpty),
+      Option(spatial.getX).filter(_.trim.nonEmpty),
+      Option(spatial.getY).filter(_.trim.nonEmpty),
+    )
+    point.value.map(value =>
+      <dcx-gml:spatial srsName={ point.srsName }>
+        <Point xmlns="http://www.opengis.net/gml">
+          <pos>{ value }</pos>
+        </Point>
+      </dcx-gml:spatial>
+    ).getOrElse(notImplemented("invalid point")(spatial))
+  }
+
+  private def toXml(box: Spatial.Box): Elem = {
+    notImplemented("box")(box)
+  }
+
+  private def toXml(polygon: Seq[Polygon]): Elem = {
+    notImplemented("polygons")(polygon)
+  }
+
   private def toXml(value: IsoDate): Elem = <label xsi:type={ orNull(value.getScheme) }>{ value }</label>
 
   private def toXml(value: BasicDate): Elem = <label xsi:type={ orNull(value.getScheme) }>{ value }</label>
 
   def orNull(dateScheme: DateScheme): String = Option(dateScheme).map("dct:" + _.toString).orNull
+
+  def orNull(s: String): String = Option(s).filter(_.nonEmpty).orNull
 
   private def isOtherDate(kv: (String, Iterable[Elem])): Boolean = !Seq("created", "available").contains(kv._1)
 

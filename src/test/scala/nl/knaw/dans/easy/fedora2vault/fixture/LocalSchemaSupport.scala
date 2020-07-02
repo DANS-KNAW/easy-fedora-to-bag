@@ -15,8 +15,6 @@
  */
 package nl.knaw.dans.easy.fedora2vault.fixture
 
-import java.net.UnknownHostException
-
 import better.files.{ File, StringExtensions }
 import javax.xml.XMLConstants
 import javax.xml.transform.Source
@@ -24,8 +22,8 @@ import javax.xml.transform.stream.StreamSource
 import javax.xml.validation.SchemaFactory
 import nl.knaw.dans.easy.fedora2vault.XmlExtensions
 
-import scala.util.{ Failure, Success, Try }
-import scala.xml.{ Node, SAXParseException }
+import scala.util.{ Failure, Try }
+import scala.xml.Node
 
 trait LocalSchemaSupport {
   val schema: String
@@ -49,16 +47,6 @@ trait LocalSchemaSupport {
     triedSchema.flatMap { schema =>
       val source = new StreamSource(serialized.inputStream)
       Try(schema.newValidator().validate(source))
-    }
-  }
-
-  def schemaIsAvailable: Boolean = {
-    triedSchema match {
-      case Failure(e: SAXParseException) if e.getCause.isInstanceOf[UnknownHostException] => false
-      case Failure(e: SAXParseException) if e.getMessage.contains("Cannot resolve") =>
-        println("Probably an offline third party schema: " + e.getMessage)
-        false
-      case Success(_) => true
     }
   }
 }

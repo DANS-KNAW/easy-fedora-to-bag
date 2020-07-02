@@ -21,11 +21,13 @@ import org.scalamock.scalatest.MockFactory
 import org.slf4j.{ Logger => UnderlyingLogger }
 
 import scala.util.{ Failure, Success }
-import scala.xml.{ Node, NodeBuffer }
 import scala.xml.Utility.trim
+import scala.xml.{ Node, NodeBuffer }
 
 class FileItemSpec extends TestSupportFixture with MockFactory with LocalSchemaSupport {
   val schema = "bag/metadata/files/files.xsd"
+
+  private def validateItem(item: Node) = validate(FileItem.filesXml(Seq(item)))
 
   "apply" should "copy both types of rights" in {
     val fileMetadata = <name>something.txt</name>
@@ -46,11 +48,8 @@ class FileItemSpec extends TestSupportFixture with MockFactory with LocalSchemaS
         <visibleToRights>ANONYMOUS</visibleToRights>
       </file>
     ))
-    assume(schemaIsAvailable)
     triedFileItem.flatMap(validateItem) shouldBe Success(())
   }
-
-  private def validateItem(item: Node) = validate(FileItem.filesXml(Seq(item)))
 
   it should "use a default for accessibleTo" in {
     val fileMetadata = <name>something.txt</name>
@@ -58,7 +57,8 @@ class FileItemSpec extends TestSupportFixture with MockFactory with LocalSchemaS
                        <mimeType>text/plain</mimeType>
                        <visibleTo>NONE</visibleTo>
 
-    FileItem(fileFoXml(fileMetadata)).map(trim) shouldBe Success(trim(
+    val triedFileItem = FileItem(fileFoXml(fileMetadata))
+    triedFileItem.map(trim) shouldBe Success(trim(
       <file filepath="data/original/something.txt">
         <dct:identifier>easy-file:35</dct:identifier>
         <dct:title>something.txt</dct:title>
@@ -67,6 +67,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with LocalSchemaS
         <visibleToRights>NONE</visibleToRights>
       </file>
     ))
+    triedFileItem.flatMap(validateItem) shouldBe Success(())
   }
 
   it should "report a missing tag (this time no default for accessibleTo)" in {
@@ -96,7 +97,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with LocalSchemaS
 
   it should "do additional metadata" in {
     val fileMetadata =
-      <name>SKKJ6_spoor.mif</name>
+      <name>SKKJ6_spoor.mix</name>
       <path>GIS/SKKJ6_spoor.mif</path>
       <mimeType>application/x-framemaker</mimeType>
       <size>911988</size>
@@ -120,10 +121,13 @@ class FileItemSpec extends TestSupportFixture with MockFactory with LocalSchemaS
         </addmd:additional>
       </addmd:additional-metadata>
 
-    FileItem(fileFoXml(fileMetadata)).map(trim) shouldBe Success(trim(
+    // note that we have two times <dct:title>,
+    // once from <name>, once from <addmd:additional-metadata><file_name>
+    val triedFileItem = FileItem(fileFoXml(fileMetadata))
+    triedFileItem.map(trim) shouldBe Success(trim(
       <file filepath="data/GIS/SKKJ6_spoor.mif">
         <dct:identifier>easy-file:35</dct:identifier>
-        <dct:title>SKKJ6_spoor.mif</dct:title>
+        <dct:title>SKKJ6_spoor.mix</dct:title>
         <dct:format>application/x-framemaker</dct:format>
         <accessibleToRights>KNOWN</accessibleToRights>
         <visibleToRights>ANONYMOUS</visibleToRights>
@@ -138,6 +142,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with LocalSchemaS
         <dct:notes>alle sporen samen vormen de putomtrek</dct:notes>
       </file>
     ))
+    triedFileItem.flatMap(validateItem) shouldBe Success(())
   }
 
   "checkNotImplemented" should "report items once" in {

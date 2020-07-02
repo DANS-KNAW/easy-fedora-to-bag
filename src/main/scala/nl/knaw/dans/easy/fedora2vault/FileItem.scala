@@ -23,7 +23,7 @@ import scala.xml.{ Elem, Node, NodeSeq, Text }
 object FileItem {
 
   def filesXml(items: Seq[Node]): Elem =
-    <files xmlns:dcterms="http://purl.org/dc/terms/"
+    <files xmlns:dct="http://purl.org/dc/terms/"
            xmlns="http://easy.dans.knaw.nl/schemas/bag/metadata/files/"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/bag/metadata/files/ https://easy.dans.knaw.nl/schemas/bag/metadata/files/files.xsd"
@@ -62,9 +62,9 @@ object FileItem {
         case _ => get("accessibleTo")
       }
       <file filepath={ "data/" + get("path") }>
-        <dcterms:identifier>{ foXml \@ "PID" }</dcterms:identifier>
-        <dcterms:title>{ get("name") }</dcterms:title>
-        <dcterms:format>{ get("mimeType") }</dcterms:format>
+        <dct:identifier>{ foXml \@ "PID" }</dct:identifier>
+        <dct:title>{ get("name") }</dct:title>
+        <dct:format>{ get("mimeType") }</dct:format>
         <accessibleToRights>{ accessibleTo }</accessibleToRights>
         <visibleToRights>{ visibleTo }</visibleToRights>
         { (fileMetadata \ "additional-metadata" \ "additional" \ "content").flatMap(convert) }
@@ -73,20 +73,38 @@ object FileItem {
   }
 
   def convert(additionalContent: Node): NodeSeq = {
+    val hasArchivalName = (additionalContent \ "archival_name").nonEmpty // EASY-I
+    val hasOriginalFile = (additionalContent \ "original_file").nonEmpty // EASY-II
     additionalContent.nonEmptyChildren.map {
-      // TODO analytic_units, mapprojection, case_quantity (skip if value is one), data_format
-      case Elem(_, "file_category", _, _, Text(value)) => <dcterms:type>{ value }</dcterms:type>
-      case Elem(_, "original_file", _, _, Text(value)) => <dcterms:isFormatOf>{ value }</dcterms:isFormatOf>
-      case Elem(_, "file_content", _, _, Text(value)) => <dcterms:abstract>{ value }</dcterms:abstract>
-      case Elem(_, "file_required", _, _, Text(value)) => <dcterms:requires>{ value }</dcterms:requires>
-      case Elem(_, "software", _, _, Text(value)) => <dcterms:description>{ s"This file was created with $value" }</dcterms:description>
-      case Elem(_, label, _, _, Text(value)) if isNotes(label) => <dcterms:description>{ value }</dcterms:description>
-      case Elem(_, "file_name", _, _, _) => Text("")
+      case Elem(_, label, attributes, _, Text(value)) if attributes.nonEmpty => <notImplemented>{ s"$label(attributes: $attributes): $value" }</notImplemented>
+
+      case Elem(_, "original_file", _, _, Text(value)) => <dct:isFormatOf>{ value }</dct:isFormatOf>
+      case Elem(_, "file_name", _, _, Text(value)) if hasOriginalFile => <dct:title>{ value }</dct:title>
+
+      case Elem(_, "file_name", _, _, Text(value)) if hasArchivalName => <dct:isFormatOf>{ value }</dct:isFormatOf>
+      case Elem(_, "archival_name", _, _, Text(value)) => <dct:title>{ value }</dct:title>
+
+      case Elem(_, "case_quantity", _, _, Text(value)) if value.trim == "1" => Text("") // RAAP mis-interpretation
+      case Elem(_, "case_quantity", _, _, Text(value)) => <afm:case_quantity>{ value }</afm:case_quantity>
+
+      case Elem(_, "file_required", _, _, Text(value)) => <dct:requires>{ value }</dct:requires>
+      case Elem(_, "file_content", _, _, Text(value)) => <dct:abstract>{ value }</dct:abstract>
+      case Elem(_, label, _, _, Text(value)) if asIs(label) => <tag>{ value }</tag>.copy(prefix = "dct", label = label)
+      case Elem(_, label, _, _, Text(value)) if isNotes(label) => <dct:notes>{ value }</dct:notes>
       case Elem(_, label, _, _, Text(value)) => <notImplemented>{ s"$label: $value" }</notImplemented>
       case node => node // white space
     }
   }
 
+  private def asIs(label: String) = {
+    Seq(
+      "hardware", "software", "original_OS",
+      "file_category", "data_format", "file_type", "othmat_codebook", "data_format",
+      "data_collector", "collection_date", "time_period",
+      "geog_cover", "geog_unit", "local_georef", "mapprojection",
+      "analytic_units"
+    ).contains(label)
+  }
   private def isNotes(label: String) = {
     Seq("notes", "remarks", "file_notes", "file_remarks").contains(label)
   }

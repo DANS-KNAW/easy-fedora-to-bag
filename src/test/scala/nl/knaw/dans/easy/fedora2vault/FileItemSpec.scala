@@ -36,9 +36,9 @@ class FileItemSpec extends TestSupportFixture with MockFactory {
 
     FileItem(fileFoXml(fileMetadata)).map(trim) shouldBe Success(trim(
       <file filepath="data/original/something.txt">
-        <dcterms:identifier>easy-file:35</dcterms:identifier>
-        <dcterms:title>something.txt</dcterms:title>
-        <dcterms:format>text/plain</dcterms:format>
+        <dct:identifier>easy-file:35</dct:identifier>
+        <dct:title>something.txt</dct:title>
+        <dct:format>text/plain</dct:format>
         <accessibleToRights>RESTRICTED_REQUEST</accessibleToRights>
         <visibleToRights>ANONYMOUS</visibleToRights>
       </file>
@@ -53,9 +53,9 @@ class FileItemSpec extends TestSupportFixture with MockFactory {
 
     FileItem(fileFoXml(fileMetadata)).map(trim) shouldBe Success(trim(
       <file filepath="data/original/something.txt">
-        <dcterms:identifier>easy-file:35</dcterms:identifier>
-        <dcterms:title>something.txt</dcterms:title>
-        <dcterms:format>text/plain</dcterms:format>
+        <dct:identifier>easy-file:35</dct:identifier>
+        <dct:title>something.txt</dct:title>
+        <dct:format>text/plain</dct:format>
         <accessibleToRights>NONE</accessibleToRights>
         <visibleToRights>NONE</visibleToRights>
       </file>
@@ -115,19 +115,19 @@ class FileItemSpec extends TestSupportFixture with MockFactory {
 
     FileItem(fileFoXml(fileMetadata)).map(trim) shouldBe Success(trim(
       <file filepath="data/GIS/SKKJ6_spoor.mif">
-        <dcterms:identifier>easy-file:35</dcterms:identifier>
-        <dcterms:title>SKKJ6_spoor.mif</dcterms:title>
-        <dcterms:format>application/x-framemaker</dcterms:format>
+        <dct:identifier>easy-file:35</dct:identifier>
+        <dct:title>SKKJ6_spoor.mif</dct:title>
+        <dct:format>application/x-framemaker</dct:format>
         <accessibleToRights>KNOWN</accessibleToRights>
         <visibleToRights>ANONYMOUS</visibleToRights>
-        <dcterms:type>GIS</dcterms:type>
-        <dcterms:isFormatOf>Skkj6_spoor.TAB</dcterms:isFormatOf>
-        <dcterms:abstract>Alle sporenkwaart</dcterms:abstract>
-        <dcterms:requires>SKKJ6_spoor.mid</dcterms:requires>
-        <dcterms:description>This file was created with MapInfo</dcterms:description>
+        <dct:type>GIS</dct:type>
+        <dct:isFormatOf>Skkj6_spoor.TAB</dct:isFormatOf>
+        <dct:abstract>Alle sporenkwaart</dct:abstract>
+        <dct:requires>SKKJ6_spoor.mid</dct:requires>
+        <dct:description>This file was created with MapInfo</dct:description>
         <notImplemented>analytic_units: antropogene en natuurlijke sporen</notImplemented>
         <notImplemented>mapprojection: non-earth (in m.), met de waarden van het RD-stelsel</notImplemented>
-        <dcterms:description>alle sporen samen vormen de putomtrek</dcterms:description>
+        <dct:description>alle sporen samen vormen de putomtrek</dct:description>
       </file>
     ))
   }
@@ -135,15 +135,15 @@ class FileItemSpec extends TestSupportFixture with MockFactory {
   "checkNotImplemented" should "report items once" in {
     val items =
       <file filepath="data/GIS/SKKJ6_spoor.mif">
-        <dcterms:identifier>easy-file:35</dcterms:identifier>
+        <dct:identifier>easy-file:35</dct:identifier>
         <notImplemented>analytic_units: abc</notImplemented>
         <notImplemented>mapprojection: xyz</notImplemented>
       </file>
       <file filepath="rabarbera.txt">
-        <dcterms:identifier>easy-file:78</dcterms:identifier>
+        <dct:identifier>easy-file:78</dct:identifier>
       </file>
       <file filepath="blabla.txt">
-        <dcterms:identifier>easy-file:78</dcterms:identifier>
+        <dct:identifier>easy-file:78</dct:identifier>
         <notImplemented>analytic_units: blabla</notImplemented>
         <notImplemented>opmerkingen: rabarbera</notImplemented>
       </file>

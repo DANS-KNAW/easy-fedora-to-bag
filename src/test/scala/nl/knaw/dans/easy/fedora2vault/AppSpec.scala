@@ -193,7 +193,7 @@ class AppSpec extends TestSupportFixture with MockFactory with FileSystemSupport
 
     // the rest of the content is tested in FileItemSpec
     (metadata / "files.xml").lines.map(_.trim).mkString("\n") should
-      include("<dcterms:identifier>easy-file:35</dcterms:identifier>")
+      include("<dct:identifier>easy-file:35</dct:identifier>")
   }
 
   it should "report invalid file metadata" in {

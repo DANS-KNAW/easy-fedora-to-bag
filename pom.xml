@@ -38,7 +38,7 @@
     <properties>
         <main-class>nl.knaw.dans.easy.fedora2vault.Command</main-class>
         <easy.emd.version>3.9.2</easy.emd.version>
-        <easy.schema.version>3.4.3-SNAPSHOT</easy.schema.version>
+        <easy.schema.version>3.4.2</easy.schema.version>
     </properties>
 
     <scm>

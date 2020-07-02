@@ -16,15 +16,17 @@
 package nl.knaw.dans.easy.fedora2vault
 
 import com.typesafe.scalalogging.Logger
-import nl.knaw.dans.easy.fedora2vault.fixture.TestSupportFixture
+import nl.knaw.dans.easy.fedora2vault.fixture.{ LocalSchemaSupport, TestSupportFixture }
 import org.scalamock.scalatest.MockFactory
 import org.slf4j.{ Logger => UnderlyingLogger }
 
 import scala.util.{ Failure, Success }
-import scala.xml.NodeBuffer
+import scala.xml.{ Node, NodeBuffer }
 import scala.xml.Utility.trim
 
-class FileItemSpec extends TestSupportFixture with MockFactory {
+class FileItemSpec extends TestSupportFixture with MockFactory with LocalSchemaSupport {
+  val schema = "bag/metadata/files/files.xsd"
+
   "apply" should "copy both types of rights" in {
     val fileMetadata = <name>something.txt</name>
                        <path>original/something.txt</path>
@@ -34,7 +36,8 @@ class FileItemSpec extends TestSupportFixture with MockFactory {
                        <visibleTo>ANONYMOUS</visibleTo>
                        <accessibleTo>RESTRICTED_REQUEST</accessibleTo>
 
-    FileItem(fileFoXml(fileMetadata)).map(trim) shouldBe Success(trim(
+    val triedFileItem = FileItem(fileFoXml(fileMetadata)).map(trim)
+    triedFileItem shouldBe Success(trim(
       <file filepath="data/original/something.txt">
         <dct:identifier>easy-file:35</dct:identifier>
         <dct:title>something.txt</dct:title>
@@ -43,7 +46,11 @@ class FileItemSpec extends TestSupportFixture with MockFactory {
         <visibleToRights>ANONYMOUS</visibleToRights>
       </file>
     ))
+    assume(schemaIsAvailable)
+    triedFileItem.flatMap(validateItem) shouldBe Success(())
   }
+
+  private def validateItem(item: Node) = validate(FileItem.filesXml(Seq(item)))
 
   it should "use a default for accessibleTo" in {
     val fileMetadata = <name>something.txt</name>
@@ -120,14 +127,15 @@ class FileItemSpec extends TestSupportFixture with MockFactory {
         <dct:format>application/x-framemaker</dct:format>
         <accessibleToRights>KNOWN</accessibleToRights>
         <visibleToRights>ANONYMOUS</visibleToRights>
-        <dct:type>GIS</dct:type>
+        <dct:file_category>GIS</dct:file_category>
         <dct:isFormatOf>Skkj6_spoor.TAB</dct:isFormatOf>
         <dct:abstract>Alle sporenkwaart</dct:abstract>
+        <dct:title>SKKJ6_spoor.mif</dct:title>
         <dct:requires>SKKJ6_spoor.mid</dct:requires>
-        <dct:description>This file was created with MapInfo</dct:description>
-        <notImplemented>analytic_units: antropogene en natuurlijke sporen</notImplemented>
-        <notImplemented>mapprojection: non-earth (in m.), met de waarden van het RD-stelsel</notImplemented>
-        <dct:description>alle sporen samen vormen de putomtrek</dct:description>
+        <dct:software>MapInfo</dct:software>
+        <dct:analytic_units>antropogene en natuurlijke sporen</dct:analytic_units>
+        <dct:mapprojection>non-earth (in m.), met de waarden van het RD-stelsel</dct:mapprojection>
+        <dct:notes>alle sporen samen vormen de putomtrek</dct:notes>
       </file>
     ))
   }

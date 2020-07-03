@@ -82,7 +82,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with LocalSchemaS
     }
   }
 
-  it should "report a repeated tag" in {
+  it should "report a repeated mandatory tag" in {
     val fileMetadata = <name>something.txt</name>
                        <path>original/something.txt</path>
                        <name>blabla</name>
@@ -94,8 +94,41 @@ class FileItemSpec extends TestSupportFixture with MockFactory with LocalSchemaS
     }
   }
 
+  it should "reject an original_file combined with archival_name" in {
+    val fileMetadata =
+      <name>A</name>
+      <path>B</path>
+      <mimeType>C</mimeType>
+      <size>9</size>
+      <creatorRole>D</creatorRole>
+      <visibleTo>E</visibleTo>
+      <accessibleTo>F</accessibleTo>
+      <addmd:additional-metadata>
+        <addmd:additional id="addi" label="archaeology-filemetadata">
+          <content>
+            <file_name>G</file_name>
+            <original_file>I</original_file>
+            <archival_name>j</archival_name>
+          </content>
+        </addmd:additional>
+      </addmd:additional-metadata>
 
-  it should "do additional metadata" in {
+    val triedFileItem = FileItem(fileFoXml(fileMetadata))
+    triedFileItem.map(trim) shouldBe Success(trim(
+      <file filepath="data/B">
+          <dct:identifier>easy-file:35</dct:identifier>
+          <dct:title>A</dct:title>
+          <dct:format>C</dct:format>
+          <accessibleToRights>F</accessibleToRights>
+          <visibleToRights>E</visibleToRights>
+          <notImplemented>original_file AND archival_name</notImplemented>
+          <dct:isFormatOf>I</dct:isFormatOf>
+          <dct:title>j</dct:title>
+      </file>
+    ))
+  }
+
+  it should "use file name as second title (first title from mandatory name)" in {
     val fileMetadata =
       <name>SKKJ6_spoor.mix</name>
       <path>GIS/SKKJ6_spoor.mif</path>
@@ -140,6 +173,54 @@ class FileItemSpec extends TestSupportFixture with MockFactory with LocalSchemaS
         <afm:analytic_units>antropogene en natuurlijke sporen</afm:analytic_units>
         <afm:mapprojection>non-earth (in m.), met de waarden van het RD-stelsel</afm:mapprojection>
         <afm:notes>alle sporen samen vormen de putomtrek</afm:notes>
+      </file>
+    ))
+    triedFileItem.flatMap(validateItem) shouldBe Success(())
+  }
+
+  it should "use archival_name as title and skip quantity 1" in {
+    val fileMetadata =
+      <name>A</name>
+      <path>B</path>
+      <mimeType>C</mimeType>
+      <size>9</size>
+      <creatorRole>D</creatorRole>
+      <visibleTo>ANONYMOUS</visibleTo>
+      <accessibleTo>ANONYMOUS</accessibleTo>
+      <addmd:additional-metadata>
+        <addmd:additional id="addi" label="archaeology-filemetadata">
+          <content>
+            <file_name>G</file_name>
+            <archival_name>I</archival_name>
+            <file_required>J</file_required>
+            <file_content>K</file_content>
+            <notes>L</notes>
+            <remarks>M</remarks>
+            <file_notes>N</file_notes>
+            <file_remarks>O</file_remarks>
+            <case_quantity> 1 </case_quantity>
+            <case_quantity>22</case_quantity>
+          </content>
+        </addmd:additional>
+      </addmd:additional-metadata>
+
+    val triedFileItem = FileItem(fileFoXml(fileMetadata))
+    triedFileItem.map(trim) shouldBe Success(trim(
+      <file filepath="data/B">
+          <dct:identifier>easy-file:35</dct:identifier>
+          <dct:title>A</dct:title>
+          <dct:format>C</dct:format>
+          <accessibleToRights>ANONYMOUS</accessibleToRights>
+          <visibleToRights>ANONYMOUS</visibleToRights>
+          <dct:isFormatOf>G</dct:isFormatOf>
+          <dct:title>I</dct:title>
+          <dct:requires>J</dct:requires>
+          <dct:abstract>K</dct:abstract>
+          <afm:notes>L</afm:notes>
+          <afm:notes>M</afm:notes>
+          <afm:notes>N</afm:notes>
+          <afm:notes>O</afm:notes>
+          <afm:case_quantity>22</afm:case_quantity>
       </file>
     ))
     triedFileItem.flatMap(validateItem) shouldBe Success(())

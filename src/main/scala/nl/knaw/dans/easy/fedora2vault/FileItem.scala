@@ -78,6 +78,7 @@ object FileItem {
     val hasOriginalFile = (additionalContent \ "original_file").nonEmpty // EASY-II
     additionalContent.nonEmptyChildren.map {
       case Elem(_, label, attributes, _, Text(value)) if attributes.nonEmpty => <notImplemented>{ s"$label(attributes: $attributes): $value" }</notImplemented>
+      case Elem(_, "file_name", _, _, _) if hasArchivalName && hasOriginalFile => <notImplemented>original_file AND archival_name</notImplemented>
 
       case Elem(_, "original_file", _, _, Text(value)) => <dct:isFormatOf>{ value }</dct:isFormatOf>
       case Elem(_, "file_name", _, _, Text(value)) if hasOriginalFile => <dct:title>{ value }</dct:title>
@@ -90,8 +91,8 @@ object FileItem {
 
       case Elem(_, "file_required", _, _, Text(value)) => <dct:requires>{ value }</dct:requires>
       case Elem(_, "file_content", _, _, Text(value)) => <dct:abstract>{ value }</dct:abstract>
-      case Elem(_, label, _, _, Text(value)) if asIs(label) => <tag>{ value }</tag>.copy(prefix = "afm", label = label)
       case Elem(_, label, _, _, Text(value)) if isNotes(label) => <afm:notes>{ value }</afm:notes>
+      case Elem(_, label, _, _, Text(value)) if asIs(label) => <tag>{ value }</tag>.copy(prefix = "afm", label = label)
       case Elem(_, label, _, _, Text(value)) => <notImplemented>{ s"$label: $value" }</notImplemented>
       case node => node // white space
     }

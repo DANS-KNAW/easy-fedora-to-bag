@@ -131,15 +131,15 @@ class FileItemSpec extends TestSupportFixture with MockFactory with LocalSchemaS
         <dct:format>application/x-framemaker</dct:format>
         <accessibleToRights>KNOWN</accessibleToRights>
         <visibleToRights>ANONYMOUS</visibleToRights>
-        <dct:file_category>GIS</dct:file_category>
+        <afm:file_category>GIS</afm:file_category>
         <dct:isFormatOf>Skkj6_spoor.TAB</dct:isFormatOf>
         <dct:abstract>Alle sporenkwaart</dct:abstract>
         <dct:title>SKKJ6_spoor.mif</dct:title>
         <dct:requires>SKKJ6_spoor.mid</dct:requires>
-        <dct:software>MapInfo</dct:software>
-        <dct:analytic_units>antropogene en natuurlijke sporen</dct:analytic_units>
-        <dct:mapprojection>non-earth (in m.), met de waarden van het RD-stelsel</dct:mapprojection>
-        <dct:notes>alle sporen samen vormen de putomtrek</dct:notes>
+        <afm:software>MapInfo</afm:software>
+        <afm:analytic_units>antropogene en natuurlijke sporen</afm:analytic_units>
+        <afm:mapprojection>non-earth (in m.), met de waarden van het RD-stelsel</afm:mapprojection>
+        <afm:notes>alle sporen samen vormen de putomtrek</afm:notes>
       </file>
     ))
     triedFileItem.flatMap(validateItem) shouldBe Success(())

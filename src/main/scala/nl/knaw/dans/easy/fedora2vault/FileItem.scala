@@ -24,6 +24,7 @@ object FileItem {
 
   def filesXml(items: Seq[Node]): Elem =
     <files xmlns:dct="http://purl.org/dc/terms/"
+           xmlns:afm="http://easy.dans.knaw.nl/schemas/bag/metadata/afm/"
            xmlns="http://easy.dans.knaw.nl/schemas/bag/metadata/files/"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/bag/metadata/files/ https://easy.dans.knaw.nl/schemas/bag/metadata/files/files.xsd"
@@ -89,8 +90,8 @@ object FileItem {
 
       case Elem(_, "file_required", _, _, Text(value)) => <dct:requires>{ value }</dct:requires>
       case Elem(_, "file_content", _, _, Text(value)) => <dct:abstract>{ value }</dct:abstract>
-      case Elem(_, label, _, _, Text(value)) if asIs(label) => <tag>{ value }</tag>.copy(prefix = "dct", label = label)
-      case Elem(_, label, _, _, Text(value)) if isNotes(label) => <dct:notes>{ value }</dct:notes>
+      case Elem(_, label, _, _, Text(value)) if asIs(label) => <tag>{ value }</tag>.copy(prefix = "afm", label = label)
+      case Elem(_, label, _, _, Text(value)) if isNotes(label) => <afm:notes>{ value }</afm:notes>
       case Elem(_, label, _, _, Text(value)) => <notImplemented>{ s"$label: $value" }</notImplemented>
       case node => node // white space
     }

@@ -66,9 +66,9 @@ object FileItem {
         <dct:identifier>{ foXml \@ "PID" }</dct:identifier>
         <dct:title>{ get("name") }</dct:title>
         <dct:format>{ get("mimeType") }</dct:format>
+        { (fileMetadata \ "additional-metadata" \ "additional" \ "content").flatMap(convert) }
         <accessibleToRights>{ accessibleTo }</accessibleToRights>
         <visibleToRights>{ visibleTo }</visibleToRights>
-        { (fileMetadata \ "additional-metadata" \ "additional" \ "content").flatMap(convert) }
       </file>
     }
   }

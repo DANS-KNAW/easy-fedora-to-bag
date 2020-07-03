@@ -162,8 +162,6 @@ class FileItemSpec extends TestSupportFixture with MockFactory with LocalSchemaS
         <dct:identifier>easy-file:35</dct:identifier>
         <dct:title>SKKJ6_spoor.mix</dct:title>
         <dct:format>application/x-framemaker</dct:format>
-        <accessibleToRights>KNOWN</accessibleToRights>
-        <visibleToRights>ANONYMOUS</visibleToRights>
         <afm:file_category>GIS</afm:file_category>
         <dct:isFormatOf>Skkj6_spoor.TAB</dct:isFormatOf>
         <dct:abstract>Alle sporenkwaart</dct:abstract>
@@ -173,6 +171,8 @@ class FileItemSpec extends TestSupportFixture with MockFactory with LocalSchemaS
         <afm:analytic_units>antropogene en natuurlijke sporen</afm:analytic_units>
         <afm:mapprojection>non-earth (in m.), met de waarden van het RD-stelsel</afm:mapprojection>
         <afm:notes>alle sporen samen vormen de putomtrek</afm:notes>
+        <accessibleToRights>KNOWN</accessibleToRights>
+        <visibleToRights>ANONYMOUS</visibleToRights>
       </file>
     ))
     triedFileItem.flatMap(validateItem) shouldBe Success(())
@@ -210,8 +210,6 @@ class FileItemSpec extends TestSupportFixture with MockFactory with LocalSchemaS
           <dct:identifier>easy-file:35</dct:identifier>
           <dct:title>A</dct:title>
           <dct:format>C</dct:format>
-          <accessibleToRights>ANONYMOUS</accessibleToRights>
-          <visibleToRights>ANONYMOUS</visibleToRights>
           <dct:isFormatOf>G</dct:isFormatOf>
           <dct:title>I</dct:title>
           <dct:requires>J</dct:requires>
@@ -221,6 +219,8 @@ class FileItemSpec extends TestSupportFixture with MockFactory with LocalSchemaS
           <afm:notes>N</afm:notes>
           <afm:notes>O</afm:notes>
           <afm:case_quantity>22</afm:case_quantity>
+          <accessibleToRights>ANONYMOUS</accessibleToRights>
+          <visibleToRights>ANONYMOUS</visibleToRights>
       </file>
     ))
     triedFileItem.flatMap(validateItem) shouldBe Success(())

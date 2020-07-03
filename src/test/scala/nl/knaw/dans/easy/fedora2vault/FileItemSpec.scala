@@ -20,13 +20,16 @@ import nl.knaw.dans.easy.fedora2vault.fixture.{ LocalSchemaSupport, TestSupportF
 import org.scalamock.scalatest.MockFactory
 import org.slf4j.{ Logger => UnderlyingLogger }
 
+import scala.reflect.io.File
 import scala.util.{ Failure, Success }
 import scala.xml.Utility.trim
 import scala.xml.{ Node, NodeBuffer }
 
 class FileItemSpec extends TestSupportFixture with MockFactory with LocalSchemaSupport {
   val schema = "bag/metadata/files/files.xsd"
+  private val localSchemasExist = File("target/easy-schema").exists
 
+  // TODO workaround for travis not loading schema's as done in easy-schema-examples
   private def validateItem(item: Node) = validate(FileItem.filesXml(Seq(item)))
 
   "apply" should "copy both types of rights" in {
@@ -48,6 +51,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with LocalSchemaS
         <visibleToRights>ANONYMOUS</visibleToRights>
       </file>
     ))
+    assume(localSchemasExist)
     triedFileItem.flatMap(validateItem) shouldBe Success(())
   }
 
@@ -67,6 +71,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with LocalSchemaS
         <visibleToRights>NONE</visibleToRights>
       </file>
     ))
+    assume(localSchemasExist)
     triedFileItem.flatMap(validateItem) shouldBe Success(())
   }
 
@@ -141,6 +146,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with LocalSchemaS
         <visibleToRights>ANONYMOUS</visibleToRights>
       </file>
     ))
+    assume(localSchemasExist)
     triedFileItem.flatMap(validateItem) shouldBe Success(())
   }
 
@@ -189,6 +195,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with LocalSchemaS
           <visibleToRights>ANONYMOUS</visibleToRights>
       </file>
     ))
+    assume(localSchemasExist)
     triedFileItem.flatMap(validateItem) shouldBe Success(())
   }
 

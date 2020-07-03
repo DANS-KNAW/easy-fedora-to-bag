@@ -53,6 +53,11 @@
         </dependency>
         <dependency>
             <groupId>nl.knaw.dans.easy</groupId>
+            <artifactId>easy-schema-lib</artifactId>
+            <version>${easy.schema.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>nl.knaw.dans.easy</groupId>
             <artifactId>emd</artifactId>
             <version>${easy.emd.version}</version>
         </dependency>

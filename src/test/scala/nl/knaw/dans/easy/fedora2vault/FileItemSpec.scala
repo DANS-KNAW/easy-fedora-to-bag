@@ -119,11 +119,11 @@ class FileItemSpec extends TestSupportFixture with MockFactory with LocalSchemaS
           <dct:identifier>easy-file:35</dct:identifier>
           <dct:title>A</dct:title>
           <dct:format>C</dct:format>
-          <accessibleToRights>F</accessibleToRights>
-          <visibleToRights>E</visibleToRights>
           <notImplemented>original_file AND archival_name</notImplemented>
           <dct:isFormatOf>I</dct:isFormatOf>
           <dct:title>j</dct:title>
+          <accessibleToRights>F</accessibleToRights>
+          <visibleToRights>E</visibleToRights>
       </file>
     ))
   }

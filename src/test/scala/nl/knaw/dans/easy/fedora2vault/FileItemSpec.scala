@@ -94,40 +94,6 @@ class FileItemSpec extends TestSupportFixture with MockFactory with LocalSchemaS
     }
   }
 
-  it should "reject an original_file combined with archival_name" in {
-    val fileMetadata =
-      <name>A</name>
-      <path>B</path>
-      <mimeType>C</mimeType>
-      <size>9</size>
-      <creatorRole>D</creatorRole>
-      <visibleTo>E</visibleTo>
-      <accessibleTo>F</accessibleTo>
-      <addmd:additional-metadata>
-        <addmd:additional id="addi" label="archaeology-filemetadata">
-          <content>
-            <file_name>G</file_name>
-            <original_file>I</original_file>
-            <archival_name>j</archival_name>
-          </content>
-        </addmd:additional>
-      </addmd:additional-metadata>
-
-    val triedFileItem = FileItem(fileFoXml(fileMetadata))
-    triedFileItem.map(trim) shouldBe Success(trim(
-      <file filepath="data/B">
-          <dct:identifier>easy-file:35</dct:identifier>
-          <dct:title>A</dct:title>
-          <dct:format>C</dct:format>
-          <notImplemented>original_file AND archival_name</notImplemented>
-          <dct:isFormatOf>I</dct:isFormatOf>
-          <dct:title>j</dct:title>
-          <accessibleToRights>F</accessibleToRights>
-          <visibleToRights>E</visibleToRights>
-      </file>
-    ))
-  }
-
   it should "use file name as second title (first title from mandatory name)" in {
     val fileMetadata =
       <name>SKKJ6_spoor.mix</name>
@@ -226,7 +192,53 @@ class FileItemSpec extends TestSupportFixture with MockFactory with LocalSchemaS
     triedFileItem.flatMap(validateItem) shouldBe Success(())
   }
 
-  "checkNotImplemented" should "report items once" in {
+  "checkNotImplemented" should "report an original_file combined with archival_name" in {
+    val fileMetadata =
+      <name>A</name>
+      <path>B</path>
+      <mimeType>C</mimeType>
+      <size>9</size>
+      <creatorRole>D</creatorRole>
+      <visibleTo>E</visibleTo>
+      <accessibleTo>F</accessibleTo>
+      <addmd:additional-metadata>
+        <addmd:additional id="addi" label="archaeology-filemetadata">
+          <content>
+            <blabla>K</blabla>
+            <file_name>G</file_name>
+            <original_file>I</original_file>
+            <archival_name>j</archival_name>
+          </content>
+        </addmd:additional>
+      </addmd:additional-metadata>
+
+    val triedFileItem = FileItem(fileFoXml(fileMetadata))
+    triedFileItem.map(trim) shouldBe Success(trim(
+      <file filepath="data/B">
+          <dct:identifier>easy-file:35</dct:identifier>
+          <dct:title>A</dct:title>
+          <dct:format>C</dct:format>
+          <notImplemented>blabla: K</notImplemented>
+          <notImplemented>original_file AND archival_name</notImplemented>
+          <dct:isFormatOf>I</dct:isFormatOf>
+          <dct:title>j</dct:title>
+          <accessibleToRights>F</accessibleToRights>
+          <visibleToRights>E</visibleToRights>
+      </file>
+    ))
+    val mockLogger = mock[UnderlyingLogger]
+    Seq(
+      "easy-file:35 (data/B) NOT IMPLEMENTED: blabla: K",
+      "easy-file:35 (data/B) NOT IMPLEMENTED: original_file AND archival_name",
+    ).foreach(s => (mockLogger.warn(_: String)) expects s once())
+    (() => mockLogger.isWarnEnabled()) expects() anyNumberOfTimes() returning true
+
+    FileItem.checkNotImplemented(List(triedFileItem.get), Logger(mockLogger)) should matchPattern {
+      case Failure(e) if e.getMessage == "1 file(s) with not implemented additional file metadata: List(blabla, original_file AND archival_name)" =>
+    }
+  }
+
+  it should "report items once" in {
     val items =
       <file filepath="data/GIS/SKKJ6_spoor.mif">
         <dct:identifier>easy-file:35</dct:identifier>

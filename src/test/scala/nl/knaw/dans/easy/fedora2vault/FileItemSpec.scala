@@ -27,9 +27,10 @@ import scala.xml.{ Node, NodeBuffer }
 
 class FileItemSpec extends TestSupportFixture with MockFactory with LocalSchemaSupport {
   val schema = "bag/metadata/files/files.xsd"
-  private val localSchemasExist = File("target/easy-schema").exists
 
   // TODO workaround for travis not loading schema's as done in easy-schema-examples
+  private val localSchemasExist = File("target/easy-schema").exists
+
   private def validateItem(item: Node) = validate(FileItem.filesXml(Seq(item)))
 
   "apply" should "copy both types of rights" in {

@@ -27,7 +27,7 @@ import nl.knaw.dans.easy.fedora2vault.XmlExtensions
 import scala.util.{ Failure, Try }
 import scala.xml.{ Node, SAXParseException }
 
-trait EasySchemaSupport {
+trait SchemaSupport {
   val schema: String
 
   // lazy vals for two reasons:
@@ -36,7 +36,7 @@ trait EasySchemaSupport {
 
   private lazy val triedSchema = Try(SchemaFactory
     .newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
-    .newSchema(Array[Source](new StreamSource(s"https://easy.dans.knaw.nl/schemas/$schema")))
+    .newSchema(Array[Source](new StreamSource(schema)))
   )
 
   lazy val schemaIsAvailable: Boolean = triedSchema match {

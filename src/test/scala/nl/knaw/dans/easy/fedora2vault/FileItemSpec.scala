@@ -16,7 +16,7 @@
 package nl.knaw.dans.easy.fedora2vault
 
 import com.typesafe.scalalogging.Logger
-import nl.knaw.dans.easy.fedora2vault.fixture.{ EasySchemaSupport, TestSupportFixture }
+import nl.knaw.dans.easy.fedora2vault.fixture.{ SchemaSupport, TestSupportFixture }
 import org.scalamock.scalatest.MockFactory
 import org.slf4j.{ Logger => UnderlyingLogger }
 
@@ -24,8 +24,8 @@ import scala.util.{ Failure, Success }
 import scala.xml.Utility.trim
 import scala.xml.{ Node, NodeBuffer }
 
-class FileItemSpec extends TestSupportFixture with MockFactory with EasySchemaSupport {
-  val schema = "bag/metadata/files/files.xsd"
+class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSupport {
+  val schema = "https://easy.dans.knaw.nl/schemas/bag/metadata/files/files.xsd"
 
   private def validateItem(item: Node) = validate(FileItem.filesXml(Seq(item)))
 

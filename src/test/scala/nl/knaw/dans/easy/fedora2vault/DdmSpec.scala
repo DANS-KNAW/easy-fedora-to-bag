@@ -15,27 +15,19 @@
  */
 package nl.knaw.dans.easy.fedora2vault
 
-import java.net.UnknownHostException
-
-import better.files.{ File, StringExtensions }
-import javax.xml.XMLConstants
-import javax.xml.transform.Source
-import javax.xml.transform.stream.StreamSource
-import javax.xml.validation.SchemaFactory
-import nl.knaw.dans.easy.fedora2vault.fixture.{ AudienceSupport, EmdSupport, TestSupportFixture }
+import better.files.File
+import nl.knaw.dans.easy.fedora2vault.fixture.{ AudienceSupport, EmdSupport, SchemaSupport, TestSupportFixture }
 import nl.knaw.dans.pf.language.emd.EasyMetadataImpl
 import nl.knaw.dans.pf.language.emd.binding.EmdUnmarshaller
 
-import scala.util.{ Failure, Success, Try }
+import scala.util.{ Success, Try }
 import scala.xml.Utility.trim
 import scala.xml._
 
-class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport {
+class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport with SchemaSupport {
 
-  private lazy val triedSchema = Try(SchemaFactory
-    .newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
-    .newSchema(Array(new StreamSource("https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd")).toArray[Source])
-  )
+  override val schema = "https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd"
+
   private val schemaLocation = "http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd"
   private val emdUnMarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
   private val emdTitle =
@@ -79,27 +71,27 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport {
           <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
         </ddm:profile>
 
-
   "streaming" should "get a valid DDM out of its EMD" in {
     val file = "streaming.xml"
     val triedDdm = getEmd(file).flatMap(DDM(_, Seq("D35400")))
-    triedDdm.map(normalized) shouldBe Success(expectedDDM(file).trim)
+    val expectedDdm = (File("src/test/resources/expected-ddm/") / file)
+      .contentAsString.replaceAll(" +", " ").trim
+    triedDdm.map(normalized) shouldBe Success(expectedDdm)
   }
 
   "depositApi" should "produce the DDM provided by easy-deposit-api" in {
     val triedFoXml = Try(XML.loadFile((sampleFoXML / "DepositApi.xml").toJava))
-    val triedDdm = getEmd("DepositApi.xml")
-      .flatMap(DDM(_, Seq("D13200")))
-      .map(toS)
+    val triedDdm = getEmd("DepositApi.xml").flatMap(DDM(_, Seq("D13200")))
     triedDdm shouldBe a[Success[_]]
 
     // round trip test (foXml/EMD was created from the foXML/DDM by easy-ingest-flow)
-    triedDdm.map(normalize) shouldBe triedFoXml.map(foXml =>
-      normalize(toS((foXml \\ "DDM").head))
+    triedDdm.map(normalized) shouldBe triedFoXml.map(foXml =>
+      normalized((foXml \\ "DDM").head)
         .replaceAll("dcterms:", "dct:")
         .replaceAll("""<dcx-dai:name xml:lang="nld">""", """<dcx-dai:name>""") // TODO api bug? lang on title?
     )
-    validate(triedDdm) shouldBe Success(())
+    assume(schemaIsAvailable)
+    triedDdm.flatMap(validate) shouldBe Success(())
   }
 
   "descriptions" should "all appear" in {
@@ -265,8 +257,8 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport {
         </emd:coverage>,
       emdRights,
     ))
-    val triedDDM = DDM(emd, Seq("D35400")).map(toS)
-    triedDDM.map(normalize) shouldBe Success(normalized(
+    val triedDDM = DDM(emd, Seq("D35400"))
+    triedDDM.map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }
         <ddm:dcmiMetadata>
@@ -283,7 +275,8 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport {
         </ddm:dcmiMetadata>
       </ddm:DDM>
     )) // note that a missing x or y defaults to zero
-    validate(triedDDM) shouldBe Success(())
+    assume(schemaIsAvailable)
+    triedDDM.flatMap(validate) shouldBe Success(())
   }
 
   it should "report a point without coordinates" in {
@@ -294,8 +287,8 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport {
         </emd:coverage>,
       emdRights,
     ))
-    val triedDDM = DDM(emd, Seq("D35400")).map(toS)
-    triedDDM.map(normalize) shouldBe Success(normalized(
+    val triedDDM = DDM(emd, Seq("D35400"))
+    triedDDM.map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }
         <ddm:dcmiMetadata>
@@ -502,41 +495,11 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport {
     ))
   }
 
-  private def validate(triedString: Try[String]): Try[Unit] = {
-    assume(schemaIsAvailable)
-    triedString.flatMap(validate)
-  }
-
-  private def validate(serialized: String): Try[Unit] = {
-    triedSchema.flatMap { schema =>
-      val source = new StreamSource(serialized.inputStream)
-      Try(schema.newValidator().validate(source))
-    }
-  }
-
-  private def schemaIsAvailable = {
-    triedSchema match {
-      case Failure(e: SAXParseException) if e.getCause.isInstanceOf[UnknownHostException] => false
-      case Failure(e: SAXParseException) if e.getMessage.contains("Cannot resolve") =>
-        println("Probably an offline third party schema: " + e.getMessage)
-        false
-      case _ => true
-    }
-  }
-
-  private def normalized(elem: Node) = normalize(toS(elem))
-
-  private def normalize(xml: String): String = xml
+  private def normalized(elem: Node) = printer
+    .format(Utility.trim(elem)) // this trim normalizes <a/> and <a></a>
     .replaceAll(nameSpaceRegExp, "") // the random order would cause differences in actual and expected
     .replaceAll(" +\n?", " ")
     .trim
-
-  private def toS(elem: Node) = printer.format(Utility.trim(elem)) // this trim normalizes <a/> and <a></a>
-
-  private def expectedDDM(file: String) = {
-    (File("src/test/resources/expected-ddm/") / file)
-      .contentAsString.replaceAll(" +", " ")
-  }
 
   private def getEmd(file: String) = {
     for {

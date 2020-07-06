@@ -15,7 +15,9 @@
  */
 package nl.knaw.dans.easy.fedora2vault.fixture
 
-import better.files.{ File, StringExtensions }
+import java.net.UnknownHostException
+
+import better.files.StringExtensions
 import javax.xml.XMLConstants
 import javax.xml.transform.Source
 import javax.xml.transform.stream.StreamSource
@@ -23,21 +25,26 @@ import javax.xml.validation.SchemaFactory
 import nl.knaw.dans.easy.fedora2vault.XmlExtensions
 
 import scala.util.{ Failure, Try }
-import scala.xml.Node
+import scala.xml.{ Node, SAXParseException }
 
-trait LocalSchemaSupport {
+trait EasySchemaSupport {
   val schema: String
-  private lazy val triedSchema = Try {
-    // lazy for two reasons:
-    // - schemaFile is set by concrete test class
-    // - postpone loading until actually validating
-    val xsdInputStream = (File("target/easy-schema") / schema)
-      .contentAsString.inputStream
-    SchemaFactory
-      .newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
-      .newSchema(Array[Source](new StreamSource(xsdInputStream)))
-  }.recoverWith { case t =>
-    Failure(new Exception(s"Could not load schema [$schema] $t", t))
+
+  // lazy vals for two reasons:
+  // - schemaFile is set by concrete test class
+  // - postpone loading until actually validating
+
+  private lazy val triedSchema = Try(SchemaFactory
+    .newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
+    .newSchema(Array[Source](new StreamSource(s"https://easy.dans.knaw.nl/schemas/$schema")))
+  )
+
+  lazy val schemaIsAvailable: Boolean = triedSchema match {
+    case Failure(e: SAXParseException) if e.getCause.isInstanceOf[UnknownHostException] => false
+    case Failure(e: SAXParseException) if e.getMessage.contains("Cannot resolve") =>
+      println("Probably an offline third party schema: " + e.getMessage)
+      false
+    case _ => true
   }
 
   def validate(xml: Node): Try[Unit] = {

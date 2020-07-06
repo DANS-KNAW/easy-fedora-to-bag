@@ -23,12 +23,13 @@ import scala.xml.{ Elem, Node, NodeSeq, Text }
 object FileItem {
 
   private val baseNS = "http://easy.dans.knaw.nl/schemas/bag/metadata"
+
   def filesXml(items: Seq[Node]): Elem =
     <files xmlns:dct="http://purl.org/dc/terms/"
            xmlns:afm={ s"$baseNS/afm/"}
            xmlns={ s"$baseNS/files/" }
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-           xsi:schemaLocation={ s"$baseNS/files/ $baseNS/files/files.xsd $baseNS/afm/ $baseNS/afm/afm.xsd" }
+           xsi:schemaLocation={ s"$baseNS/files/ $baseNS/files/files.xsd" }
     >
     { items }
     </files>
@@ -108,6 +109,7 @@ object FileItem {
       "analytic_units"
     ).contains(label)
   }
+
   private def isNotes(label: String) = {
     Seq("notes", "remarks", "file_notes", "file_remarks").contains(label)
   }

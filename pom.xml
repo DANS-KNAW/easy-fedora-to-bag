@@ -38,7 +38,6 @@
     <properties>
         <main-class>nl.knaw.dans.easy.fedora2vault.Command</main-class>
         <easy.emd.version>3.9.2</easy.emd.version>
-        <easy.schema.version>3.4.2</easy.schema.version>
     </properties>
 
     <scm>
@@ -154,28 +153,6 @@
             </activation>
             <build>
                 <plugins>
-                    <plugin>
-                        <artifactId>maven-dependency-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>test-resources</id>
-                                <phase>generate-test-resources</phase>
-                                <goals>
-                                    <goal>unpack</goal>
-                                </goals>
-                                <configuration>
-                                    <artifactItems>
-                                        <artifactItem>
-                                            <groupId>nl.knaw.dans.easy</groupId>
-                                            <artifactId>easy-schema-lib</artifactId>
-                                            <version>${easy.schema.version}</version>
-                                            <outputDirectory>${project.build.directory}/easy-schema</outputDirectory>
-                                        </artifactItem>
-                                    </artifactItems>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>rpm-maven-plugin</artifactId>

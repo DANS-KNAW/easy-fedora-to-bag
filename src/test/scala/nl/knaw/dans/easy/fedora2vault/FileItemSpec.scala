@@ -16,20 +16,16 @@
 package nl.knaw.dans.easy.fedora2vault
 
 import com.typesafe.scalalogging.Logger
-import nl.knaw.dans.easy.fedora2vault.fixture.{ LocalSchemaSupport, TestSupportFixture }
+import nl.knaw.dans.easy.fedora2vault.fixture.{ EasySchemaSupport, TestSupportFixture }
 import org.scalamock.scalatest.MockFactory
 import org.slf4j.{ Logger => UnderlyingLogger }
 
-import scala.reflect.io.File
 import scala.util.{ Failure, Success }
 import scala.xml.Utility.trim
 import scala.xml.{ Node, NodeBuffer }
 
-class FileItemSpec extends TestSupportFixture with MockFactory with LocalSchemaSupport {
+class FileItemSpec extends TestSupportFixture with MockFactory with EasySchemaSupport {
   val schema = "bag/metadata/files/files.xsd"
-
-  // TODO workaround for travis not loading schema's as done in easy-schema-examples
-  private val localSchemasExist = File("target/easy-schema").exists
 
   private def validateItem(item: Node) = validate(FileItem.filesXml(Seq(item)))
 
@@ -52,7 +48,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with LocalSchemaS
         <visibleToRights>ANONYMOUS</visibleToRights>
       </file>
     ))
-    assume(localSchemasExist)
+    assume(schemaIsAvailable)
     triedFileItem.flatMap(validateItem) shouldBe Success(())
   }
 
@@ -72,7 +68,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with LocalSchemaS
         <visibleToRights>NONE</visibleToRights>
       </file>
     ))
-    assume(localSchemasExist)
+    assume(schemaIsAvailable)
     triedFileItem.flatMap(validateItem) shouldBe Success(())
   }
 
@@ -147,7 +143,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with LocalSchemaS
         <visibleToRights>ANONYMOUS</visibleToRights>
       </file>
     ))
-    assume(localSchemasExist)
+    assume(schemaIsAvailable)
     triedFileItem.flatMap(validateItem) shouldBe Success(())
   }
 
@@ -196,7 +192,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with LocalSchemaS
           <visibleToRights>ANONYMOUS</visibleToRights>
       </file>
     ))
-    assume(localSchemasExist)
+    assume(schemaIsAvailable)
     triedFileItem.flatMap(validateItem) shouldBe Success(())
   }
 

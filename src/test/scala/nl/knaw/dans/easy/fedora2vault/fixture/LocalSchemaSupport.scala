@@ -31,10 +31,8 @@ trait LocalSchemaSupport {
     // lazy for two reasons:
     // - schemaFile is set by concrete test class
     // - postpone loading until actually validating
-    val xsdInputStream = (File("target/easy-schema") / schema).contentAsString.replaceAll(
-      """schemaLocation="http://easy.dans.knaw.nl/schemas"""",
-      s"""schemaLocation="file://target/easy-schema"""
-    ).inputStream
+    val xsdInputStream = (File("target/easy-schema") / schema)
+      .contentAsString.inputStream
     SchemaFactory
       .newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
       .newSchema(Array[Source](new StreamSource(xsdInputStream)))

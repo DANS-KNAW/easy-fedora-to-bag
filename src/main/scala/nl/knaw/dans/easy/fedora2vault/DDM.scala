@@ -209,7 +209,7 @@ object DDM extends DebugEnhancedLogging {
     val exterior = Option(polygon.getExterior)
       .map(part => <exterior>{ toXml(part, maybeScheme) }</exterior>)
       .getOrElse(Text(""))
-    val interiors = Option(polygon.getExterior).toSeq
+    val interiors = Option(polygon.getInterior).toSeq.flatMap(_.asScala)
       .flatMap(part => <interior>{ toXml(part, maybeScheme) }</interior>)
     <dcx-gml:spatial>
         <Polygon xmlns='http://www.opengis.net/gml' srsName={ srsName }>

@@ -299,6 +299,208 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     )) // logging explains the not implemented
   }
 
+  it should "render a polygon" in {
+    val emd = parseEmdContent(Seq(
+      emdTitle, emdCreator, emdDescription, emdDates,
+        <emd:coverage>
+          <eas:spatial>
+            <eas:polygon eas:scheme="RD">
+              <eas:place>Some kind of description, without an actual polygon attached to it</eas:place>
+            </eas:polygon>
+          </eas:spatial>
+          <eas:spatial>
+            <eas:polygon eas:scheme="degrees">
+              <eas:place>A triangle between DANS, NWO and the railway station</eas:place>
+              <eas:polygon-exterior>
+                <eas:place>main triangle</eas:place>
+                <eas:polygon-point><eas:x>52.08110</eas:x><eas:y>4.34521</eas:y></eas:polygon-point>
+                <eas:polygon-point><eas:x>52.08071</eas:x><eas:y>4.34422</eas:y></eas:polygon-point>
+                <eas:polygon-point><eas:x>52.07913</eas:x><eas:y>4.34332</eas:y></eas:polygon-point>
+                <eas:polygon-point><eas:x>52.08110</eas:x><eas:y>4.34521</eas:y></eas:polygon-point>
+              </eas:polygon-exterior>
+              <eas:polygon-interior>
+                <eas:place>hole1</eas:place>
+                <eas:polygon-point><eas:x>52.080542</eas:x><eas:y>4.344215</eas:y></eas:polygon-point>
+                <eas:polygon-point><eas:x>52.080450</eas:x><eas:y>4.344323</eas:y></eas:polygon-point>
+                <eas:polygon-point><eas:x>52.080357</eas:x><eas:y>4.344110</eas:y></eas:polygon-point>
+                <eas:polygon-point><eas:x>52.080542</eas:x><eas:y>4.344215</eas:y></eas:polygon-point>
+              </eas:polygon-interior>
+              <eas:polygon-interior>
+                <eas:place>hole2</eas:place>
+                <eas:polygon-point><eas:x>52.080542</eas:x><eas:y>4.344215</eas:y></eas:polygon-point>
+                <eas:polygon-point><eas:x>52.080450</eas:x><eas:y>4.344323</eas:y></eas:polygon-point>
+                <eas:polygon-point><eas:x>52.080357</eas:x><eas:y>4.344110</eas:y></eas:polygon-point>
+                <eas:polygon-point><eas:x>52.080542</eas:x><eas:y>4.344215</eas:y></eas:polygon-point>
+              </eas:polygon-interior>
+            </eas:polygon>
+          </eas:spatial>
+          <eas:spatial>
+            <eas:polygon eas:scheme="RD">
+              <eas:place>A triangle between DANS, NWO and the railway station</eas:place>
+              <eas:polygon-interior>
+                <eas:place>hole in none</eas:place>
+                <eas:polygon-point><eas:x>83506</eas:x><eas:y>455210</eas:y></eas:polygon-point>
+                <eas:polygon-point><eas:x>83513</eas:x><eas:y>455200</eas:y></eas:polygon-point>
+                <eas:polygon-point><eas:x>83499</eas:x><eas:y>455189</eas:y></eas:polygon-point>
+                <eas:polygon-point><eas:x>83506</eas:x><eas:y>455210</eas:y></eas:polygon-point>
+              </eas:polygon-interior>
+            </eas:polygon>
+          </eas:spatial>
+          <eas:spatial>
+            <eas:polygon eas:scheme="RD">
+              <eas:place>A triangle between DANS, NWO and the railway station</eas:place>
+              <eas:polygon-interior>
+                <eas:place>pointless hole</eas:place>
+              </eas:polygon-interior>
+            </eas:polygon>
+          </eas:spatial>
+        </emd:coverage>,
+      emdRights,
+    ))
+    val triedDDM = DDM(emd, Seq("D35400"))
+    triedDDM.map(normalized(_).replace("<posList></posList>", "<posList/>")) shouldBe Success(normalized(
+      <ddm:DDM xsi:schemaLocation={ schemaLocation }>
+        { ddmProfile("D35400") }
+        <ddm:dcmiMetadata>
+           <dcx-gml:spatial>
+             <Polygon srsName="http://www.opengis.net/def/crs/EPSG/0/28992" xmlns="http://www.opengis.net/gml">
+               <description>Some kind of description, without an actual polygon attached to it</description>
+             </Polygon>
+           </dcx-gml:spatial>
+           <dcx-gml:spatial>
+             <Polygon srsName="http://www.opengis.net/def/crs/EPSG/0/4326" xmlns="http://www.opengis.net/gml">
+               <description>A triangle between DANS, NWO and the railway station</description>
+               <exterior><LinearRing><description>main triangle</description><posList>4.34521 52.08110 4.34422 52.08071 4.34332 52.07913 4.34521 52.08110</posList></LinearRing></exterior>
+               <interior><LinearRing><description>hole1</description><posList>4.344215 52.080542 4.344323 52.080450 4.344110 52.080357 4.344215 52.080542</posList></LinearRing></interior>
+               <interior><LinearRing><description>hole2</description><posList>4.344215 52.080542 4.344323 52.080450 4.344110 52.080357 4.344215 52.080542</posList></LinearRing></interior>
+             </Polygon>
+           </dcx-gml:spatial>
+           <dcx-gml:spatial>
+             <Polygon srsName="http://www.opengis.net/def/crs/EPSG/0/28992" xmlns="http://www.opengis.net/gml">
+               <description>A triangle between DANS, NWO and the railway station</description>
+               <interior><LinearRing><description>hole in none</description><posList>83506 455210 83513 455200 83499 455189 83506 455210</posList></LinearRing></interior>
+             </Polygon>
+           </dcx-gml:spatial>
+           <dcx-gml:spatial>
+             <Polygon srsName="http://www.opengis.net/def/crs/EPSG/0/28992" xmlns="http://www.opengis.net/gml">
+               <description>A triangle between DANS, NWO and the railway station</description>
+               <interior><LinearRing><description>pointless hole</description><posList></posList></LinearRing></interior>
+             </Polygon>
+           </dcx-gml:spatial>
+          <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
+        </ddm:dcmiMetadata>
+      </ddm:DDM>
+    )) // Note that even te validation is happy with a pointless polygon or an interior without exterior
+    assume(schemaIsAvailable)
+    triedDDM.flatMap(validate) shouldBe Success(())
+  }
+
+  it should "render a box" in {
+    val emd = parseEmdContent(Seq(
+      emdTitle, emdCreator, emdDescription, emdDates,
+        <emd:coverage>
+          <eas:spatial>
+            <eas:box eas:scheme="RD">
+              <eas:north>455271.2</eas:north>
+              <eas:east>83575.4</eas:east>
+              <eas:south>455271.0</eas:south>
+              <eas:west>83575.0</eas:west>
+            </eas:box>
+          </eas:spatial>
+          <eas:spatial>
+            <eas:box eas:scheme="degrees">
+              <eas:north>79.5</eas:north>
+              <eas:east>23.0</eas:east>
+              <eas:south>76.7</eas:south>
+              <eas:west>10.0</eas:west>
+            </eas:box>
+          </eas:spatial>
+          <eas:spatial>
+            <eas:box eas:scheme="RD">
+              <eas:west>83575.0</eas:west>
+            </eas:box>
+          </eas:spatial>
+          <eas:spatial>
+            <eas:box eas:scheme="degrees">
+                <eas:north>79.5</eas:north>
+            </eas:box>
+          </eas:spatial>
+        </emd:coverage>,
+      emdRights,
+    ))
+    val triedDDM = DDM(emd, Seq("D35400"))
+    triedDDM.map(normalized) shouldBe Success(normalized(
+      <ddm:DDM xsi:schemaLocation={ schemaLocation }>
+        { ddmProfile("D35400") }
+        <ddm:dcmiMetadata>
+           <dcx-gml:spatial>
+             <boundedBy xmlns="http://www.opengis.net/gml">
+               <Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/28992">
+                 <lowerCorner>83575.0 455271.0</lowerCorner>
+                 <upperCorner>83575.4 455271.2</upperCorner>
+               </Envelope>
+             </boundedBy>
+           </dcx-gml:spatial>
+           <dcx-gml:spatial>
+             <boundedBy xmlns="http://www.opengis.net/gml">
+               <Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/4326">
+                 <lowerCorner>76.7 10.0</lowerCorner>
+                 <upperCorner>79.5 23.0</upperCorner>
+               </Envelope>
+             </boundedBy>
+           </dcx-gml:spatial>
+           <dcx-gml:spatial>
+             <boundedBy xmlns="http://www.opengis.net/gml">
+               <Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/28992">
+                 <lowerCorner>83575.0 0</lowerCorner>
+                 <upperCorner>0 0</upperCorner>
+               </Envelope>
+             </boundedBy>
+           </dcx-gml:spatial>
+           <dcx-gml:spatial>
+             <boundedBy xmlns="http://www.opengis.net/gml">
+               <Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/4326">
+                 <lowerCorner>0 0</lowerCorner>
+                 <upperCorner>79.5 0</upperCorner>
+               </Envelope>
+             </boundedBy>
+           </dcx-gml:spatial>
+           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
+        </ddm:dcmiMetadata>
+      </ddm:DDM>
+    ))
+    assume(schemaIsAvailable)
+    triedDDM.flatMap(validate) shouldBe Success(())
+  }
+
+  it should "complain about a box without any coordinate" in {
+    val emd = parseEmdContent(Seq(
+      emdTitle, emdCreator, emdDescription, emdDates,
+        <emd:coverage>
+          <eas:spatial>
+            <eas:box eas:scheme="RD">
+            </eas:box>
+          </eas:spatial>
+          <eas:spatial>
+            <eas:box eas:scheme="degrees">
+            </eas:box>
+          </eas:spatial>
+        </emd:coverage>,
+      emdRights,
+    ))
+    val triedDDM = DDM(emd, Seq("D35400"))
+    triedDDM.map(normalized) shouldBe Success(normalized(
+      <ddm:DDM xsi:schemaLocation={ schemaLocation }>
+        { ddmProfile("D35400") }
+        <ddm:dcmiMetadata>
+          <not:implemented/>
+          <not:implemented/>
+          <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
+        </ddm:dcmiMetadata>
+      </ddm:DDM>
+    )) // logging explains the not implemented
+  }
+
   "subject" should "succeed" in {
     val emd = parseEmdContent(Seq(
       emdTitle, emdCreator,

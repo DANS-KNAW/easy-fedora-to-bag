@@ -183,7 +183,7 @@ object DDM extends DebugEnhancedLogging {
       optional(emdPoint.getY),
     ))
     <dcx-gml:spatial srsName={ maybePoint.map(_.srsName).orNull }>
-      { Option(spatial.getPlace).toSeq.map(bs => <description xml:lang={ lang(bs) }>{ bs.getValue }</description>) }
+      { Option(spatial.getPlace).toSeq.map(bs => <name xml:lang={ lang(bs) }>{ bs.getValue }</name>) }
       { maybePoint.toSeq.map(toXml) }
       { Option(spatial.getBox).toSeq.map(toXml) }
       { Option(spatial.getPolygons.asScala).toSeq.map(toXml) }
@@ -223,7 +223,7 @@ object DDM extends DebugEnhancedLogging {
       override val value: Option[String] = None
     }.srsName
     val place = optional(polygon.getPlace)
-      .map(place => <description>{ place }</description>)
+      .map(place => <name>{ place }</name>)
       .getOrElse(Text(""))
     val exterior = Option(polygon.getExterior)
       .map(part => <exterior>{ toXml(part, maybeScheme) }</exterior>)

@@ -278,7 +278,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     triedDDM.flatMap(validate) shouldBe Success(())
   }
 
-  it should "report a point without coordinates" in {
+  it should "report a point without coordinates as not implemented" in {
     val emd = parseEmdContent(Seq(
       emdTitle, emdCreator, emdDescription, emdDates,
         <emd:coverage>
@@ -286,8 +286,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
         </emd:coverage>,
       emdRights,
     ))
-    val triedDDM = DDM(emd, Seq("D35400"))
-    triedDDM.map(normalized) shouldBe Success(normalized(
+    DDM(emd, Seq("D35400")).map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }
         <ddm:dcmiMetadata>
@@ -298,55 +297,6 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
         </ddm:dcmiMetadata>
       </ddm:DDM>
     )) // logging explains the not implemented
-  }
-
-  it should "render a mix of spatial element types" in {
-    // TODO easy-schema-examples also has DDM with:
-    //  <dcterms:spatial xsi:type="dcx-gml:SimpleGMLType"><Point>
-    // TODO easy-sword test/demo also has DDM:
-      <Point xmlns="http://www.opengis.net/gml">
-        <description>Entrance of DANS Building</description>
-        <name>Data Archiving and Networked Services (DANS)</name>
-        <pos>52.08110 4.34521 1.12</pos>
-      </Point>
-
-    val emd = parseEmdContent(Seq(
-      emdTitle, emdCreator, emdDescription, emdDates,
-        <emd:coverage>
-          <eas:spatial>
-            <eas:place>A general description</eas:place>
-            <eas:point><eas:x>1</eas:x></eas:point>
-            <eas:box eas:scheme="degrees"><eas:north>79.5</eas:north><eas:east>23.0</eas:east><eas:south>76.7</eas:south><eas:west>10.0</eas:west></eas:box>
-            <eas:polygon eas:scheme="RD"><eas:place>A polygon description</eas:place></eas:polygon>
-          </eas:spatial>
-        </emd:coverage>,
-      emdRights,
-    ))
-    val triedDDM = DDM(emd, Seq("D35400"))
-    triedDDM.map(normalized) shouldBe Success(normalized(
-      <ddm:DDM xsi:schemaLocation={ schemaLocation }>
-        { ddmProfile("D35400") }
-        <ddm:dcmiMetadata>
-          <dcx-gml:spatial>
-            <description>A general description</description>
-            <Point xmlns="http://www.opengis.net/gml"><pos>0 1</pos></Point>
-            <boundedBy xmlns="http://www.opengis.net/gml">
-              <Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/4326">
-                <lowerCorner>76.7 10.0</lowerCorner>
-                <upperCorner>79.5 23.0</upperCorner>
-              </Envelope>
-            </boundedBy>
-            <Polygon srsName="http://www.opengis.net/def/crs/EPSG/0/28992" xmlns="http://www.opengis.net/gml">
-              <description>A polygon description</description>
-            </Polygon>
-          </dcx-gml:spatial>
-          <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
-        </ddm:dcmiMetadata>
-      </ddm:DDM>
-    ))
-    assume(schemaIsAvailable)
-    triedDDM.foreach(x => println(printer.format(x)))
-    triedDDM.flatMap(validate) shouldBe a[Failure[_]]
   }
 
   it should "render a polygon" in {
@@ -414,12 +364,12 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
         <ddm:dcmiMetadata>
            <dcx-gml:spatial>
              <Polygon srsName="http://www.opengis.net/def/crs/EPSG/0/28992" xmlns="http://www.opengis.net/gml">
-               <description>Some kind of description, without an actual polygon attached to it</description>
+               <name>Some kind of description, without an actual polygon attached to it</name>
              </Polygon>
            </dcx-gml:spatial>
            <dcx-gml:spatial>
              <Polygon srsName="http://www.opengis.net/def/crs/EPSG/0/4326" xmlns="http://www.opengis.net/gml">
-               <description>A triangle between DANS, NWO and the railway station</description>
+               <name>A triangle between DANS, NWO and the railway station</name>
                <exterior><LinearRing><description>main triangle</description><posList>4.34521 52.08110 4.34422 52.08071 4.34332 52.07913 4.34521 52.08110</posList></LinearRing></exterior>
                <interior><LinearRing><description>hole1</description><posList>4.344215 52.080542 4.344323 52.080450 4.344110 52.080357 4.344215 52.080542</posList></LinearRing></interior>
                <interior><LinearRing><description>hole2</description><posList>4.344215 52.080542 4.344323 52.080450 4.344110 52.080357 4.344215 52.080542</posList></LinearRing></interior>
@@ -427,13 +377,13 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
            </dcx-gml:spatial>
            <dcx-gml:spatial>
              <Polygon srsName="http://www.opengis.net/def/crs/EPSG/0/28992" xmlns="http://www.opengis.net/gml">
-               <description>A triangle between DANS, NWO and the railway station</description>
+               <name>A triangle between DANS, NWO and the railway station</name>
                <interior><LinearRing><description>hole in none</description><posList>83506 455210 83513 455200 83499 455189 83506 455210</posList></LinearRing></interior>
              </Polygon>
            </dcx-gml:spatial>
            <dcx-gml:spatial>
              <Polygon srsName="http://www.opengis.net/def/crs/EPSG/0/28992" xmlns="http://www.opengis.net/gml">
-               <description>A triangle between DANS, NWO and the railway station</description>
+               <name>A triangle between DANS, NWO and the railway station</name>
                <interior><LinearRing><description>pointless hole</description><posList></posList></LinearRing></interior>
              </Polygon>
            </dcx-gml:spatial>
@@ -523,7 +473,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     triedDDM.flatMap(validate) shouldBe Success(())
   }
 
-  it should "complain about a box without any coordinate" in {
+  it should "report a box without any coordinate as not implemented" in {
     val emd = parseEmdContent(Seq(
       emdTitle, emdCreator, emdDescription, emdDates,
         <emd:coverage>
@@ -553,6 +503,80 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
         </ddm:dcmiMetadata>
       </ddm:DDM>
     )) // logging explains the not implemented
+  }
+
+  it should "render a mix of spatial element types" in {
+    val emd = parseEmdContent(Seq(
+      emdTitle, emdCreator, emdDescription, emdDates,
+        <emd:coverage>
+          <eas:spatial>
+            <eas:place>A general description</eas:place>
+            <eas:point><eas:x>1</eas:x></eas:point>
+            <eas:box eas:scheme="degrees"><eas:north>79.5</eas:north><eas:east>23.0</eas:east><eas:south>76.7</eas:south><eas:west>10.0</eas:west></eas:box>
+            <eas:polygon eas:scheme="RD"><eas:place>A polygon description</eas:place></eas:polygon>
+          </eas:spatial>
+        </emd:coverage>,
+      emdRights,
+    ))
+    val triedDDM = DDM(emd, Seq("D35400"))
+    triedDDM.map(normalized) shouldBe Success(normalized(
+      <ddm:DDM xsi:schemaLocation={ schemaLocation }>
+        { ddmProfile("D35400") }
+        <ddm:dcmiMetadata>
+          <dcx-gml:spatial>
+            <name>A general description</name>
+            <Point xmlns="http://www.opengis.net/gml"><pos>0 1</pos></Point>
+            <boundedBy xmlns="http://www.opengis.net/gml">
+              <Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/4326">
+                <lowerCorner>76.7 10.0</lowerCorner>
+                <upperCorner>79.5 23.0</upperCorner>
+              </Envelope>
+            </boundedBy>
+            <Polygon srsName="http://www.opengis.net/def/crs/EPSG/0/28992" xmlns="http://www.opengis.net/gml">
+              <name>A polygon description</name>
+            </Polygon>
+          </dcx-gml:spatial>
+          <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
+        </ddm:dcmiMetadata>
+      </ddm:DDM>
+    ))
+    assume(schemaIsAvailable)
+    triedDDM.flatMap(validate) should matchPattern {
+      case Failure(e: SAXParseException) if e.getLocalizedMessage
+        .matches(".*Invalid content was found starting with element 'name'. One of .*:_Geometry, .*:boundedBy}' is expected.") =>
+    }
+
+    // other rendering variants found elsewhere in the EASY code base
+
+    validate( // easy-ddm/src/test/resources/input/spatial.xml
+      <ddm:DDM xsi:schemaLocation={ schemaLocation } xmlns:ddm="http://easy.dans.knaw.nl/schemas/md/ddm/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dct="http://purl.org/dc/terms/" xmlns:dcx-dai="http://easy.dans.knaw.nl/schemas/dcx/dai/" xmlns:dcx-gml="http://easy.dans.knaw.nl/schemas/dcx/gml/" xmlns:id-type="http://easy.dans.knaw.nl/schemas/vocab/identifier-type/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        { ddmProfile("D35400") }
+        <ddm:dcmiMetadata>
+          <dcx-gml:spatial>
+            <Point xmlns="http://www.opengis.net/gml">
+              <description>Entrance of DANS Building</description>
+              <name>Data Archiving and Networked Services (DANS)</name>
+              <pos>52.08110 4.34521 1.12</pos>
+            </Point>
+          </dcx-gml:spatial>
+          <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
+        </ddm:dcmiMetadata>
+      </ddm:DDM>
+    ) shouldBe a[Success[_]]
+
+    validate( // easy-app/front-end/easy-sword/src/test/resources/input/demoDDM.xml
+      <ddm:DDM xsi:schemaLocation={ schemaLocation } xmlns:ddm="http://easy.dans.knaw.nl/schemas/md/ddm/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dct="http://purl.org/dc/terms/" xmlns:dcx-dai="http://easy.dans.knaw.nl/schemas/dcx/dai/" xmlns:dcx-gml="http://easy.dans.knaw.nl/schemas/dcx/gml/" xmlns:id-type="http://easy.dans.knaw.nl/schemas/vocab/identifier-type/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        { ddmProfile("D35400") }
+        <ddm:dcmiMetadata>
+          <dct:spatial xsi:type="dcx-gml:SimpleGMLType">
+            <Point xmlns="http://www.opengis.net/gml">
+              <pos>1.0 2.0</pos>
+            </Point>
+          </dct:spatial>
+          <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
+        </ddm:dcmiMetadata>
+      </ddm:DDM>
+    ) shouldBe a[Success[_]]
   }
 
   "subject" should "succeed" in {

@@ -61,14 +61,6 @@ case class SpatialPoint(scheme: Option[String],
     (x ++ y).headOption
       .map(_ => pos)
   }
-
-  lazy val xml: Option[Elem] = value.map(value =>
-    <dcx-gml:spatial srsName={ srsName }>
-      <Point xmlns="http://www.opengis.net/gml">
-        <pos>{ value }</pos>
-      </Point>
-    </dcx-gml:spatial>
-  )
 }
 
 case class SpatialBox(scheme: Option[String],
@@ -112,15 +104,4 @@ case class SpatialBox(scheme: Option[String],
     (north ++ east ++ south++ west).headOption
       .map(_ => s"($lower) ($upper)")
   }
-
-  lazy val xml: Option[Elem] = value.map(value =>
-    <dcx-gml:spatial>
-      <boundedBy xmlns="http://www.opengis.net/gml">
-          <Envelope srsName={ srsName }>
-              <lowerCorner>{ lower }</lowerCorner>
-              <upperCorner>{ upper }</upperCorner>
-          </Envelope>
-      </boundedBy>
-    </dcx-gml:spatial>
-  )
 }

@@ -88,11 +88,8 @@ object DDM extends DebugEnhancedLogging {
        { emd.getEmdCoverage.getTermsSpatial.asScala.filterNot(hasSimpleScheme).map(bs => <dct:spatial xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue }</dct:spatial>) }
        { emd.getEmdCoverage.getTermsTemporal.asScala.filter(hasSimpleScheme).map(bs => <dct:temporal xml:lang={ lang(bs) } xsi:type={ abrType(bs) }>{ bs.getValue }</dct:temporal>) }
        { emd.getEmdCoverage.getTermsTemporal.asScala.filterNot(hasSimpleScheme).map(bs => <dct:temporal xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue }</dct:temporal>) }
-       { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getPlace == null).map(notImplemented("places")) }
        { dateMap.filter(isOtherDate).map { case (key, values) => values.map(_.withLabel(dateLabel(key))) } }
-       { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getBox == null).map(spatial => toXml(spatial.getBox))}
-       { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getPoint == null).map(spatial => toXml(spatial.getPoint))}
-       { emd.getEmdCoverage.getEasSpatial.asScala.filterNot(_.getPolygons == null).map(spatial => toXml(spatial.getPolygons.asScala))}
+       { emd.getEmdCoverage.getEasSpatial.asScala.map(spatial => toXml(spatial))}
        <dct:license xsi:type="dct:URI">{ toLicenseUrl(emd.getEmdRights) }</dct:license>
        { emd.getEmdLanguage.getDcLanguage.asScala.map(bs => <dct:language xsi:type={langType(bs)}>{ langValue(bs) }</dct:language>) }
      </ddm:dcmiMetadata>
@@ -179,22 +176,44 @@ object DDM extends DebugEnhancedLogging {
     s"$uri/${ id.getEntityId }"
   }
 
-  private def toXml(spatial: Spatial.Point): Elem = {
-    SpatialPoint(
-      optional(spatial.getScheme),
-      optional(spatial.getX),
-      optional(spatial.getY),
-    ).xml.getOrElse(notImplemented("invalid point")(spatial))
+  private def toXml(spatial: Spatial): Elem = {
+    val maybePoint = Option(spatial.getPoint).map(emdPoint => SpatialPoint(
+      optional(emdPoint.getScheme),
+      optional(emdPoint.getX),
+      optional(emdPoint.getY),
+    ))
+    <dcx-gml:spatial srsName={ maybePoint.map(_.srsName).orNull }>
+      { Option(spatial.getPlace).toSeq.map(bs => <description xml:lang={ lang(bs) }>{ bs.getValue }</description>) }
+      { maybePoint.toSeq.map(toXml) }
+      { Option(spatial.getBox).toSeq.map(toXml) }
+      { Option(spatial.getPolygons.asScala).toSeq.map(toXml) }
+    </dcx-gml:spatial>
+  }
+
+  private def toXml(point: SpatialPoint) = {
+    point.value.map(value =>
+      <Point xmlns="http://www.opengis.net/gml">
+        <pos>{ value }</pos>
+      </Point>
+    ).getOrElse(notImplemented("invalid point")(point))
   }
 
   private def toXml(spatial: Spatial.Box): Elem = {
-    SpatialBox(
+    val box = SpatialBox(
       optional(spatial.getScheme),
       optional(spatial.getNorth),
       optional(spatial.getEast),
       optional(spatial.getSouth),
       optional(spatial.getWest),
-    ).xml.getOrElse(notImplemented("invalid point")(spatial))
+    )
+    box.value.map(_ =>
+    <boundedBy xmlns="http://www.opengis.net/gml">
+        <Envelope srsName={ box.srsName }>
+            <lowerCorner>{ box.lower }</lowerCorner>
+            <upperCorner>{ box.upper }</upperCorner>
+        </Envelope>
+    </boundedBy>
+    ).getOrElse(notImplemented("invalid box")(spatial))
   }
 
   private def toXml(polygons: Seq[Polygon]): Seq[Node] = polygons.map { polygon =>
@@ -211,13 +230,11 @@ object DDM extends DebugEnhancedLogging {
       .getOrElse(Text(""))
     val interiors = Option(polygon.getInterior).toSeq.flatMap(_.asScala)
       .flatMap(part => <interior>{ toXml(part, maybeScheme) }</interior>)
-    <dcx-gml:spatial>
-        <Polygon xmlns='http://www.opengis.net/gml' srsName={ srsName }>
-            { place }
-            { exterior }
-            { interiors }
-        </Polygon>
-    </dcx-gml:spatial>
+    <Polygon xmlns='http://www.opengis.net/gml' srsName={ srsName }>
+        { place }
+        { exterior }
+        { interiors }
+    </Polygon>
   }
 
   private def toXml(part: PolygonPart, maybeScheme: Option[String]): Node = {

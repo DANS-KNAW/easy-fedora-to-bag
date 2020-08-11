@@ -20,7 +20,7 @@ import nl.knaw.dans.easy.fedora2vault.fixture.{ AudienceSupport, EmdSupport, Sch
 import nl.knaw.dans.pf.language.emd.EasyMetadataImpl
 import nl.knaw.dans.pf.language.emd.binding.EmdUnmarshaller
 
-import scala.util.{ Success, Try }
+import scala.util.{ Failure, Success, Try }
 import scala.xml.Utility.trim
 import scala.xml._
 
@@ -75,7 +75,9 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     val file = "streaming.xml"
     val triedDdm = getEmd(file).flatMap(DDM(_, Seq("D35400")))
     val expectedDdm = (File("src/test/resources/expected-ddm/") / file)
-      .contentAsString.replaceAll(" +", " ").trim
+      .contentAsString
+      .replaceAll(" +", " ")
+      .replaceAll("\n +<", "\n<").trim
     triedDdm.map(normalized) shouldBe Success(expectedDdm)
   }
 
@@ -245,12 +247,8 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     val emd = parseEmdContent(Seq(
       emdTitle, emdCreator, emdDescription, emdDates,
         <emd:coverage>
-          <eas:spatial>
-              <eas:point eas:scheme="RD"><eas:x>700</eas:x><eas:y>456000</eas:y></eas:point>
-          </eas:spatial>
-          <eas:spatial>
-              <eas:point eas:scheme="degrees"><eas:x>52.08110</eas:x><eas:y>4.34521</eas:y></eas:point>
-          </eas:spatial>
+          <eas:spatial><eas:point eas:scheme="RD"><eas:x>700</eas:x><eas:y>456000</eas:y></eas:point></eas:spatial>
+          <eas:spatial><eas:point eas:scheme="degrees"><eas:x>52.08110</eas:x><eas:y>4.34521</eas:y></eas:point></eas:spatial>
           <eas:spatial><eas:point><eas:x>1</eas:x><eas:y>2</eas:y></eas:point></eas:spatial>
           <eas:spatial><eas:point><eas:x>1</eas:x></eas:point></eas:spatial>
           <eas:spatial><eas:point><eas:y>2</eas:y></eas:point></eas:spatial>
@@ -274,7 +272,8 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
            <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>
-    )) // note that a missing x or y defaults to zero
+      )
+    ) // note that a missing x or y defaults to zero
     assume(schemaIsAvailable)
     triedDDM.flatMap(validate) shouldBe Success(())
   }
@@ -292,11 +291,62 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }
         <ddm:dcmiMetadata>
-          <not:implemented/>
+          <dcx-gml:spatial srsName="http://www.opengis.net/def/crs/EPSG/0/28992">
+            <not:implemented/>
+          </dcx-gml:spatial>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>
     )) // logging explains the not implemented
+  }
+
+  it should "render a mix of spatial element types" in {
+    // TODO easy-schema-examples also has DDM with:
+    //  <dcterms:spatial xsi:type="dcx-gml:SimpleGMLType"><Point>
+    // TODO easy-sword test/demo also has DDM:
+      <Point xmlns="http://www.opengis.net/gml">
+        <description>Entrance of DANS Building</description>
+        <name>Data Archiving and Networked Services (DANS)</name>
+        <pos>52.08110 4.34521 1.12</pos>
+      </Point>
+
+    val emd = parseEmdContent(Seq(
+      emdTitle, emdCreator, emdDescription, emdDates,
+        <emd:coverage>
+          <eas:spatial>
+            <eas:place>A general description</eas:place>
+            <eas:point><eas:x>1</eas:x></eas:point>
+            <eas:box eas:scheme="degrees"><eas:north>79.5</eas:north><eas:east>23.0</eas:east><eas:south>76.7</eas:south><eas:west>10.0</eas:west></eas:box>
+            <eas:polygon eas:scheme="RD"><eas:place>A polygon description</eas:place></eas:polygon>
+          </eas:spatial>
+        </emd:coverage>,
+      emdRights,
+    ))
+    val triedDDM = DDM(emd, Seq("D35400"))
+    triedDDM.map(normalized) shouldBe Success(normalized(
+      <ddm:DDM xsi:schemaLocation={ schemaLocation }>
+        { ddmProfile("D35400") }
+        <ddm:dcmiMetadata>
+          <dcx-gml:spatial>
+            <description>A general description</description>
+            <Point xmlns="http://www.opengis.net/gml"><pos>0 1</pos></Point>
+            <boundedBy xmlns="http://www.opengis.net/gml">
+              <Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/4326">
+                <lowerCorner>76.7 10.0</lowerCorner>
+                <upperCorner>79.5 23.0</upperCorner>
+              </Envelope>
+            </boundedBy>
+            <Polygon srsName="http://www.opengis.net/def/crs/EPSG/0/28992" xmlns="http://www.opengis.net/gml">
+              <description>A polygon description</description>
+            </Polygon>
+          </dcx-gml:spatial>
+          <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
+        </ddm:dcmiMetadata>
+      </ddm:DDM>
+    ))
+    assume(schemaIsAvailable)
+    triedDDM.foreach(x => println(printer.format(x)))
+    triedDDM.flatMap(validate) shouldBe a[Failure[_]]
   }
 
   it should "render a polygon" in {
@@ -493,8 +543,12 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }
         <ddm:dcmiMetadata>
-          <not:implemented/>
-          <not:implemented/>
+          <dcx-gml:spatial>
+            <not:implemented/>
+          </dcx-gml:spatial>
+          <dcx-gml:spatial>
+            <not:implemented/>
+          </dcx-gml:spatial>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>
@@ -701,6 +755,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     .format(Utility.trim(elem)) // this trim normalizes <a/> and <a></a>
     .replaceAll(nameSpaceRegExp, "") // the random order would cause differences in actual and expected
     .replaceAll(" +\n?", " ")
+    .replaceAll("\n +<", "\n<")
     .trim
 
   private def getEmd(file: String) = {

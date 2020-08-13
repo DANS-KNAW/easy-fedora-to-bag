@@ -20,8 +20,9 @@ import scala.xml.Elem
 // TODO copied from easy-deposit-api
 //  which in turn was a (better isolated) variation of
 //  easy-split-multi-deposit/AddDatasetMetadataToDeposit
-//  dropped the trait OptionalValue from easy-deposit-api
-//  added an dcxGml field as that also is a common factor in all projects
+//  * dropped the trait OptionalValue from easy-deposit-api
+//  * added an dcxGml field as that also is a common factor in these 3 projects
+//    it won't be of use for DDM to dataverse-json
 
 object SpatialNames {
   /** coordinate order y, x = latitude (DCX_SPATIAL_Y), longitude (DCX_SPATIAL_X) */

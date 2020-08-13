@@ -20,7 +20,7 @@ import nl.knaw.dans.easy.fedora2vault.fixture.{ AudienceSupport, EmdSupport, Sch
 import nl.knaw.dans.pf.language.emd.EasyMetadataImpl
 import nl.knaw.dans.pf.language.emd.binding.EmdUnmarshaller
 
-import scala.util.{ Failure, Success, Try }
+import scala.util.{ Success, Try }
 import scala.xml.Utility.trim
 import scala.xml._
 

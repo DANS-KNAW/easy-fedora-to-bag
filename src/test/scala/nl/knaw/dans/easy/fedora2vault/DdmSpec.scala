@@ -16,6 +16,7 @@
 package nl.knaw.dans.easy.fedora2vault
 
 import better.files.File
+import nl.knaw.dans.easy.fedora2vault.DDM.{ lang, xsiType }
 import nl.knaw.dans.easy.fedora2vault.fixture.{ AudienceSupport, EmdSupport, SchemaSupport, TestSupportFixture }
 import nl.knaw.dans.pf.language.emd.EasyMetadataImpl
 import nl.knaw.dans.pf.language.emd.binding.EmdUnmarshaller
@@ -541,42 +542,43 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       <emd:subject>
           <dc:subject eas:scheme="ABR" eas:schemeId="archaeology.dc.subject">DEPO</dc:subject>
           <dc:subject>hello world</dc:subject>
+          <dc:subject eas:scheme="BSS0" eas:schemeId="common.dc.type0" xml:lang="nld-NLD">subject 0</dc:subject>
+          <dc:subject eas:scheme="BSS1" eas:schemeId="common.dc.type1" xml:lang="nld-NLD">subject 1</dc:subject>
+          <dc:subject xml:lang="nld-NLD" eas:scheme="BSS0">subject zero</dc:subject>
       </emd:subject>,
-      emdDescription, emdDates, emdRights,
+      emdDescription, emdDates,
+      <emd:format>
+          <dc:format eas:scheme="scheme60" xml:lang="en-US" eas:schemeId="schemeId56">format0</dc:format>
+          <dc:format eas:scheme="scheme61" xml:lang="en-US" eas:schemeId="schemeId57">format1</dc:format>
+          <dct:extent eas:scheme="scheme62" xml:lang="en-US" eas:schemeId="schemeId58">extent0</dct:extent>
+          <dct:extent eas:scheme="scheme63" xml:lang="en-US" eas:schemeId="schemeId59">extent1</dct:extent>
+          <dct:medium eas:scheme="scheme64" xml:lang="en-US" eas:schemeId="schemeId60">medium0</dct:medium>
+          <dct:medium eas:scheme="scheme65" xml:lang="en-US" eas:schemeId="schemeId61">medium1</dct:medium>
+      </emd:format>,
+      emdRights,
     ))
-    DDM(emd, Seq("D13200")).map(normalized) shouldBe Success(normalized(
+    val triedDDM = DDM(emd, Seq("D13200"))
+    triedDDM.map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D13200") }
         <ddm:dcmiMetadata>
-          <dc:subject xsi:type="abr:ABRcomplex">DEPO</dc:subject>
-          <dc:subject>hello world</dc:subject>
+          <dct:format>format0</dct:format>
+          <dct:format>format1</dct:format>
+          <dct:extent>extent0</dct:extent>
+          <dct:extent>extent1</dct:extent>
+          <dct:medium>medium0</dct:medium>
+          <dct:medium>medium1</dct:medium>
+          <dct:subject xsi:type="abr:ABRcomplex">DEPO</dct:subject>
+          <dct:subject>hello world</dct:subject>
+          <dct:subject xml:lang="nld-NLD">subject 0</dct:subject>
+          <dct:subject xml:lang="nld-NLD">subject 1</dct:subject>
+          <dct:subject xml:lang="nld-NLD">subject zero</dct:subject>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>
     ))
-  }
-
-  it should "generate not-implemented" in {
-    val emd = parseEmdContent(Seq(
-        <emd:subject>
-            <dc:subject eas:scheme="BSS0" eas:schemeId="common.dc.type0" xml:lang="nld-NLD">subject 0</dc:subject>
-            <dc:subject eas:scheme="BSS1" eas:schemeId="common.dc.type1" xml:lang="nld-NLD">subject 1</dc:subject>
-            <dc:subject xml:lang="nld-NLD" eas:scheme="BSS0">subject zero</dc:subject>
-        </emd:subject>
-    ))
-    DDM(emd, Seq.empty).map(normalized) shouldBe Success(normalized(
-      <ddm:DDM xsi:schemaLocation={ schemaLocation }>
-        <ddm:profile>
-          <ddm:accessRights/>
-        </ddm:profile>
-        <ddm:dcmiMetadata>
-          <not:implemented/>
-          <not:implemented/>
-          <not:implemented/>
-          <dct:license xsi:type="dct:URI">{ DDM.dansLicense }</dct:license>
-        </ddm:dcmiMetadata>
-      </ddm:DDM>
-    ))
+    assume(schemaIsAvailable)
+    triedDDM.flatMap(validate) shouldBe Success(())
   }
 
   "author" should "succeed" in {

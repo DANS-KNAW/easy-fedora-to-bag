@@ -67,6 +67,7 @@ object DDM extends DebugEnhancedLogging {
      </ddm:profile>
      <ddm:dcmiMetadata>
        { emd.getEmdIdentifier.getDcIdentifier.asScala.filter(isDdmId).map(bi => <dct:identifier xsi:type={ idType(bi) }>{ bi.getValue }</dct:identifier>) }
+       { /* TODO? emd.getEmdIdentifier.getDcIdentifier.asScala.filterNot(isDdmId).map(notImplemented("DcIdentifier"))*/ }
        { emd.getEmdTitle.getTermsAlternative.asScala.map(str => <dct:alternative>{ str }</dct:alternative>) }
        { emd.getEmdDescription.getTermsAbstract.asScala.map(bs => <ddm:description xml:lang={ lang(bs) } descriptionType='Abstract'>{ bs.getValue }</ddm:description>) }
        { emd.getEmdDescription.getTermsTableOfContents.asScala.map(bs => <ddm:description xml:lang={ lang(bs) } descriptionType='TableOfContent'>{ bs.getValue }</ddm:description>) }
@@ -77,17 +78,14 @@ object DDM extends DebugEnhancedLogging {
        { emd.getEmdRights.getTermsRightsHolder.asScala.map(bs => <dct:rightsHolder>{ bs.toString }</dct:rightsHolder>) }
        { emd.getEmdPublisher.getDcPublisher.asScala.map(bs => <dct:publisher xml:lang={ lang(bs) }>{ bs.getValue }</dct:publisher>) }
        { emd.getEmdSource.getDcSource.asScala.map(bs => <dc:source xml:lang={ lang(bs) }>{ bs.getValue }</dc:source>) }
-       { emd.getEmdType.getDcType.asScala.map(bs => <dct:type xsi:type={ dcType(bs) }>{ bs.getValue }</dct:type>) }
+       { emd.getEmdType.getDcType.asScala.map(bs => <dct:type xsi:type={ xsiType(bs) }>{ bs.getValue }</dct:type>) }
        { emd.getEmdFormat.getDcFormat.asScala.map(bs => <dct:format>{ bs.getValue }</dct:format>) }
-       { emd.getEmdFormat.getTermsExtent.asScala.map(notImplemented("extent format")) }
-       { emd.getEmdFormat.getTermsMedium.asScala.map(notImplemented("medium formt")) }
-       { emd.getEmdSubject.getDcSubject.asScala.filter(hasSimpleScheme).map(bs => <dc:subject xml:lang={ lang(bs) } xsi:type={ abrType(bs) }>{ bs.getValue }</dc:subject>) }
-       { emd.getEmdSubject.getDcSubject.asScala.filterNot(hasSimpleScheme).map(notImplemented("schemed subject")) }
+       { emd.getEmdFormat.getTermsExtent.asScala.map(bs => <dct:extent>{ bs.getValue }</dct:extent>) }
+       { emd.getEmdFormat.getTermsMedium.asScala.map(bs => <dct:medium>{ bs.getValue }</dct:medium>) }
+       { emd.getEmdSubject.getDcSubject.asScala.map(bs => <dct:subject xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue }</dct:subject>) }
        { emd.getEmdCoverage.getDcCoverage.asScala.map(bs => <dct:coverage xml:lang={ lang(bs) }>{ bs.getValue }</dct:coverage>) }
-       { emd.getEmdCoverage.getTermsSpatial.asScala.filter(hasSimpleScheme).map(bs => <dct:spatial xml:lang={ lang(bs) } xsi:type={ abrType(bs) }>{ bs.getValue }</dct:spatial>) }
-       { emd.getEmdCoverage.getTermsSpatial.asScala.filterNot(hasSimpleScheme).map(bs => <dct:spatial xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue }</dct:spatial>) }
-       { emd.getEmdCoverage.getTermsTemporal.asScala.filter(hasSimpleScheme).map(bs => <dct:temporal xml:lang={ lang(bs) } xsi:type={ abrType(bs) }>{ bs.getValue }</dct:temporal>) }
-       { emd.getEmdCoverage.getTermsTemporal.asScala.filterNot(hasSimpleScheme).map(bs => <dct:temporal xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue }</dct:temporal>) }
+       { emd.getEmdCoverage.getTermsSpatial.asScala.map(bs => <dct:spatial xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue }</dct:spatial>) }
+       { emd.getEmdCoverage.getTermsTemporal.asScala.map(bs => <dct:temporal xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue }</dct:temporal>) }
        { dateMap.filter(isOtherDate).map { case (key, values) => values.map(_.withLabel(dateLabel(key))) } }
        { emd.getEmdCoverage.getEasSpatial.asScala.map(spatial => toXml(spatial))}
        <dct:license xsi:type="dct:URI">{ toLicenseUrl(emd.getEmdRights) }</dct:license>
@@ -108,41 +106,26 @@ object DDM extends DebugEnhancedLogging {
     case s => s
   }
 
-  private def hasSimpleScheme(string: BasicString): Boolean = {
-    Option(string.getScheme).map(_.toUpperCase()) match {
-      case Some("ABR") | None => true
-      case _ => false
-    }
-  }
-
-  private def abrType(bs: BasicString): String = bs.getSchemeId match {
-    case "archaeology.dc.subject" => "abr:ABRcomplex"
-    case "archaeology.dc.temporal" => "abr:ABRperiode"
-    case _ => notImplementedAttribute(s"ABR schemeId")(bs)
-      null
-  }
-
-  private def dcType(bs: BasicString): String = {
-    (bs.getScheme, bs.getSchemeId) match {
-      case ("DCMI", "common.dc.type") => "dct:DCMIType"
-      case _ => notImplementedAttribute(s"dctType")(bs)
-        null
+  private def xsiType(bs: BasicString): String = {
+    val scheme = Option(bs.getScheme).map(_.toUpperCase())
+    (scheme, Option(bs.getSchemeId)) match {
+      case (Some("ABR"),Some("archaeology.dc.subject")) => "abr:ABRcomplex"
+      case (Some("ABR"),Some("archaeology.dc.temporal")) => "abr:ABRperiode"
+      case (Some("ABR"),_) => notImplementedAttribute("ABR schemeId")(bs)
+      case (Some("DCMI"),Some("common.dc.type")) => "dct:DCMIType"
+      case (Some("DCMI"),_) => notImplementedAttribute("DCMI schemeId")(bs)
+      case (_, Some(scheme)) if scheme.startsWith("id-type:") => scheme
+      case (None, None) => null
+      case _ => notImplementedAttribute("")(bs)
     }
   }
 
   private def idType(bs: BasicString): String = Option(bs.getScheme).map(s => "id-type:" + s).orNull
 
-  private def xsiType(bs: BasicString): String = {
-    if (bs.getScheme != null && bs.getScheme.startsWith("id-type"))
-      bs.getScheme
-    else if (bs.getScheme != null || bs.getSchemeId != null)
-           notImplementedAttribute("")(bs)
-    null
-  }
-
-  private def notImplementedAttribute(msg: String)(data: Any): Unit = {
+  private def notImplementedAttribute(msg: String)(data: Any): String = {
     // TODO return something that won't pass validation
     logger.error(s"not implemented $msg [$data]")
+    null
   }
 
   private def notImplemented(msg: String)(data: Any): Elem = {

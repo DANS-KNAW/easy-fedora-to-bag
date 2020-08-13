@@ -177,25 +177,28 @@ object DDM extends DebugEnhancedLogging {
   }
 
   private def toXml(spatial: Spatial): Elem = {
-    val maybePoint = Option(spatial.getPoint).map(emdPoint => SpatialPoint(
+    (Option(spatial.getPlace),
+      Option(spatial.getPoint),
+      Option(spatial.getBox),
+      Option(spatial.getPolygons),
+    ) match {
+      case (None, None, None, Some(polygons)) if !polygons.isEmpty =>
+        <dcx-gml:spatial>
+          { toXml(polygons.asScala) }
+        </dcx-gml:spatial>
+      case (None, Some(_), None, None) => toXmlPoint(spatial.getPoint)
+      case (None, None, Some(_), None) => toXml(spatial.getBox)
+      case _ => notImplemented("expected either point, box or polygon")(spatial)
+    }
+  }
+
+  private def toXmlPoint(emdPoint: Spatial.Point) = {
+    val point = SpatialPoint(
       optional(emdPoint.getScheme),
       optional(emdPoint.getX),
       optional(emdPoint.getY),
-    ))
-    <dcx-gml:spatial srsName={ maybePoint.map(_.srsName).orNull }>
-      { Option(spatial.getPlace).toSeq.map(bs => <name xml:lang={ lang(bs) }>{ bs.getValue }</name>) }
-      { maybePoint.toSeq.map(toXml) }
-      { Option(spatial.getBox).toSeq.map(toXml) }
-      { Option(spatial.getPolygons.asScala).toSeq.map(toXml) }
-    </dcx-gml:spatial>
-  }
-
-  private def toXml(point: SpatialPoint) = {
-    point.value.map(value =>
-      <Point xmlns="http://www.opengis.net/gml">
-        <pos>{ value }</pos>
-      </Point>
-    ).getOrElse(notImplemented("invalid point")(point))
+    )
+    point.dcxGml.getOrElse(notImplemented("invalid point")(point))
   }
 
   private def toXml(spatial: Spatial.Box): Elem = {
@@ -206,14 +209,7 @@ object DDM extends DebugEnhancedLogging {
       optional(spatial.getSouth),
       optional(spatial.getWest),
     )
-    box.value.map(_ =>
-    <boundedBy xmlns="http://www.opengis.net/gml">
-        <Envelope srsName={ box.srsName }>
-            <lowerCorner>{ box.lower }</lowerCorner>
-            <upperCorner>{ box.upper }</upperCorner>
-        </Envelope>
-    </boundedBy>
-    ).getOrElse(notImplemented("invalid box")(spatial))
+    box.dcxGml.getOrElse(notImplemented("invalid box")(box))
   }
 
   private def toXml(polygons: Seq[Polygon]): Seq[Node] = polygons.map { polygon =>

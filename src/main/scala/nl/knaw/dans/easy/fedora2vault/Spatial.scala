@@ -21,7 +21,7 @@ import scala.xml.Elem
 //  which in turn was a (better isolated) variation of
 //  easy-split-multi-deposit/AddDatasetMetadataToDeposit
 //  dropped the trait OptionalValue from easy-deposit-api
-//  added an xml field as that also was a common factor in all projects
+//  added an dcxGml field as that also is a common factor in all projects
 
 object SpatialNames {
   /** coordinate order y, x = latitude (DCX_SPATIAL_Y), longitude (DCX_SPATIAL_X) */
@@ -61,6 +61,14 @@ case class SpatialPoint(scheme: Option[String],
     (x ++ y).headOption
       .map(_ => pos)
   }
+
+  lazy val dcxGml: Option[Elem] = value.map(value =>
+    <dcx-gml:spatial srsName={ srsName }>
+      <Point xmlns="http://www.opengis.net/gml">
+        <pos>{ value }</pos>
+      </Point>
+    </dcx-gml:spatial>
+  )
 }
 
 case class SpatialBox(scheme: Option[String],
@@ -101,7 +109,18 @@ case class SpatialBox(scheme: Option[String],
   }
 
   override lazy val value: Option[String] = {
-    (north ++ east ++ south++ west).headOption
+    (north ++ east ++ south ++ west).headOption
       .map(_ => s"($lower) ($upper)")
   }
+
+  lazy val dcxGml: Option[Elem] = value.map(_ =>
+    <dcx-gml:spatial>
+      <boundedBy xmlns="http://www.opengis.net/gml">
+          <Envelope srsName={ srsName }>
+              <lowerCorner>{ lower }</lowerCorner>
+              <upperCorner>{ upper }</upperCorner>
+          </Envelope>
+      </boundedBy>
+    </dcx-gml:spatial>
+  )
 }

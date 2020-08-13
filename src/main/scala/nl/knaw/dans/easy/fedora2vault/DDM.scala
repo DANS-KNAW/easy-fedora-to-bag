@@ -70,7 +70,7 @@ object DDM extends DebugEnhancedLogging {
        { /* TODO? emd.getEmdIdentifier.getDcIdentifier.asScala.filterNot(isDdmId).map(notImplemented("DcIdentifier"))*/ }
        { emd.getEmdTitle.getTermsAlternative.asScala.map(str => <dct:alternative>{ str }</dct:alternative>) }
        { emd.getEmdDescription.getTermsAbstract.asScala.map(bs => <ddm:description xml:lang={ lang(bs) } descriptionType='Abstract'>{ bs.getValue }</ddm:description>) }
-       { emd.getEmdDescription.getTermsTableOfContents.asScala.map(bs => <ddm:description xml:lang={ lang(bs) } descriptionType='TableOfContent'>{ bs.getValue }</ddm:description>) }
+       { emd.getEmdDescription.getTermsTableOfContents.asScala.map(bs => <ddm:description xml:lang={ lang(bs) } descriptionType='TableOfContents'>{ bs.getValue }</ddm:description>) }
        { emd.getEmdRelation.getDCRelationMap.asScala.map { case (key, values) => values.asScala.map(toRelationXml(key, _)) } }
        { emd.getEmdRelation.getRelationMap.asScala.map { case (key, values) => values.asScala.map(toRelationXml(key, _)) } }
        { emd.getEmdContributor.getDcContributor.asScala.map(bs => <dc:contributor>{ bs.getValue }</dc:contributor>) }

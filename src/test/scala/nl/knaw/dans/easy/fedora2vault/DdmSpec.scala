@@ -16,12 +16,11 @@
 package nl.knaw.dans.easy.fedora2vault
 
 import better.files.File
-import nl.knaw.dans.easy.fedora2vault.DDM.{ lang, xsiType }
 import nl.knaw.dans.easy.fedora2vault.fixture.{ AudienceSupport, EmdSupport, SchemaSupport, TestSupportFixture }
 import nl.knaw.dans.pf.language.emd.EasyMetadataImpl
 import nl.knaw.dans.pf.language.emd.binding.EmdUnmarshaller
 
-import scala.util.{ Success, Try }
+import scala.util.{ Failure, Success, Try }
 import scala.xml.Utility.trim
 import scala.xml._
 
@@ -56,16 +55,21 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
             <dct:accessRights eas:schemeId="common.dcterms.accessrights">OPEN_ACCESS</dct:accessRights>
         </emd:rights>
 
-  /** result of the emd values above */
-  private def ddmProfile(audience: String) =
-       <ddm:profile>
-          <dc:title>XXX</dc:title>
-          <dct:description>YYY</dct:description>
+  /** expected results of the emd values above */
+
+  private val ddmCreator =
           <dcx-dai:creatorDetails>
             <dcx-dai:organization>
               <dcx-dai:name>DANS</dcx-dai:name>
             </dcx-dai:organization>
           </dcx-dai:creatorDetails>
+
+
+  private def ddmProfile(audience: String) =
+       <ddm:profile>
+          <dc:title>XXX</dc:title>
+          <dct:description>YYY</dct:description>
+          { ddmCreator }
           <ddm:created>2017-09-30</ddm:created>
           <ddm:available>2017-09-30</ddm:available>
           <ddm:audience>{ audience }</ddm:audience>
@@ -80,6 +84,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       .replaceAll(" +", " ")
       .replaceAll("\n +<", "\n<").trim
     triedDdm.map(normalized) shouldBe Success(expectedDdm)
+    triedDdm.flatMap(validate) shouldBe Success(())
   }
 
   "depositApi" should "produce the DDM provided by easy-deposit-api" in {
@@ -99,33 +104,44 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
 
   "descriptions" should "all appear" in {
     val emd = parseEmdContent(Seq(
+      emdTitle, emdCreator,
         <emd:description>
           <dc:description>abstract</dc:description>
           <dc:description>Suggestions for data usage: remark1</dc:description>
           <dc:description>beschrijving</dc:description>
           <dct:tableOfContents>rabar</dct:tableOfContents>
           <dct:abstract>blabl</dct:abstract>
-        </emd:description>
+        </emd:description>,
+      emdDates,
+      emdRights,
     ))
-    DDM(emd, Seq.empty).map(trim) shouldBe Success(trim(
+    val triedDDM = DDM(emd, Seq("D35400"))
+    triedDDM.map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
-         <ddm:profile>
-           <dct:description>abstract</dct:description>
-           <dct:description>Suggestions for data usage: remark1</dct:description>
-           <dct:description>beschrijving</dct:description>
-           <ddm:accessRights/>
-         </ddm:profile>
-         <ddm:dcmiMetadata>
-           <ddm:description descriptionType="Abstract">blabl</ddm:description>
-           <ddm:description descriptionType="TableOfContent">rabar</ddm:description>
-           <dct:license xsi:type="dct:URI">{ DDM.dansLicense }</dct:license>
-         </ddm:dcmiMetadata>
+        <ddm:profile>
+          <dc:title>XXX</dc:title>
+          <dct:description>abstract</dct:description>
+          <dct:description>Suggestions for data usage: remark1</dct:description>
+          <dct:description>beschrijving</dct:description>
+          { ddmCreator }
+          <ddm:created>2017-09-30</ddm:created>
+          <ddm:available>2017-09-30</ddm:available>
+          <ddm:audience>D35400</ddm:audience>
+          <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
+        </ddm:profile>
+        <ddm:dcmiMetadata>
+          <ddm:description descriptionType="Abstract">blabl</ddm:description>
+          <ddm:description descriptionType="TableOfContents">rabar</ddm:description>
+          <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
+        </ddm:dcmiMetadata>
        </ddm:DDM>
      ))
+    triedDDM.flatMap(validate) shouldBe Success(())
   }
 
   "relations" should "all appear" in {
     val emd = parseEmdContent(Seq(
+      emdTitle, emdCreator, emdDescription, emdDates,
         <emd:relation>
           <dct:hasVersion eas:scheme="ISSN">my-issn-related-identifier</dct:hasVersion>
           <dct:requires eas:scheme="ISBN">my-isbn-related-identifier</dct:requires>
@@ -155,13 +171,13 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
               <eas:subject-title>urn:nbn:nl:ui:test-urn-alternative-identifier</eas:subject-title>
               <eas:subject-link>http://persistent-identifier.nl/urn:nbn:nl:ui:test-urn-alternative-identifier</eas:subject-link>
           </eas:isFormatOf>
-        </emd:relation>
+        </emd:relation>,
+      emdRights,
     ))
-    DDM(emd, Seq.empty).map(trim) shouldBe Success(trim( // TODO implemented quick and dirty
+    val triedDDM = DDM(emd, Seq("D35400"))
+    triedDDM.map(normalized) shouldBe Success(normalized( // TODO implemented quick and dirty
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
-        <ddm:profile>
-          <ddm:accessRights/>
-        </ddm:profile>
+        { ddmProfile("D35400") }
         <ddm:dcmiMetadata>
           <dct:isFormatOf xsi:type="id-type:NWO-PROJECTNR">my-nwo-related-identifier</dct:isFormatOf>
           <dct:isFormatOf xsi:type="id-type:ISBN">my-isbn-alternative-identifier</dct:isFormatOf>
@@ -180,24 +196,32 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <ddm:replaces scheme="id-type:URN" href="http://persistent-identifier.nl/urn:nbn:nl:ui:test-urn-related-identifier">
             urn:nbn:nl:ui:test-urn-related-identifier
           </ddm:replaces>
-          <dct:license xsi:type="dct:URI">{ DDM.dansLicense }</dct:license>
+          <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>
     ))
+    triedDDM.flatMap(validate) shouldBe Success(())
   }
 
   "license" should "be copied from <dct:license>" in {
     val emd = parseEmdContent(Seq(
+      emdTitle, emdCreator, emdDescription, emdDates,
         <emd:rights>
             <dct:accessRights eas:schemeId="common.dct.accessrights">ACCESS_ELSEWHERE</dct:accessRights>
             <dct:license>http://dans.knaw.nl/en/about/organisation-and-policy/legal-information/DANSLicence.pdf</dct:license>
             <dct:license eas:scheme="Easy2 version 1">accept</dct:license>
         </emd:rights>
     ))
-    // TODO namespace attributes in random order get in the way of trimmed comparison as above
-    DDM(emd, Seq.empty).map(normalized) shouldBe Success(normalized(
+    val triedDDM = DDM(emd, Seq("D35400"))
+    triedDDM.map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         <ddm:profile>
+          <dc:title>XXX</dc:title>
+          <dct:description>YYY</dct:description>
+          { ddmCreator }
+          <ddm:created>2017-09-30</ddm:created>
+          <ddm:available>2017-09-30</ddm:available>
+          <ddm:audience>D35400</ddm:audience>
           <ddm:accessRights>ACCESS_ELSEWHERE</ddm:accessRights>
         </ddm:profile>
         <ddm:dcmiMetadata>
@@ -205,17 +229,29 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
         </ddm:dcmiMetadata>
       </ddm:DDM>
     ))
+    assume(schemaIsAvailable)
+    triedDDM.flatMap(validate) should matchPattern {
+      case Failure(e) if e.getMessage.contains("Value 'ACCESS_ELSEWHERE' is not facet-valid") =>
+    }
   }
 
   it should "convert from OPEN_ACCESS" in { // as in streaming.xml
     val emd = parseEmdContent(Seq(
+      emdTitle, emdCreator, emdDescription, emdDates,
       <emd:rights>
           <dct:accessRights eas:schemeId="common.dct.accessrights">OPEN_ACCESS</dct:accessRights>
       </emd:rights>
     ))
-    DDM(emd, Seq.empty).map(normalized) shouldBe Success(normalized(
+    val triedDDM = DDM(emd, Seq("D35400"))
+    triedDDM.map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         <ddm:profile>
+          <dc:title>XXX</dc:title>
+          <dct:description>YYY</dct:description>
+          { ddmCreator }
+          <ddm:created>2017-09-30</ddm:created>
+          <ddm:available>2017-09-30</ddm:available>
+          <ddm:audience>D35400</ddm:audience>
           <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
         </ddm:profile>
         <ddm:dcmiMetadata>
@@ -223,18 +259,28 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
         </ddm:dcmiMetadata>
       </ddm:DDM>
     ))
+    assume(schemaIsAvailable)
+    triedDDM.flatMap(validate) shouldBe Success(())
   }
 
   it should "convert from REQUEST_PERMISSION" in { // as in TalkOfEurope.xml
     val emd = parseEmdContent(Seq(
+      emdTitle, emdCreator, emdDescription, emdDates,
         <emd:rights>
             <dct:accessRights eas:schemeId="common.dct.accessrights">REQUEST_PERMISSION</dct:accessRights>
             <dct:license>accept</dct:license>
         </emd:rights>
     ))
-    DDM(emd, Seq.empty).map(normalized) shouldBe Success(normalized(
+    val triedDDM = DDM(emd, Seq("D35400"))
+    triedDDM.map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         <ddm:profile>
+          <dc:title>XXX</dc:title>
+          <dct:description>YYY</dct:description>
+          { ddmCreator }
+          <ddm:created>2017-09-30</ddm:created>
+          <ddm:available>2017-09-30</ddm:available>
+          <ddm:audience>D35400</ddm:audience>
           <ddm:accessRights>REQUEST_PERMISSION</ddm:accessRights>
         </ddm:profile>
         <ddm:dcmiMetadata>
@@ -242,6 +288,8 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
         </ddm:dcmiMetadata>
       </ddm:DDM>
     ))
+    assume(schemaIsAvailable)
+    triedDDM.flatMap(validate) shouldBe Success(())
   }
 
   "spatial" should "render a point" in {
@@ -583,6 +631,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
 
   "author" should "succeed" in {
     val emd = parseEmdContent(Seq(
+      emdTitle,
         <emd:creator>
           <eas:creator>
             <eas:title>Drs</eas:title>
@@ -606,11 +655,15 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
               <eas:surname>lastname</eas:surname>
               <eas:entityId eas:identification-system="https://orcid.org/" eas:scheme="ORCID">0000-0001-2281-955X</eas:entityId>
           </eas:creator>
-        </emd:creator>
+        </emd:creator>,
+      emdDescription, emdDates, emdRights,
     ))
-    DDM(emd, Seq.empty).map(normalized) shouldBe Success(normalized(
+    val triedDDM = DDM(emd, Seq("D35400"))
+    triedDDM.map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         <ddm:profile>
+          <dc:title>XXX</dc:title>
+          <dct:description>YYY</dct:description>
           <dcx-dai:creatorDetails>
             <dcx-dai:author>
               <dcx-dai:titles>Drs</dcx-dai:titles>
@@ -641,44 +694,135 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
               <dcx-dai:ORCID>https://orcid.org/0000-0001-2281-955X</dcx-dai:ORCID>
             </dcx-dai:author>
           </dcx-dai:creatorDetails>
-          <ddm:accessRights/>
+          <ddm:created>2017-09-30</ddm:created>
+          <ddm:available>2017-09-30</ddm:available>
+          <ddm:audience>D35400</ddm:audience>
+          <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
         </ddm:profile>
         <ddm:dcmiMetadata>
-          <dct:license xsi:type="dct:URI">{ DDM.dansLicense }</dct:license>
+          <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>
     ))
+    assume(schemaIsAvailable)
+    triedDDM.flatMap(validate) shouldBe Success(())
   }
 
   "dates" should "use created for available" in {
     val emd = parseEmdContent(Seq(
+      emdTitle, emdCreator, emdDescription,
           <emd:date>
               <dct:created>03-2013</dct:created>
-          </emd:date>
+          </emd:date>,
+      emdRights,
     ))
-    DDM(emd, Seq.empty).map(normalized) shouldBe Success(normalized(
+    val triedDDM = DDM(emd, Seq.empty)
+    triedDDM.map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         <ddm:profile>
+          <dc:title>XXX</dc:title>
+          <dct:description>YYY</dct:description>
+          { ddmCreator }
           <ddm:created>03-2013</ddm:created>
           <ddm:available>03-2013</ddm:available>
-          <ddm:accessRights/>
+          <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
         </ddm:profile>
         <ddm:dcmiMetadata>
-          <dct:license xsi:type="dct:URI">{ DDM.dansLicense }</dct:license>
+          <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>
     ))
+    assume(schemaIsAvailable)
+    triedDDM.flatMap(validate) should matchPattern {
+      case Failure(e) if e.getMessage
+        .contains("'03-2013' is not a valid value of union type '#AnonType_W3CDTF'") =>
+    }
   }
 
-  it should "render only the first available" in {
+  it should "render an invalid number of dates created" in {
     val emd = parseEmdContent(Seq(
+      emdTitle, emdCreator, emdDescription,
+          <emd:date>
+              <dct:created>2013-03</dct:created>
+              <dct:available>2013-04</dct:available>
+              <eas:created eas:scheme="W3CDTF" eas:format="DAY">2017-09-30T00:00:00.000+02:00</eas:created>
+              <eas:created eas:scheme="W3CDTF" eas:format="MONTH">1901-04-01T00:00:00.000+00:19:32</eas:created>
+          </emd:date>,
+      emdRights,
+    ))
+    val triedDDM = DDM(emd, Seq.empty)
+    triedDDM.map(normalized) shouldBe Success(normalized(
+      <ddm:DDM xsi:schemaLocation={ schemaLocation }>
+        <ddm:profile>
+          <dc:title>XXX</dc:title>
+          <dct:description>YYY</dct:description>
+          { ddmCreator }
+          <ddm:created>2013-03</ddm:created>
+          <ddm:created>2017-09-30</ddm:created>
+          <ddm:created>1901-04</ddm:created>
+          <ddm:available>2013-04</ddm:available>
+          <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
+        </ddm:profile>
+        <ddm:dcmiMetadata>
+          <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
+        </ddm:dcmiMetadata>
+      </ddm:DDM>
+    ))
+    assume(schemaIsAvailable)
+    triedDDM.flatMap(validate) should matchPattern {
+      case Failure(e) if e.getMessage
+        .contains("Invalid content was found starting with element 'ddm:created'") && e.getMessage
+        .contains(":available}' is expected") =>
+    }
+  }
+
+  it should "render an invalid number of dates available" in {
+    val emd = parseEmdContent(Seq(
+      emdTitle, emdCreator, emdDescription,
+          <emd:date>
+              <dct:created>2013-03</dct:created>
+              <dct:available>2013-04</dct:available>
+              <eas:available eas:scheme="W3CDTF" eas:format="DAY">2017-09-30T00:00:00.000+02:00</eas:available>
+              <eas:available eas:scheme="W3CDTF" eas:format="MONTH">1901-04-01T00:00:00.000+00:19:32</eas:available>
+          </emd:date>,
+      emdRights,
+    ))
+    val triedDDM = DDM(emd, Seq.empty)
+    triedDDM.map(normalized) shouldBe Success(normalized(
+      <ddm:DDM xsi:schemaLocation={ schemaLocation }>
+        <ddm:profile>
+          <dc:title>XXX</dc:title>
+          <dct:description>YYY</dct:description>
+          { ddmCreator }
+          <ddm:created>2013-03</ddm:created>
+          <ddm:available>2013-04</ddm:available>
+          <ddm:available>2017-09-30</ddm:available>
+          <ddm:available>1901-04</ddm:available>
+          <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
+        </ddm:profile>
+        <ddm:dcmiMetadata>
+          <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
+        </ddm:dcmiMetadata>
+      </ddm:DDM>
+    ))
+    assume(schemaIsAvailable)
+    triedDDM.flatMap(validate) should matchPattern {
+      case Failure(e) if e.getMessage
+        .contains("Invalid content was found starting with element 'ddm:available'") && e.getMessage
+        .contains(":audience}' is expected") =>
+    }
+  }
+
+  it should "render dates with proper precision" in {
+    val emd = parseEmdContent(Seq(
+      emdTitle, emdCreator, emdDescription,
           <emd:date>
               <dc:date>gisteren</dc:date>
               <dc:date>11-2013</dc:date>
               <dc:date>12-2013</dc:date>
-              <dct:created>03-2013</dct:created>
+              <dct:created>2013-03</dct:created>
               <dct:valid>06-2013</dct:valid>
-              <dct:available>04-2013</dct:available>
+              <dct:available>2013-04</dct:available>
               <dct:issued>07-2013</dct:issued>
               <dct:modified>08-2013</dct:modified>
               <dct:dateAccepted>05-2013</dct:dateAccepted>
@@ -686,28 +830,26 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
               <dct:dateSubmitted>10-2013</dct:dateSubmitted>
               <eas:date eas:scheme="W3CDTF" eas:format="MONTH">1909-04-01T00:00:00.000+00:19:32</eas:date>
               <eas:date eas:scheme="W3CDTF" eas:format="MONTH">1910-04-01T00:00:00.000+00:19:32</eas:date>
-              <eas:created eas:scheme="W3CDTF" eas:format="DAY">2017-09-30T00:00:00.000+02:00</eas:created>
-              <eas:created eas:scheme="W3CDTF" eas:format="MONTH">1901-04-01T00:00:00.000+00:19:32</eas:created>
               <eas:valid eas:scheme="W3CDTF" eas:format="MONTH">1904-04-01T00:00:00.000+00:19:32</eas:valid>
-              <eas:available eas:scheme="W3CDTF" eas:format="YEAR">1900-01-01T00:00:00.000+00:19:32</eas:available>
-              <eas:available eas:scheme="W3CDTF" eas:format="MONTH">1902-04-01T00:00:00.000+00:19:32</eas:available>
               <eas:issued eas:scheme="W3CDTF" eas:format="MONTH">1905-04-01T00:00:00.000+00:19:32</eas:issued>
               <eas:modified eas:scheme="W3CDTF" eas:format="MONTH">1906-04-01T00:00:00.000+00:19:32</eas:modified>
               <eas:dateAccepted eas:scheme="W3CDTF" eas:format="MONTH">1903-04-01T00:00:00.000+00:19:32</eas:dateAccepted>
               <eas:dateCopyrighted eas:scheme="W3CDTF" eas:format="MONTH">1907-04-01T00:00:00.000+00:19:32</eas:dateCopyrighted>
               <eas:dateSubmitted eas:scheme="W3CDTF" eas:format="MONTH">1908-04-01T00:00:00.000+00:19:32</eas:dateSubmitted>
-          </emd:date>
+          </emd:date>,
+      emdRights,
     ))
-    DDM(emd, Seq.empty).map(normalized) shouldBe Success(normalized(
+    val triedDDM = DDM(emd, Seq("D35400"))
+    triedDDM.map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         <ddm:profile>
-          <ddm:created>03-2013</ddm:created>
-          <ddm:created>2017-09-30</ddm:created>
-          <ddm:created>1901-04</ddm:created>
-          <ddm:available>04-2013</ddm:available>
-          <ddm:available>1900</ddm:available>
-          <ddm:available>1902-04</ddm:available>
-          <ddm:accessRights/>
+          <dc:title>XXX</dc:title>
+          <dct:description>YYY</dct:description>
+          { ddmCreator }
+          <ddm:created>2013-03</ddm:created>
+          <ddm:available>2013-04</ddm:available>
+          <ddm:audience>D35400</ddm:audience>
+          <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
         </ddm:profile>
         <ddm:dcmiMetadata>
           <dct:date>gisteren</dct:date>
@@ -727,10 +869,12 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <dct:dateAccepted xsi:type="dct:W3CDTF">1903-04</dct:dateAccepted>
           <dct:valid>06-2013</dct:valid>
           <dct:valid xsi:type="dct:W3CDTF">1904-04</dct:valid>
-          <dct:license xsi:type="dct:URI">{ DDM.dansLicense }</dct:license>
+          <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>
     ))
+    assume(schemaIsAvailable)
+    triedDDM.flatMap(validate) shouldBe Success(())
   }
 
   private def normalized(elem: Node) = printer

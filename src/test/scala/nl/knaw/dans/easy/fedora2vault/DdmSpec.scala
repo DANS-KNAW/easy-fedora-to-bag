@@ -16,6 +16,7 @@
 package nl.knaw.dans.easy.fedora2vault
 
 import better.files.File
+import nl.knaw.dans.easy.fedora2vault.DDM.schemaNameSpace
 import nl.knaw.dans.easy.fedora2vault.fixture.{ AudienceSupport, EmdSupport, SchemaSupport, TestSupportFixture }
 import nl.knaw.dans.pf.language.emd.EasyMetadataImpl
 import nl.knaw.dans.pf.language.emd.binding.EmdUnmarshaller
@@ -341,7 +342,8 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       emdRights,
     ))
     // logs ERROR not implemented invalid point [SpatialPoint(Some(RD),None,None)]
-    DDM(emd, Seq("D35400")).map(normalized) shouldBe Success(normalized(
+    val triedDDM = DDM(emd, Seq("D35400"))
+    triedDDM.map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }
         <ddm:dcmiMetadata>
@@ -350,6 +352,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
         </ddm:dcmiMetadata>
       </ddm:DDM>
     ))
+    triedDDM.flatMap(validate) should failWithNotImplementedElement
   }
 
   it should "render a polygon" in {
@@ -559,7 +562,8 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>
-    )) // logging explains the not implemented
+    ))
+    triedDDM.flatMap(validate) should failWithNotImplementedElement
   }
 
   it should "report a mix of spatial element types" in {
@@ -588,7 +592,8 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     //  ERROR not implemented  [subject 0]
     //  ERROR not implemented  [subject 1]
     //  ERROR not implemented  [subject z
-    DDM(emd, Seq("D35400")).map(normalized) shouldBe Success(normalized(
+    val triedDDM = DDM(emd, Seq("D35400"))
+    triedDDM.map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }
         <ddm:dcmiMetadata>
@@ -600,6 +605,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
         </ddm:dcmiMetadata>
       </ddm:DDM>
     ))
+    triedDDM.flatMap(validate) should failWithNotImplementedElement
   }
 
   "subject" should "succeed" in {
@@ -640,15 +646,38 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <dct:medium>medium1</dct:medium>
           <dct:subject xsi:type="abr:ABRcomplex">DEPO</dct:subject>
           <dct:subject>hello world</dct:subject>
-          <dct:subject xml:lang="nld-NLD">subject 0</dct:subject>
-          <dct:subject xml:lang="nld-NLD">subject 1</dct:subject>
-          <dct:subject xml:lang="nld-NLD">subject zero</dct:subject>
+          <dct:subject xml:lang="nld-NLD" xsi:type="-">subject 0</dct:subject>
+          <dct:subject xml:lang="nld-NLD" xsi:type="-">subject 1</dct:subject>
+          <dct:subject xml:lang="nld-NLD" xsi:type="-">subject zero</dct:subject>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>
     ))
     assume(schemaIsAvailable)
-    triedDDM.flatMap(validate) shouldBe Success(())
+    triedDDM.flatMap(validate) should failWithNotImplementedAttribute
+  }
+
+  it should "report not implemented attributes" in {
+    val emd = parseEmdContent(Seq(
+      emdTitle, emdCreator,
+      <emd:subject>
+          <dc:subject eas:scheme="ABR" eas:schemeId="archaeologie.subject">DEPO</dc:subject>
+      </emd:subject>,
+      emdDescription, emdDates, emdRights,
+    ))
+    val triedDDM = DDM(emd, Seq("D13200"))
+    // logs ERROR not implemented ABR schemeId [DEPO]
+    triedDDM.map(normalized) shouldBe Success(normalized(
+      <ddm:DDM xsi:schemaLocation={ schemaLocation }>
+        { ddmProfile("D13200") }
+        <ddm:dcmiMetadata>
+          <dct:subject xsi:type="-">DEPO</dct:subject>
+          <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
+        </ddm:dcmiMetadata>
+      </ddm:DDM>
+    ))
+    assume(schemaIsAvailable)
+    triedDDM.flatMap(validate) should failWithNotImplementedAttribute
   }
 
   "author" should "succeed" in {
@@ -911,5 +940,19 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       emdNode <- FoXml.getEmd(XML.loadFile((sampleFoXML / file).toJava))
       emd <- Try(emdUnMarshaller.unmarshal(emdNode.serialize))
     } yield emd
+  }
+
+  private def failWithNotImplementedElement = {
+    matchPattern {
+      case Failure(e) if e.getMessage
+        .contains("""The prefix "not" for element "not:implemented" is not bound.""") =>
+    }
+  }
+
+  private def failWithNotImplementedAttribute = {
+    matchPattern {
+      case Failure(e) if e.getMessage
+        .contains("'-' is not a valid value for 'QName'.") =>
+    }
   }
 }

@@ -122,9 +122,9 @@ object DDM extends DebugEnhancedLogging {
   private def idType(bs: BasicString): String = Option(bs.getScheme).map(s => "id-type:" + s).orNull
 
   private def notImplementedAttribute(msg: String)(data: Any): String = {
-    // TODO return something that won't pass validation
     logger.error(s"not implemented $msg [$data]")
-    null
+    // schema validation will stumble with "cvc-datatype-valid.1.2.1: '-' is not a valid value for 'QName'."
+    "-"
   }
 
   private def notImplemented(msg: String)(data: Any): Elem = {

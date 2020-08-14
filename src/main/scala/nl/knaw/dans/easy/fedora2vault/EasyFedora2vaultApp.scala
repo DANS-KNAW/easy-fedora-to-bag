@@ -120,9 +120,9 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
         .map(addAgreements(bag))
         .getOrElse(AgreementsXml(foXml, ldap)
           .map(addAgreements(bag)))
-      _ <- managedMetadataStream(foXml, "ADDITIONAL_LICENSE", bag, "license") // TODO EASY-2696 where to store?
+      _ <- managedMetadataStream(foXml, "ADDITIONAL_LICENSE", bag, "license")
         .getOrElse(Success(()))
-      _ <- managedMetadataStream(foXml, "DATASET_LICENSE", bag, "depositor-info/depositor-agreement") // TODO EASY-2697: older versions
+      _ <- managedMetadataStream(foXml, "DATASET_LICENSE", bag, "depositor-info/depositor-agreement")
         .getOrElse(Success(()))
       fileItems <- fedoraIDs.filter(_.startsWith("easy-file:"))
         .toList.traverse(addPayloadFileTo(bag))

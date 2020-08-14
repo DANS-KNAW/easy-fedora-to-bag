@@ -78,6 +78,8 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
   "streaming" should "get a valid DDM out of its EMD" in {
     val file = "streaming.xml"
     val triedDdm = getEmd(file).flatMap(DDM(_, Seq("D35400")))
+    // Logs
+    //  INFO  skipped dct:relation STREAMING_SURROGATE_RELATION /domain/dans/user/utest/collection/ctest/presentation/private_continuous
     val expectedDdm = (File("src/test/resources/expected-ddm/") / file)
       .contentAsString
       .replaceAll(" +", " ")
@@ -176,7 +178,8 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       emdRights,
     ))
     val triedDDM = DDM(emd, Seq("D35400"))
-    triedDDM.map(normalized) shouldBe Success(normalized( // TODO implemented quick and dirty
+    // logs INFO  skipped dct:relation STREAMING_SURROGATE_RELATION /domain/dans/user/utest/collection/ctest/presentation/private_continuous
+    triedDDM.map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }
         <ddm:dcmiMetadata>
@@ -306,6 +309,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       emdRights,
     ))
     val triedDDM = DDM(emd, Seq("D35400"))
+    // logs ERROR not implemented invalid point [SpatialPoint(Some(RD),None,None)]
     triedDDM.map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }
@@ -336,6 +340,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
         </emd:coverage>,
       emdRights,
     ))
+    // logs ERROR not implemented invalid point [SpatialPoint(Some(RD),None,None)]
     DDM(emd, Seq("D35400")).map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }
@@ -344,7 +349,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>
-    )) // logging explains the not implemented
+    ))
   }
 
   it should "render a polygon" in {
@@ -477,6 +482,9 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       emdRights,
     ))
     val triedDDM = DDM(emd, Seq("D35400"))
+    // logs
+    //  ERROR not implemented invalid box [SpatialBox(Some(RD),None,None,None,None)]
+    //  ERROR not implemented invalid box [SpatialBox(Some(degrees),None,None,None,None)]
     triedDDM.map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }
@@ -536,6 +544,11 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
         </emd:coverage>,
       emdRights,
     ))
+    // logs
+    //  ERROR not implemented expected either point, box or polygon [name=A general description ]
+    //  ERROR not implemented expected either point, box or polygon [scheme=null x=1 y=nullscheme=degrees north=79.5 east=23.0 south=76.7 west=10.0]
+    //  ERROR not implemented expected either point, box or polygon [scheme=degrees north=79.5 east=23.0 south=76.7 west=10.0(exterior=null, interior=null) ]
+    //  ERROR not implemented expected either point, box or polygon [scheme=null x=1 y=null(exterior=null, interior=null) ]
     val triedDDM = DDM(emd, Seq("D35400"))
     triedDDM.map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
@@ -571,6 +584,10 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
         </emd:coverage>,
       emdRights,
     ))
+    // logs
+    //  ERROR not implemented  [subject 0]
+    //  ERROR not implemented  [subject 1]
+    //  ERROR not implemented  [subject z
     DDM(emd, Seq("D35400")).map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }
@@ -607,6 +624,10 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       emdRights,
     ))
     val triedDDM = DDM(emd, Seq("D13200"))
+    // logs (but bag will get validated)
+    //  ERROR not implemented  [subject 0]
+    //  ERROR not implemented  [subject 1]
+    //  ERROR not implemented  [subject zero]
     triedDDM.map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D13200") }

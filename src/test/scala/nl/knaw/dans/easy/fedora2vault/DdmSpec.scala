@@ -21,7 +21,6 @@ import nl.knaw.dans.pf.language.emd.EasyMetadataImpl
 import nl.knaw.dans.pf.language.emd.binding.EmdUnmarshaller
 
 import scala.util.{ Failure, Success, Try }
-import scala.xml.Utility.trim
 import scala.xml._
 
 class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport with SchemaSupport {
@@ -83,6 +82,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       .contentAsString
       .replaceAll(" +", " ")
       .replaceAll("\n +<", "\n<").trim
+      .replace("\n<dct:relation/>", "").trim
     triedDdm.map(normalized) shouldBe Success(expectedDdm)
     triedDdm.flatMap(validate) shouldBe Success(())
   }
@@ -139,10 +139,11 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     triedDDM.flatMap(validate) shouldBe Success(())
   }
 
-  "relations" should "all appear" in {
+  "relations" should "all appear except STREAMING_SURROGATE_RELATION" in {
     val emd = parseEmdContent(Seq(
       emdTitle, emdCreator, emdDescription, emdDates,
         <emd:relation>
+          <dc:relation eas:scheme="STREAMING_SURROGATE_RELATION">/domain/dans/user/utest/collection/ctest/presentation/private_continuous</dc:relation>
           <dct:hasVersion eas:scheme="ISSN">my-issn-related-identifier</dct:hasVersion>
           <dct:requires eas:scheme="ISBN">my-isbn-related-identifier</dct:requires>
           <dct:isPartOf>my own related identifier</dct:isPartOf>

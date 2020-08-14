@@ -109,11 +109,11 @@ object DDM extends DebugEnhancedLogging {
   private def xsiType(bs: BasicString): String = {
     val scheme = Option(bs.getScheme).map(_.toUpperCase())
     (scheme, Option(bs.getSchemeId)) match {
-      case (Some("ABR"),Some("archaeology.dc.subject")) => "abr:ABRcomplex"
-      case (Some("ABR"),Some("archaeology.dc.temporal")) => "abr:ABRperiode"
-      case (Some("ABR"),_) => notImplementedAttribute("ABR schemeId")(bs)
-      case (Some("DCMI"),Some("common.dc.type")) => "dct:DCMIType"
-      case (Some("DCMI"),_) => notImplementedAttribute("DCMI schemeId")(bs)
+      case (Some("ABR"), Some("archaeology.dc.subject")) => "abr:ABRcomplex"
+      case (Some("ABR"), Some("archaeology.dc.temporal")) => "abr:ABRperiode"
+      case (Some("ABR"), _) => notImplementedAttribute("ABR schemeId")(bs)
+      case (Some("DCMI"), Some("common.dc.type")) => "dct:DCMIType"
+      case (Some("DCMI"), _) => notImplementedAttribute("DCMI schemeId")(bs)
       case (_, Some(scheme)) if scheme.startsWith("id-type:") => scheme
       case (None, None) => null
       case _ => notImplementedAttribute("")(bs)
@@ -262,12 +262,15 @@ object DDM extends DebugEnhancedLogging {
     >{ rel.getSubjectTitle.getValue }</label>
   }.withLabel(relationLabel("ddm:", key))
 
-  private def toRelationXml(key: String, bs: BasicString): Elem = {
-    if (bs.getScheme == "STREAMING_SURROGATE_RELATION") notImplemented("relation")(bs)
+  private def toRelationXml(key: String, bs: BasicString): Node = {
+    if (bs.getScheme == "STREAMING_SURROGATE_RELATION") {
+      logger.info(s"skipped ${ relationLabel("dct:", key) } ${ bs.getScheme } $bs")
+      Text("")
+    }
     else <label xsi:type={ idType(bs) }
                 xml:lang={ bs.getLanguage }
-         >{ bs.getValue }</label>
-  }.withLabel(relationLabel("dct:", key))
+         >{ bs.getValue }</label>.withLabel(relationLabel("dct:", key))
+  }
 
   private def relationType(rel: Relation): String = {
     rel.getSubjectLink.getAuthority match {

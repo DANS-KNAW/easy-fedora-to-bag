@@ -31,6 +31,7 @@ import nl.knaw.dans.easy.fedora2vault.Command.FeedBackMessage
 import nl.knaw.dans.easy.fedora2vault.FileItem.{ checkNotImplemented, filesXml }
 import nl.knaw.dans.easy.fedora2vault.FoXml.{ getEmd, _ }
 import nl.knaw.dans.easy.fedora2vault.TransformationType.SIMPLE
+import nl.knaw.dans.easy.fedora2vault.check._
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import nl.knaw.dans.pf.language.emd.EasyMetadataImpl
@@ -46,24 +47,25 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
   lazy val fedoraProvider: FedoraProvider = new FedoraProvider(new FedoraClient(configuration.fedoraCredentials))
   lazy val ldapContext: InitialLdapContext = new InitialLdapContext(configuration.ldapEnv, null)
   lazy val bagIndex: BagIndex = BagIndex(configuration.bagIndexUrl)
-  private lazy val simpleChecker: SimpleChecker = SimpleChecker(bagIndex)
   private lazy val ldap = new Ldap(ldapContext)
   private val emdUnmarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
 
-  def simpleTransForms(datasetIds: Iterator[DatasetId], outputDir: File, strict: Boolean, writer: Writer): Try[FeedBackMessage] = {
+  def simpleTransForms(datasetIds: Iterator[DatasetId], outputDir: File, strict: Boolean, writer: Writer)
+                      (implicit transformationChecker: TransformationChecker): Try[FeedBackMessage] = {
     new Dispose(CsvRecord.csvFormat.print(writer))
-      .apply(simpleTransForms(datasetIds, outputDir, strict))
+      .apply(simpleTransForms(_, datasetIds, outputDir, strict))
   }
 
-  private def simpleTransForms(input: Iterator[DatasetId], outputDir: File, strict: Boolean)
-                              (printer: CSVPrinter): Try[FeedBackMessage] = input
+  private def simpleTransForms(printer: CSVPrinter, input: Iterator[DatasetId], outputDir: File, strict: Boolean)
+                              (implicit transformationChecker: TransformationChecker): Try[FeedBackMessage] = input
     .map(simpleTransform(_, outputDir / UUID.randomUUID.toString, strict, printer))
     .failFastOr(Success("no fedora/IO errors"))
 
-  private def simpleTransform(datasetId: DatasetId, bagDir: File, strict: Boolean, printer: CSVPrinter): Try[Any] = {
+  private def simpleTransform(datasetId: DatasetId, bagDir: File, strict: Boolean, printer: CSVPrinter)
+                             (implicit transformationChecker: TransformationChecker): Try[Any] = {
     simpleTransform(datasetId, bagDir, strict)
       .doIfFailure {
-        case t: NotSimpleException => logger.warn(s"$datasetId -> $bagDir failed: ${ t.getMessage }")
+        case t: InvalidTransformationException => logger.warn(s"$datasetId -> $bagDir failed: ${ t.getMessage }")
       }.recoverWith {
       case t: FedoraClientException if t.getStatus != 404 => Failure(t)
       case t: Exception if t.isInstanceOf[IOException] => Failure(t)
@@ -74,7 +76,8 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       .doIfSuccess(_.print(printer))
   }
 
-  def simpleTransform(datasetId: DatasetId, bagDir: File, strict: Boolean): Try[CsvRecord] = {
+  def simpleTransform(datasetId: DatasetId, bagDir: File, strict: Boolean)
+                     (implicit transformationChecker: TransformationChecker): Try[CsvRecord] = {
 
     def managedMetadataStream(foXml: Elem, streamId: String, bag: DansV0Bag, metadataFile: String) = {
       managedStreamLabel(foXml, streamId)
@@ -90,7 +93,6 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
     for {
       foXml <- fedoraProvider.loadFoXml(datasetId)
       depositor <- getOwner(foXml)
-      msg = s"$bagDir from $datasetId with owner $depositor"
       emdXml <- getEmd(foXml)
       emd <- Try(emdUnmarshaller.unmarshal(emdXml.serialize))
       amd <- getAmd(foXml)
@@ -98,10 +100,9 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
         .map(id => getAudience(id.getValue)).collectResults
       ddm <- DDM(emd, audiences)
       fedoraIDs <- fedoraProvider.getSubordinates(datasetId)
-      jumpOffIds = fedoraIDs.filter(_.startsWith("easy-jumpoff:"))
-      maybeSimpleViolations <- simpleChecker.violations(emd, ddm, amd, jumpOffIds)
-      _ = if (strict) maybeSimpleViolations.foreach(msg => throw NotSimpleException(msg))
-      _ = logger.info("Creating " + msg)
+      maybeTransformationViolations <- transformationChecker.violations(emd, ddm, amd, fedoraIDs)
+      _ = if (strict) maybeTransformationViolations.foreach(msg => throw InvalidTransformationException(msg))
+      _ = logger.info(s"Creating $bagDir from $datasetId with owner $depositor")
       bag <- DansV0Bag.empty(bagDir)
         .map(_.withEasyUserAccount(depositor).withCreated(DateTime.now()))
       _ <- addXmlMetadata(bag, "emd.xml")(emdXml)
@@ -135,8 +136,8 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       UUID.fromString(bagDir.name),
       doi,
       depositor,
-      transformationType = maybeSimpleViolations.map(_ => "not strict simple").getOrElse("simple"),
-      maybeSimpleViolations.getOrElse("OK"),
+      transformationType = maybeTransformationViolations.map(_ => "not strict simple").getOrElse("simple"),
+      maybeTransformationViolations.getOrElse("OK"),
     )
   }
 

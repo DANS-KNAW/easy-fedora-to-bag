@@ -18,6 +18,7 @@ package nl.knaw.dans.easy.fedora2vault
 import java.net.URI
 
 import com.typesafe.scalalogging.Logger
+import nl.knaw.dans.easy.fedora2vault.check.{ SimpleChecker, TransformationChecker }
 import nl.knaw.dans.easy.fedora2vault.fixture.{ EmdSupport, TestSupportFixture }
 import org.scalamock.scalatest.MockFactory
 import org.slf4j.{ Logger => UnderlyingLogger }
@@ -26,7 +27,7 @@ import scalaj.http.HttpResponse
 import scala.util.Success
 import scala.xml.Elem
 
-class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupport {
+class TransformationCheckerSpec extends TestSupportFixture with MockFactory with EmdSupport {
 
   private class MockedBagIndex extends BagIndex(new URI("http://localhost:20120/"))
 
@@ -147,7 +148,7 @@ class SimpleCheckerSpec extends TestSupportFixture with MockFactory with EmdSupp
 
   private def simpleCheckerExpecting(expectedBagIndexResponse: HttpResponse[String],
                                      loggerWarnCalledWith: Seq[String],
-                                    ): SimpleChecker = {
+                                    ): TransformationChecker = {
     val mockedBagIndex = new BagIndex(new URI("https://does.not.exist.dans.knaw.nl")) {
       override def execute(doi: String): HttpResponse[String] =
         expectedBagIndexResponse

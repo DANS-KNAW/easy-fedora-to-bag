@@ -65,7 +65,7 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   val strictMode: ScallopOption[Boolean] = opt(name = "strict", short = 's',
     descr = "If provided, the transformation will check whether the datasets adhere to the requirements of the chosen transformation.")
   val transformation: ScallopOption[TransformationType] = trailArg(name = "transformation",
-    descr = "The type of transformation used. Only 'simple' is implemented yet.")
+    descr = s"The type of transformation used. Possible values: ${ TransformationType.values.mkString(", ") }.")
 
   requireOne(datasetId, inputPath)
 

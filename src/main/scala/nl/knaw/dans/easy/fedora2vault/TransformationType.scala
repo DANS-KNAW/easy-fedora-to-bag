@@ -20,5 +20,6 @@ object TransformationType extends Enumeration {
 
   // @formatter:off
   val SIMPLE: TransformationType = Value("simple")
+  val THEMA: TransformationType = Value("thematische-collectie")
   // @formatter:on
 }

@@ -13,20 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.fedora2vault
+package nl.knaw.dans.easy.fedora2vault.check
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory.{ OPEN_ACCESS, REQUEST_PERMISSION }
+import nl.knaw.dans.easy.fedora2vault._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import nl.knaw.dans.pf.language.emd.EasyMetadataImpl
 
 import scala.util.{ Success, Try }
 import scala.xml.Node
 
-case class NotSimpleException(msg: String) extends Exception(msg)
+case class InvalidTransformationException(msg: String) extends Exception(msg)
 
-case class SimpleChecker(bagIndex: BagIndex) extends DebugEnhancedLogging {
+trait TransformationChecker extends DebugEnhancedLogging {
+  val bagIndex: BagIndex
 
-  def violations(emd: EasyMetadataImpl, ddm: Node, amd: Node, jumpOff: Seq[String]): Try[Option[String]] = {
+  def violations(emd: EasyMetadataImpl, ddm: Node, amd: Node, fedoraIDs: Seq[String]): Try[Option[String]] = {
     val maybeDoi = Option(emd.getEmdIdentifier.getDansManagedDoi)
     val triedMaybeVaultResponse: Try[Option[String]] = maybeDoi
       .map(bagIndex.bagInfoByDoi)
@@ -34,9 +36,9 @@ case class SimpleChecker(bagIndex: BagIndex) extends DebugEnhancedLogging {
     val violations = Seq(
       "1: DANS DOI" -> (if (maybeDoi.isEmpty) Seq("not found")
                         else Seq[String]()),
-      "2: has jump off" -> jumpOff,
+      "2: has jump off" -> fedoraIDs.filter(_.startsWith("easy-jumpoff:")),
       "3: invalid title" -> Option(emd.getEmdTitle.getPreferredTitle)
-        .filter(_.toLowerCase.contains("thematische collectie")).toSeq,
+        .filter(title => forbiddenTitle(title)).toSeq,
       "4: invalid rights" -> findInvalidRights(emd),
       "5: invalid state" -> findInvalidState(amd),
       "6: DANS relations" -> findDansRelations(ddm),
@@ -52,6 +54,8 @@ case class SimpleChecker(bagIndex: BagIndex) extends DebugEnhancedLogging {
       else Some(violations.keys.mkString("Violates ", "; ", ""))
     )
   }
+
+  def forbiddenTitle(title: String): Boolean
 
   private def findInvalidRights(emd: EasyMetadataImpl) = {
     val maybe = Option(emd.getEmdRights.getAccessCategory)

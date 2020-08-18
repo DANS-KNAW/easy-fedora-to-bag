@@ -33,7 +33,7 @@ ARGUMENTS
      -v, --version             Show version of this program
 
     trailing arguments:
-     transformation (required)   The type of transformation used. Only 'simple' is implemented yet.
+      transformation (required)   The type of transformation used. Possible values: simple, thematische-collectie.
 
 EXAMPLES
 --------

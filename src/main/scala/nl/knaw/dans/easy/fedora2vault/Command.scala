@@ -16,22 +16,23 @@
 package nl.knaw.dans.easy.fedora2vault
 
 import better.files.File
-import nl.knaw.dans.easy.fedora2vault.TransformationType.SIMPLE
+import nl.knaw.dans.easy.fedora2vault.TransformationType._
+import nl.knaw.dans.easy.fedora2vault.check._
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.language.reflectiveCalls
-import scala.util.Try
 import scala.util.control.NonFatal
+import scala.util.{ Failure, Try }
 
 object Command extends App with DebugEnhancedLogging {
   type FeedBackMessage = String
 
-  val configuration = Configuration(File(System.getProperty("app.home")))
-  val commandLine: CommandLineOptions = new CommandLineOptions(args, configuration) {
+  private val configuration = Configuration(File(System.getProperty("app.home")))
+  private val app = new EasyFedora2vaultApp(configuration)
+  private val commandLine: CommandLineOptions = new CommandLineOptions(args, configuration) {
     verify()
   }
-  val app = new EasyFedora2vaultApp(configuration)
 
   runSubcommand(app)
     .doIfSuccess(msg => println(s"OK: $msg"))
@@ -40,17 +41,24 @@ object Command extends App with DebugEnhancedLogging {
 
   private def runSubcommand(app: EasyFedora2vaultApp): Try[FeedBackMessage] = {
     commandLine.transformation() match {
-      case SIMPLE => app.simpleTransForms(
-        commandLine
-          .datasetId.map(Iterator(_))
-          .getOrElse(commandLine.inputFile()
-            .lineIterator
-            .filterNot(_.startsWith("#"))
-          ),
-        commandLine.outputDir(),
-        commandLine.strictMode(),
-        commandLine.logFile().newFileWriter(append = true),
-      ).map(msg => s"$msg, for details see ${ commandLine.logFile().toJava.getAbsolutePath }")
+      case SIMPLE => simpleTransform(app)(SimpleChecker(app.bagIndex))
+      case THEMA => simpleTransform(app)(ThemaChecker(app.bagIndex))
+      case _ => Failure(new Exception(s"transformation type not implemented"))
     }
+  }.map(msg => s"$msg, for details see ${ commandLine.logFile().toJava.getAbsolutePath }")
+
+  private def simpleTransform(app: EasyFedora2vaultApp)
+                             (implicit transformationChecker: TransformationChecker) = {
+    app.simpleTransForms(
+      commandLine
+        .datasetId.map(Iterator(_))
+        .getOrElse(commandLine.inputFile()
+          .lineIterator
+          .filterNot(_.startsWith("#"))
+        ),
+      commandLine.outputDir(),
+      commandLine.strictMode(),
+      commandLine.logFile().newFileWriter(append = true),
+    )
   }
 }

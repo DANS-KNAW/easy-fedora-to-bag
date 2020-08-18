@@ -59,5 +59,4 @@ package object fedora2vault {
         .getOrElse(onSuccess)
     }
   }
-
 }

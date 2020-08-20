@@ -107,22 +107,22 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       _ <- addXmlMetadata(bag, "emd.xml")(emdXml)
       _ <- addXmlMetadata(bag, "amd.xml")(amd)
       _ <- getDdm(foXml)
-        .map(addXmlPayload(bag, "original-ddm.xml"))
+        .map(addXmlMetadata(bag, "original-ddm.xml"))
         .getOrElse(Success(()))
       _ <- addXmlMetadata(bag, "dataset.xml")(ddm)
       _ <- getMessageFromDepositor(foXml)
         .map(addXmlMetadata(bag, "depositor-info/message-from-depositor.txt"))
         .getOrElse(Success(()))
       _ <- getFilesXml(foXml)
-        .map(addXmlPayload(bag, "original-files.xml"))
+        .map(addXmlMetadata(bag, "original-files.xml"))
         .getOrElse(Success(()))
       _ <- getAgreementsXml(foXml)
         .map(addAgreements(bag))
         .getOrElse(AgreementsXml(foXml, ldap)
           .map(addAgreements(bag)))
-      _ <- managedMetadataStream(foXml, "ADDITIONAL_LICENSE", bag, "license") // TODO EASY-2696 where to store?
+      _ <- managedMetadataStream(foXml, "ADDITIONAL_LICENSE", bag, "license")
         .getOrElse(Success(()))
-      _ <- managedMetadataStream(foXml, "DATASET_LICENSE", bag, "depositor-info/depositor-agreement") // TODO EASY-2697: older versions
+      _ <- managedMetadataStream(foXml, "DATASET_LICENSE", bag, "depositor-info/depositor-agreement")
         .getOrElse(Success(()))
       fileItems <- fedoraIDs.filter(_.startsWith("easy-file:"))
         .toList.traverse(addPayloadFileTo(bag))
@@ -156,10 +156,6 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
 
   private def addAgreements(bag: DansV0Bag)(content: Node): Try[Any] = {
     bag.addTagFile(content.serialize.inputStream, Paths.get(s"metadata/depositor-info/agreements.xml"))
-  }
-
-  private def addXmlPayload(bag: DansV0Bag, path: String)(content: Node): Try[Any] = {
-    bag.addPayloadFile(content.serialize.inputStream, Paths.get(path))
   }
 
   private def addPayloadFileTo(bag: DansV0Bag)(fedoraFileId: String): Try[Node] = {

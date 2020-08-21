@@ -107,7 +107,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       _ <- addXmlMetadata(bag, "emd.xml")(emdXml)
       _ <- addXmlMetadata(bag, "amd.xml")(amd)
       _ <- getDdm(foXml)
-        .map(addXmlMetadata(bag, "original/ddm.xml"))
+        .map(addXmlMetadata(bag, "original/dataset.xml"))
         .getOrElse(Success(()))
       _ <- addXmlMetadata(bag, "dataset.xml")(ddm)
       _ <- getMessageFromDepositor(foXml)

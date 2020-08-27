@@ -37,7 +37,7 @@ case class BagIndex(bagIndexUri: URI) {
     maybeBagInfo = maybeXml.flatMap(xml => (xml \ "bag-info").theSeq.headOption)
   } yield maybeBagInfo.map(_.toOneLiner)
 
-  protected def findBagInfo(doi: String): Try[Option[String]] = Try {
+  private def findBagInfo(doi: String): Try[Option[String]] = Try {
     execute(doi)
   }.recoverWith {
     case t: Throwable => Failure(BagIndexException(s"DOI[$doi] url[$url]" + t.getMessage, t))

@@ -45,7 +45,7 @@ case class BagIndex(bagIndexUri: URI) {
     case response if response.code == 404 => None
     case response if response.code == 200 => Some(response.body)
     case response =>
-      throw BagIndexException(s"Not expected response code from bag-index. url='${ url }', doi='$doi', response: ${ response.code } - ${ response.body }", null)
+      throw BagIndexException(s"Not expected response code from bag-index. url='$url', doi='$doi', response: ${ response.code } - ${ response.body }", null)
   }
 
   protected def execute(doi: String): HttpResponse[String] = {

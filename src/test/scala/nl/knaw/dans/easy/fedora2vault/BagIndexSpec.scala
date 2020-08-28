@@ -15,11 +15,8 @@
  */
 package nl.knaw.dans.easy.fedora2vault
 
-import java.net.URI
-
 import nl.knaw.dans.easy.fedora2vault.fixture.{ BagIndexSupport, TestSupportFixture }
 import org.scalamock.scalatest.MockFactory
-import scalaj.http.HttpResponse
 
 import scala.util.{ Failure, Success }
 import scala.xml.SAXParseException

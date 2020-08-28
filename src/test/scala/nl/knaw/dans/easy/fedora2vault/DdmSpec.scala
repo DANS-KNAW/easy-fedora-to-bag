@@ -16,7 +16,6 @@
 package nl.knaw.dans.easy.fedora2vault
 
 import better.files.File
-import nl.knaw.dans.easy.fedora2vault.DDM.schemaNameSpace
 import nl.knaw.dans.easy.fedora2vault.fixture.{ AudienceSupport, EmdSupport, SchemaSupport, TestSupportFixture }
 import nl.knaw.dans.pf.language.emd.EasyMetadataImpl
 import nl.knaw.dans.pf.language.emd.binding.EmdUnmarshaller
@@ -63,7 +62,6 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
               <dcx-dai:name>DANS</dcx-dai:name>
             </dcx-dai:organization>
           </dcx-dai:creatorDetails>
-
 
   private def ddmProfile(audience: String) =
        <ddm:profile>

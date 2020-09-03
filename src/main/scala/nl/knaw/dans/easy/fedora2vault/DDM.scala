@@ -66,7 +66,7 @@ object DDM extends DebugEnhancedLogging {
        <ddm:accessRights>{ emd.getEmdRights.getAccessCategory }</ddm:accessRights>
      </ddm:profile>
      <ddm:dcmiMetadata>
-       { emd.getEmdIdentifier.getDcIdentifier.asScala.filter(isDdmId).map(bi => <dct:identifier xsi:type={ idType(bi) }>{ bi.getValue }</dct:identifier>) }
+       { emd.getEmdIdentifier.getDcIdentifier.asScala.filter(_.getScheme != "DMO_ID").map(bi => <dct:identifier xsi:type={ idType(bi) }>{ bi.getValue }</dct:identifier>) }
        { emd.getEmdTitle.getTermsAlternative.asScala.map(str => <dct:alternative>{ str }</dct:alternative>) }
        { emd.getEmdDescription.getTermsAbstract.asScala.map(bs => <ddm:description xml:lang={ lang(bs) } descriptionType='Abstract'>{ bs.getValue }</ddm:description>) }
        { emd.getEmdDescription.getTermsTableOfContents.asScala.map(bs => <ddm:description xml:lang={ lang(bs) } descriptionType='TableOfContents'>{ bs.getValue }</ddm:description>) }
@@ -119,7 +119,13 @@ object DDM extends DebugEnhancedLogging {
     }
   }
 
-  private def idType(bs: BasicString): String = Option(bs.getScheme).map(s => "id-type:" + s).orNull
+  private def idType(bs: BasicString): String = {
+    Option(bs.getScheme) match {
+      case Some("PID") if bs.getValue.toLowerCase.contains("urn") => "id-type:URN"
+      case Some(s) => "id-type:" + s
+      case None => null
+    }
+  }
 
   private def notImplementedAttribute(msg: String)(data: Any): String = {
     logger.error(s"not implemented $msg [$data]")
@@ -299,11 +305,6 @@ object DDM extends DebugEnhancedLogging {
         case ANONYMOUS_ACCESS | OPEN_ACCESS | FREELY_AVAILABLE | OPEN_ACCESS_FOR_REGISTERED_USERS => cc0
         case _ => dansLicense
       })
-  }
-
-  private def isDdmId(bi: BasicIdentifier): Boolean = {
-    // generated into EMD by easy-ingest-flow/EASY-I, not schema valid in DDM
-    !Seq("PID", "DMO_ID").contains(bi.getScheme)
   }
 
   /** @param elem XML element to be adjusted */

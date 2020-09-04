@@ -23,6 +23,7 @@ import javax.xml.transform.Source
 import javax.xml.transform.stream.StreamSource
 import javax.xml.validation.SchemaFactory
 import nl.knaw.dans.easy.fedora2vault.XmlExtensions
+import org.scalatest.Assertions.fail
 
 import scala.util.{ Failure, Try }
 import scala.xml.{ Node, SAXParseException }
@@ -40,7 +41,9 @@ trait SchemaSupport {
   )
 
   lazy val schemaIsAvailable: Boolean = triedSchema match {
-    case Failure(e: SAXParseException) if e.getCause.isInstanceOf[UnknownHostException] => false
+    case Failure(e: SAXParseException) if e.getCause.isInstanceOf[UnknownHostException] =>
+      println("UnknownHostException: " + e.getMessage)
+      false
     case Failure(e: SAXParseException) if e.getMessage.contains("Cannot resolve") =>
       println("Probably an offline third party schema: " + e.getMessage)
       false
@@ -49,6 +52,7 @@ trait SchemaSupport {
 
   def validate(xml: Node): Try[Unit] = {
     val serialized = xml.serialize
+    triedSchema.getOrElse(fail("Please prefix the test with 'assume(schemaIsAvailable)' to ignore a failure due to not reachable schema's"))
     triedSchema.flatMap { schema =>
       val source = new StreamSource(serialized.inputStream)
       Try(schema.newValidator().validate(source))

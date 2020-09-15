@@ -40,25 +40,24 @@ object Command extends App with DebugEnhancedLogging {
     .doIfFailure { case NonFatal(e) => println(s"FAILED: ${ e.getMessage }") }
 
   private def runSubcommand(app: EasyFedora2vaultApp): Try[FeedBackMessage] = {
+    lazy val ids = commandLine
+      .datasetId.map(Iterator(_))
+      .getOrElse(commandLine.inputFile()
+        .lineIterator
+        .filterNot(_.startsWith("#"))
+      )
+    lazy val strict = commandLine.strictMode()
+    lazy val writer = commandLine.logFile().newFileWriter(append = true)
+    lazy val outputDir = commandLine.outputDir()
+
     commandLine.transformation() match {
-      case SIMPLE => simpleTransform(app)(SimpleChecker(app.bagIndex))
-      case THEMA => simpleTransform(app)(ThemaChecker(app.bagIndex))
-      case _ => Failure(new Exception(s"transformation type not implemented"))
+      case SIMPLE_SIP =>
+        // TODO construct a SIP in a staging directory, on success move to outputDir
+        Failure(new NotImplementedError(s"transformation type $SIMPLE_SIP is not implemented"))
+      case SIMPLE_AIP => app
+        .simpleTransForms(ids, outputDir, strict, writer)(SimpleChecker(app.bagIndex))
+      case THEMA => app
+        .simpleTransForms(ids, outputDir, strict, writer)(ThemaChecker(app.bagIndex))
     }
   }.map(msg => s"$msg, for details see ${ commandLine.logFile().toJava.getAbsolutePath }")
-
-  private def simpleTransform(app: EasyFedora2vaultApp)
-                             (implicit transformationChecker: TransformationChecker) = {
-    app.simpleTransForms(
-      commandLine
-        .datasetId.map(Iterator(_))
-        .getOrElse(commandLine.inputFile()
-          .lineIterator
-          .filterNot(_.startsWith("#"))
-        ),
-      commandLine.outputDir(),
-      commandLine.strictMode(),
-      commandLine.logFile().newFileWriter(append = true),
-    )
-  }
 }

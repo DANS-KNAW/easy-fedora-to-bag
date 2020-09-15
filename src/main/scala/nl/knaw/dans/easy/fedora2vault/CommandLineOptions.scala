@@ -28,7 +28,7 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   editBuilder(_.setHelpWidth(110))
   printedName = "easy-fedora2vault"
   version(configuration.version)
-  val description: String = s"""Tool for exporting datasets from Fedora and constructing AIP-bags to be stored in the bag stores"""
+  val description: String = s"""Tool for exporting datasets from Fedora and constructing Information Packages."""
   val synopsis: String =
     s"""
        |  easy-fedora2vault {-d <dataset-id> | -i <dataset-ids-file>} [-o <staged-AIP-dir>] [-u <depositor>] [-s] [-l <log-file>] <transformation>
@@ -54,7 +54,7 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
     descr = "File containing a newline-separated list of easy-dataset-ids to be transformed. Use either this or the dataset-id argument")
   val inputFile: ScallopOption[File] = inputPath.map(File(_))
   private val outputDirPath: ScallopOption[Path] = opt(name = "output-dir", short = 'o', required = true,
-    descr = "Empty directory in which to stage the created AIP bags. It will be created if it doesn't exist.")
+    descr = "Empty directory in which to stage the created IPs. It will be created if it doesn't exist.")
   val outputDir: ScallopOption[File] = outputDirPath.map(File(_))
   val depositor: ScallopOption[Depositor] = opt(name = "depositor", short = 'u',
     descr = "The depositor for these datasets. If provided, only datasets from this depositor are transformed.")
@@ -65,7 +65,7 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   val strictMode: ScallopOption[Boolean] = opt(name = "strict", short = 's',
     descr = "If provided, the transformation will check whether the datasets adhere to the requirements of the chosen transformation.")
   val transformation: ScallopOption[TransformationType] = trailArg(name = "transformation",
-    descr = s"The type of transformation used. Possible values: ${ TransformationType.values.mkString(", ") }.")
+    descr = TransformationType.values.mkString("The type of transformation used: ",", ","."))
 
   requireOne(datasetId, inputPath)
 

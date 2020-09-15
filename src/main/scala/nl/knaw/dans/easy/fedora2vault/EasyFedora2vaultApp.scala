@@ -30,7 +30,7 @@ import nl.knaw.dans.bag.v0.DansV0Bag
 import nl.knaw.dans.easy.fedora2vault.Command.FeedBackMessage
 import nl.knaw.dans.easy.fedora2vault.FileItem.{ checkNotImplemented, filesXml }
 import nl.knaw.dans.easy.fedora2vault.FoXml.{ getEmd, _ }
-import nl.knaw.dans.easy.fedora2vault.TransformationType.SIMPLE
+import nl.knaw.dans.easy.fedora2vault.TransformationType._
 import nl.knaw.dans.easy.fedora2vault.check._
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
@@ -70,7 +70,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       case t: FedoraClientException if t.getStatus != 404 => Failure(t)
       case t: Exception if t.isInstanceOf[IOException] => Failure(t)
       case t => Success(CsvRecord(
-        datasetId, UUID.fromString(bagDir.name), doi = "", depositor = "", SIMPLE.toString, s"FAILED: $t"
+        datasetId, UUID.fromString(bagDir.name), doi = "", depositor = "", SIMPLE_AIP.toString, s"FAILED: $t"
       ))
     }
       .doIfSuccess(_.print(printer))
@@ -136,7 +136,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       UUID.fromString(bagDir.name),
       doi,
       depositor,
-      transformationType = maybeTransformationViolations.map(_ => "not strict simple").getOrElse("simple"),
+      transformationType = maybeTransformationViolations.map(_ => "not strict simple").getOrElse(SIMPLE_AIP.toString),
       maybeTransformationViolations.getOrElse("OK"),
     )
   }

@@ -96,8 +96,8 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
     sw.toString should (fullyMatch regex
       """easyDatasetId,uuid,doi,depositor,transformationType,comment
         |success:1,.*,,,simple,OK
-        |failure:2,.*,,,simple,FAILED: java.lang.Exception: failure:2
-        |notSimple:3,.*,,,simple,FAILED: nl.knaw.dans.easy.fedora2vault.check.InvalidTransformationException: mocked
+        |failure:2,.*,,,simple-AIP,FAILED: java.lang.Exception: failure:2
+        |notSimple:3,.*,,,simple-AIP,FAILED: nl.knaw.dans.easy.fedora2vault.check.InvalidTransformationException: mocked
         |success:4,.*,,,simple,OK
         |""".stripMargin
       )
@@ -117,7 +117,7 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
 
     val uuid = UUID.randomUUID
     app.simpleTransform("easy-dataset:17", testDir / "bags" / uuid.toString, strict = true)(app.simpleChecker) shouldBe
-      Success(CsvRecord("easy-dataset:17", uuid, "10.17026/test-Iiib-z9p-4ywa", "user001", "simple", "OK"))
+      Success(CsvRecord("easy-dataset:17", uuid, "10.17026/test-Iiib-z9p-4ywa", "user001", "simple-AIP", "OK"))
 
     val metadata = (testDir / "bags").children.next() / "metadata"
     (metadata / "depositor-info/depositor-agreement.pdf").contentAsString shouldBe "blablabla"
@@ -180,7 +180,7 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
 
     val uuid = UUID.randomUUID
     app.simpleTransform("easy-dataset:13", testDir / "bags" / uuid.toString, strict = true)(app.simpleChecker) shouldBe
-      Success(CsvRecord("easy-dataset:13", uuid, "10.17026/mocked-Iiib-z9p-4ywa", "user001", "simple", "OK"))
+      Success(CsvRecord("easy-dataset:13", uuid, "10.17026/mocked-Iiib-z9p-4ywa", "user001", "simple-AIP", "OK"))
 
     val metadata = (testDir / "bags").children.next() / "metadata"
 

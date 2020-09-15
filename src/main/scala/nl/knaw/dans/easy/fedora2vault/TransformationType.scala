@@ -19,7 +19,8 @@ object TransformationType extends Enumeration {
   type TransformationType = Value
 
   // @formatter:off
-  val SIMPLE: TransformationType = Value("simple")
+  val SIMPLE_AIP: TransformationType = Value("simple-AIP")
+  val SIMPLE_SIP: TransformationType = Value("simple-SIP")
   val THEMA: TransformationType = Value("thematische-collectie")
   // @formatter:on
 }

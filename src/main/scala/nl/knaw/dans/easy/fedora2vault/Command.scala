@@ -16,6 +16,7 @@
 package nl.knaw.dans.easy.fedora2vault
 
 import better.files.File
+import nl.knaw.dans.easy.fedora2vault.OutputFormat._
 import nl.knaw.dans.easy.fedora2vault.TransformationType._
 import nl.knaw.dans.easy.fedora2vault.check._
 import nl.knaw.dans.lib.error._
@@ -50,13 +51,13 @@ object Command extends App with DebugEnhancedLogging {
     lazy val writer = commandLine.logFile().newFileWriter(append = true)
     lazy val outputDir = commandLine.outputDir()
 
-    commandLine.transformation() match {
-      case SIMPLE_SIP =>
+    (commandLine.transformation(), commandLine.outputFormat()) match {
+      case (SIMPLE, AIP) =>
         // TODO construct a SIP in a staging directory, on success move to outputDir
-        Failure(new NotImplementedError(s"transformation type $SIMPLE_SIP is not implemented"))
-      case SIMPLE_AIP => app
+        Failure(new NotImplementedError(s"simple SIP is not implemented"))
+      case (SIMPLE, SIP) => app
         .simpleTransForms(ids, outputDir, strict, writer)(SimpleChecker(app.bagIndex))
-      case THEMA => app
+      case (THEMA, _) => app
         .simpleTransForms(ids, outputDir, strict, writer)(ThemaChecker(app.bagIndex))
     }
   }.map(msg => s"$msg, for details see ${ commandLine.logFile().toJava.getAbsolutePath }")

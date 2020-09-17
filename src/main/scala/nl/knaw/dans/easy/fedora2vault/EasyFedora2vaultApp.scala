@@ -70,7 +70,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       case t: FedoraClientException if t.getStatus != 404 => Failure(t)
       case t: Exception if t.isInstanceOf[IOException] => Failure(t)
       case t => Success(CsvRecord(
-        datasetId, UUID.fromString(bagDir.name), doi = "", depositor = "", SIMPLE_AIP.toString, s"FAILED: $t"
+        datasetId, UUID.fromString(bagDir.name), doi = "", depositor = "", SIMPLE.toString, s"FAILED: $t"
       ))
     }
       .doIfSuccess(_.print(printer))
@@ -136,7 +136,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       UUID.fromString(bagDir.name),
       doi,
       depositor,
-      transformationType = maybeTransformationViolations.map(_ => "not strict simple").getOrElse(SIMPLE_AIP.toString),
+      transformationType = maybeTransformationViolations.map(_ => "not strict simple").getOrElse(SIMPLE.toString),
       maybeTransformationViolations.getOrElse("OK"),
     )
   }

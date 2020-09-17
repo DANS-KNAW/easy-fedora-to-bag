@@ -15,11 +15,11 @@
  */
 package nl.knaw.dans.easy.fedora2vault
 
-object TransformationType extends Enumeration {
-  type TransformationType = Value
+object OutputFormat extends Enumeration {
+  type OutputFormat = Value
 
   // @formatter:off
-  val SIMPLE: TransformationType = Value("simple")
-  val THEMA: TransformationType = Value("thematische-collectie")
+  val AIP: OutputFormat = Value("AIP")
+  val SIP: OutputFormat = Value("SIP")
   // @formatter:on
 }

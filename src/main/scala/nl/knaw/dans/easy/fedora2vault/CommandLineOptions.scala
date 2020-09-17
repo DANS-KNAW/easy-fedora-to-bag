@@ -19,6 +19,7 @@ import java.nio.file.{ Path, Paths }
 
 import better.files.File
 import nl.knaw.dans.easy.fedora2vault.TransformationType.TransformationType
+import nl.knaw.dans.easy.fedora2vault.OutputFormat.OutputFormat
 import org.rogach.scallop.{ ScallopConf, ScallopOption, ValueConverter, singleArgConverter }
 
 import scala.xml.Properties
@@ -28,7 +29,7 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   editBuilder(_.setHelpWidth(110))
   printedName = "easy-fedora2vault"
   version(configuration.version)
-  val description: String = s"""Tool for exporting datasets from Fedora and constructing Information Packages."""
+  val description: String = s"""Tool for exporting datasets from Fedora and constructing Archival/Submission Information Packages."""
   val synopsis: String =
     s"""
        |  easy-fedora2vault {-d <dataset-id> | -i <dataset-ids-file>} [-o <staged-AIP-dir>] [-u <depositor>] [-s] [-l <log-file>] <transformation>
@@ -47,6 +48,7 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
        |""".stripMargin)
 
   implicit val transformationTypeConverter: ValueConverter[TransformationType] = singleArgConverter(TransformationType.withName)
+  implicit val outputFormatConverter: ValueConverter[OutputFormat] = singleArgConverter(OutputFormat.withName)
 
   val datasetId: ScallopOption[DatasetId] = opt(name = "datasetId", short = 'd',
     descr = "A single easy-dataset-id to be transformed. Use either this or the input-file argument")
@@ -56,6 +58,8 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   private val outputDirPath: ScallopOption[Path] = opt(name = "output-dir", short = 'o', required = true,
     descr = "Empty directory in which to stage the created IPs. It will be created if it doesn't exist.")
   val outputDir: ScallopOption[File] = outputDirPath.map(File(_))
+  val outputFormat: ScallopOption[OutputFormat] = opt(name = "output-format", short = 'f',
+    descr = OutputFormat.values.mkString("Output format: ",", ",". Only required for transformation type simple."))
   val depositor: ScallopOption[Depositor] = opt(name = "depositor", short = 'u',
     descr = "The depositor for these datasets. If provided, only datasets from this depositor are transformed.")
   private val logFilePath: ScallopOption[Path] = opt(name = "log-file", short = 'l',

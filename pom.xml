@@ -30,7 +30,7 @@
     <version>1.0.2-SNAPSHOT</version>
 
     <name>EASY Fedora2vault</name>
-    <description>Tool for exporting datasets from Fedora and constructing Information Packages.</description>
+    <description>Tool for exporting datasets from Fedora and constructing Archival/Submission Information Packages.</description>
     <url>https://github.com/DANS-KNAW/easy-fedora2vault</url>
     <inceptionYear>2020</inceptionYear>
 

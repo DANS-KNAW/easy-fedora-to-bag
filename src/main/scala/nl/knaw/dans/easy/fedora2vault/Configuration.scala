@@ -27,6 +27,7 @@ case class Configuration(version: String,
                          fedoraCredentials: FedoraCredentials,
                          ldapEnv: LdapEnv,
                          bagIndexUrl: URI,
+                         stagingDir: File,
                         )
 
 object Configuration {
@@ -57,6 +58,7 @@ object Configuration {
         put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
       },
       new URI(properties.getString("bag-index.url")),
+      File(properties.getString("staging.dir")),
     )
   }
 }

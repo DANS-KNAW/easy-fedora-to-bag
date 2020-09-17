@@ -47,7 +47,7 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
     override lazy val fedoraProvider: FedoraProvider = mock[FedoraProvider]
     override lazy val ldapContext: InitialLdapContext = mock[MockedLdapContext]
     override lazy val bagIndex: BagIndex = mockedBagIndex
-    val simpleChecker: SimpleChecker = SimpleChecker(bagIndex)
+    val simpleChecker: SimpleChecker = new SimpleChecker(bagIndex)
   }
 
   private class OverriddenApp extends MockedApp {

@@ -52,13 +52,19 @@ object Command extends App with DebugEnhancedLogging {
     lazy val outputDir = commandLine.outputDir()
 
     (commandLine.transformation(), commandLine.outputFormat()) match {
+      case (SIMPLE, AIP) if commandLine.strictMode() =>
+        // TODO we would need a TargetIndex trait with BagIndex and DataverseIndex as implementations
+        Failure(new NotImplementedError(s"strict mode for SIPs would exclude datasets in the vault for dataverse"))
       case (SIMPLE, AIP) =>
-        // TODO construct a SIP in a staging directory, on success move to outputDir
+        // TODO construct SIPs in a staging directory, move completed SIPs to outputDir,
         Failure(new NotImplementedError(s"simple SIP is not implemented"))
       case (SIMPLE, SIP) => app
-        .simpleTransForms(ids, outputDir, strict, writer)(SimpleChecker(app.bagIndex))
-      case (THEMA, _) => app
-        .simpleTransForms(ids, outputDir, strict, writer)(ThemaChecker(app.bagIndex))
+        .simpleTransForms(ids, outputDir, strict, writer)(new SimpleChecker(app.bagIndex))
+      case (THEMA, SIP) => app
+        .simpleTransForms(ids, outputDir, strict, writer)(new ThemaChecker(app.bagIndex))
+      case (THEMA, _) =>
+        Failure(new NotImplementedError(s"Only AIPs for 'theamtische collecties'"))
+
     }
   }.map(msg => s"$msg, for details see ${ commandLine.logFile().toJava.getAbsolutePath }")
 }

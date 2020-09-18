@@ -64,16 +64,18 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
     val depositDir = (configuration.stagingDir / uuid).createDirectories()
     val triedCsvRecord = for {
       csvRecord <- simpleAip(datasetId, depositDir / "bag", strict, filter)
-      _ = (depositDir / "deposit.properties").write("") // TODO
+      _ <- DepositProperties.create(depositDir, csvRecord)
       _ = depositDir.moveTo(outputDir / uuid)(CopyOptions.atomically)
     } yield csvRecord
     errorHandling(printer, triedCsvRecord, datasetId, depositDir)
   }
 
   def simpleAips(input: Iterator[DatasetId], outputDir: File, strict: Boolean, filter: Filter)
-                (printer: CSVPrinter): Try[FeedBackMessage] = input
-    .map(simpleAip(_, outputDir / UUID.randomUUID.toString, strict, printer, filter))
-    .failFastOr(Success("no fedora/IO errors"))
+                (printer: CSVPrinter): Try[FeedBackMessage] = {
+    input
+      .map(simpleAip(_, outputDir / UUID.randomUUID.toString, strict, printer, filter))
+      .failFastOr(Success("no fedora/IO errors"))
+  }
 
   private def simpleAip(datasetId: DatasetId, bagDir: File, strict: Boolean, printer: CSVPrinter, filter: Filter): Try[Any] = {
     val triedCsvRecord = simpleAip(datasetId, bagDir, strict, filter)

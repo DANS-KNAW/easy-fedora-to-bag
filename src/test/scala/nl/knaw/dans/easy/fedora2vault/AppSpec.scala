@@ -65,13 +65,13 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
           Failure(new Exception(datasetId))
         case _ =>
           outputDir.createFile().writeText(datasetId)
-          Success(CsvRecord(datasetId, UUID.randomUUID(), "", "", "simple", "OK"))
+          Success(CsvRecord(datasetId, UUID.randomUUID(), doi = "testDOI", depositor = "testUser", transformationType = "simple", comment = "OK"))
       }
     }
   }
 
   "simpleSips" should "report success" in {
-    val ids = Iterator("success:1", "notSimple:3", "success:2")
+    val ids = Iterator("success:1", "notSimple:1", "success:1")
     val outputDir = (testDir / "output").createDirectories()
     val app = new OverriddenApp(Configuration(null, null, null, null, testDir / "staging"))
     val printer = CsvRecord.csvFormat.print(new StringWriter()) // content verified with simpleTransforms
@@ -81,7 +81,19 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
     val files = outputDir.listRecursively.toSeq
     files should have length 6 // two directories plus two files each
     files.filter(_.name == "bag") should have length 2
-    files.filter(_.name == "deposit.properties") should have length 2
+    val props = files.filter(_.name == "deposit.properties")
+    props should have length 2
+    props.map(linesWithoutTimestamp).toList.distinct shouldBe List(
+      """state.label = SUBMITTED
+        |state.description = Deposit is valid and ready for post-submission processing
+        |depositor.userId = testUser
+        |identifier.doi = testDOI
+        |identifier.fedora = success:1
+        |deposit.origin = easy-fedora2vault""".stripMargin)
+  }
+
+  private def linesWithoutTimestamp(file: File) = {
+    file.contentAsString.split("\n").filterNot(_.contains("timestamp")).mkString("\n")
   }
 
   "simpleAips" should "report success" in {
@@ -92,8 +104,8 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
     app.simpleAips(ids, outputDir, strict = true, app.filter)(CsvRecord.csvFormat.print(sw)) shouldBe Success("no fedora/IO errors")
     sw.toString should (fullyMatch regex
       """easyDatasetId,uuid,doi,depositor,transformationType,comment
-        |success:1,.*,,,simple,OK
-        |success:2,.*,,,simple,OK
+        |success:1,.*,testDOI,testUser,simple,OK
+        |success:2,.*,testDOI,testUser,simple,OK
         |""".stripMargin
       )
     outputDir.listRecursively.toSeq should have length 2
@@ -109,10 +121,10 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
     }
     sw.toString should (fullyMatch regex
       """easyDatasetId,uuid,doi,depositor,transformationType,comment
-        |success:1,.*,,,simple,OK
+        |success:1,.*,testDOI,testUser,simple,OK
         |failure:2,.*,,,simple,FAILED: java.lang.Exception: failure:2
         |notSimple:3,.*,,,simple,FAILED: .*InvalidTransformationException: mocked
-        |success:4,.*,,,simple,OK
+        |success:4,.*,testDOI,testUser,simple,OK
         |""".stripMargin
       )
     outputDir.list.toSeq should have length 4

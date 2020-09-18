@@ -25,14 +25,14 @@ import org.apache.commons.csv.{ CSVFormat, CSVPrinter }
 import scala.util.Try
 
 case class CsvRecord(easyDatasetId: DatasetId,
-                     bagUUID: UUID,
+                     ipUUID: UUID,
                      doi: String,
                      depositor: Depositor,
                      transformationType: String,
                      comment: String,
                     ) {
   def print(implicit printer: CSVPrinter): Try[FeedBackMessage] = Try {
-    printer.printRecord(easyDatasetId, bagUUID, doi, depositor, transformationType, comment)
+    printer.printRecord(easyDatasetId, ipUUID, doi, depositor, transformationType, comment)
     comment
   }
 }

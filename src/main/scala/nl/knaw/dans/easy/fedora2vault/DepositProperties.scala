@@ -27,7 +27,6 @@ object DepositProperties {
   private val dateTimeFormatter = ISODateTimeFormat.dateTimeNoMillis()
 
   def create(depositDir: File, csvRecord: CsvRecord): Try[Unit] = Try {
-
     val nowWithoutMillis: DatasetId = {
       val now = DateTime.now(UTC)
       now.minusMillis(now.millisOfSecond().get())

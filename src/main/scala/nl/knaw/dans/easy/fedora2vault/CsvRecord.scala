@@ -19,7 +19,7 @@ import java.io.IOException
 import java.util.UUID
 
 import better.files.{ Dispose, File }
-import nl.knaw.dans.easy.fedora2vault.Command.{ FeedBackMessage, commandLine }
+import nl.knaw.dans.easy.fedora2vault.Command.FeedBackMessage
 import org.apache.commons.csv.{ CSVFormat, CSVPrinter }
 
 import scala.util.Try

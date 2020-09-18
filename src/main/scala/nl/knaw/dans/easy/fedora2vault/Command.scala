@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.easy.fedora2vault
 
-import better.files.{ Dispose, File }
+import better.files.File
 import nl.knaw.dans.easy.fedora2vault.OutputFormat._
 import nl.knaw.dans.easy.fedora2vault.TransformationType._
 import nl.knaw.dans.easy.fedora2vault.filter._

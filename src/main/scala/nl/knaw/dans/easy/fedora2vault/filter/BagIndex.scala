@@ -17,9 +17,9 @@ package nl.knaw.dans.easy.fedora2vault.filter
 
 import java.io.IOException
 import java.net.URI
-import nl.knaw.dans.easy.fedora2vault._
 
 import better.files.StringExtensions
+import nl.knaw.dans.easy.fedora2vault._
 import scalaj.http.{ Http, HttpResponse }
 
 import scala.util.{ Failure, Try }

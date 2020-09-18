@@ -18,8 +18,8 @@ package nl.knaw.dans.easy.fedora2vault
 import java.nio.file.{ Path, Paths }
 
 import better.files.File
-import nl.knaw.dans.easy.fedora2vault.TransformationType.TransformationType
 import nl.knaw.dans.easy.fedora2vault.OutputFormat.OutputFormat
+import nl.knaw.dans.easy.fedora2vault.TransformationType.TransformationType
 import org.rogach.scallop.{ ScallopConf, ScallopOption, ValueConverter, singleArgConverter }
 
 import scala.xml.Properties
@@ -59,7 +59,7 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
     descr = "Empty directory in which to stage the created IPs. It will be created if it doesn't exist.")
   val outputDir: ScallopOption[File] = outputDirPath.map(File(_))
   val outputFormat: ScallopOption[OutputFormat] = opt(name = "output-format", short = 'f',
-    descr = OutputFormat.values.mkString("Output format: ",", ",". Only required for transformation type simple."))
+    descr = OutputFormat.values.mkString("Output format: ", ", ", ". Only required for transformation type simple."))
   val depositor: ScallopOption[Depositor] = opt(name = "depositor", short = 'u',
     descr = "The depositor for these datasets. If provided, only datasets from this depositor are transformed.")
   private val logFilePath: ScallopOption[Path] = opt(name = "log-file", short = 'l',
@@ -69,7 +69,7 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   val strictMode: ScallopOption[Boolean] = opt(name = "strict", short = 's',
     descr = "If provided, the transformation will check whether the datasets adhere to the requirements of the chosen transformation.")
   val transformation: ScallopOption[TransformationType] = trailArg(name = "transformation",
-    descr = TransformationType.values.mkString("The type of transformation used: ",", ","."))
+    descr = TransformationType.values.mkString("The type of transformation used: ", ", ", "."))
 
   requireOne(datasetId, inputPath)
 

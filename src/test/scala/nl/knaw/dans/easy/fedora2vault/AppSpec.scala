@@ -70,7 +70,7 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
     }
   }
 
-  "simpleSips" should "report success" in pendingUntilFixed {
+  "simpleSips" should "report success" in {
     val ids = Iterator("success:1", "notSimple:3", "success:2")
     val outputDir = (testDir / "output").createDirectories()
     val app = new OverriddenApp(Configuration(null, null, null, null, testDir / "staging"))

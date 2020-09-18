@@ -52,17 +52,23 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
   private val emdUnmarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
 
   def simpleSips(input: Iterator[DatasetId], outputDir: File, strict: Boolean, filter: Filter)
-                (printer: CSVPrinter): Try[FeedBackMessage] = input
-    .map { datasetId =>
-      val uuid = UUID.randomUUID.toString
-      val depositDir = (configuration.stagingDir / uuid).createDirectories()
-      for {
-        _ <- simpleTransform(datasetId, depositDir / UUID.randomUUID.toString, strict, printer, filter)
-        _ = (depositDir / "deposit.properties").write("") // TODO
-        _ = depositDir.moveTo(outputDir / uuid)(CopyOptions.atomically)
-      } yield ()
-    }
-    .failFastOr(Success("no fedora/IO errors"))
+                (printer: CSVPrinter): Try[FeedBackMessage] = {
+    input
+      .map(simpleSip(outputDir, strict, filter, printer))
+      .failFastOr(Success("no fedora/IO errors"))
+  }
+
+  private def simpleSip(outputDir: File, strict: Boolean, filter: Filter, printer: CSVPrinter)
+                       (datasetId: DatasetId): Try[CsvRecord] = {
+    val uuid = UUID.randomUUID.toString
+    val depositDir = (configuration.stagingDir / uuid).createDirectories()
+    val triedCsvRecord = for {
+      csvRecord <- simpleTransform(datasetId, depositDir / "bag", strict, filter)
+      _ = (depositDir / "deposit.properties").write("") // TODO
+      _ = depositDir.moveTo(outputDir / uuid)(CopyOptions.atomically)
+    } yield csvRecord
+    errorHandling(printer, triedCsvRecord, datasetId, depositDir)
+  }
 
   def simpleTransForms(input: Iterator[DatasetId], outputDir: File, strict: Boolean, filter: Filter)
                       (printer: CSVPrinter): Try[FeedBackMessage] = input
@@ -70,17 +76,22 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
     .failFastOr(Success("no fedora/IO errors"))
 
   private def simpleTransform(datasetId: DatasetId, bagDir: File, strict: Boolean, printer: CSVPrinter, filter: Filter): Try[Any] = {
-    simpleTransform(datasetId, bagDir, strict, filter)
+    val triedCsvRecord = simpleTransform(datasetId, bagDir, strict, filter)
+    errorHandling(printer, triedCsvRecord, datasetId, bagDir)
+  }
+
+  private def errorHandling(printer: CSVPrinter, triedCsvRecord: Try[CsvRecord], datasetId: DatasetId, ipDir: File) = {
+    triedCsvRecord
       .doIfFailure {
-        case t: InvalidTransformationException => logger.warn(s"$datasetId -> $bagDir failed: ${ t.getMessage }")
-      }.recoverWith {
-      case t: FedoraClientException if t.getStatus != 404 => Failure(t)
-      case t: Exception if t.isInstanceOf[IOException] => Failure(t)
-      case t => Success(CsvRecord(
-        datasetId, UUID.fromString(bagDir.name), doi = "", depositor = "", SIMPLE.toString, s"FAILED: $t"
-      ))
-    }
-      .doIfSuccess(_.print(printer))
+        case t: InvalidTransformationException => logger.warn(s"$datasetId -> $ipDir failed: ${ t.getMessage }")
+      }
+      .recoverWith {
+        case t: FedoraClientException if t.getStatus != 404 => Failure(t)
+        case t: Exception if t.isInstanceOf[IOException] => Failure(t)
+        case t => Success(CsvRecord(
+          datasetId, UUID.fromString(ipDir.name), doi = "", depositor = "", SIMPLE.toString, s"FAILED: $t"
+        ))
+      }.doIfSuccess(_.print(printer))
   }
 
   def simpleTransform(datasetId: DatasetId, bagDir: File, strict: Boolean, filter: Filter): Try[CsvRecord] = {

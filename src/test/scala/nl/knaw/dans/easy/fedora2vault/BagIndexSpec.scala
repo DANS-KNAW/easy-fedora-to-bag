@@ -25,22 +25,22 @@ class BagIndexSpec extends TestSupportFixture with BagIndexSupport with MockFact
 
   "bagInfoByDoi" should "return None" in {
     mockBagIndexRespondsWith(body = "", code = 404)
-      .bagInfoByDoi("") shouldBe Success(None)
+      .getByDoi("") shouldBe Success(None)
   }
 
   it should "return also None" in {
     mockBagIndexRespondsWith(body = "<result/>", code = 200)
-      .bagInfoByDoi("") shouldBe Success(None)
+      .getByDoi("") shouldBe Success(None)
   }
 
   it should "return Some" in {
     mockBagIndexRespondsWith(body = "<result><bag-info>blabla</bag-info></result>", code = 200)
-      .bagInfoByDoi("") shouldBe Success(Some("<bag-info>blabla</bag-info>"))
+      .getByDoi("") shouldBe Success(Some("<bag-info>blabla</bag-info>"))
   }
 
   it should "return SAXParseException" in {
     mockBagIndexRespondsWith(body = "", code = 200)
-      .bagInfoByDoi("") should matchPattern {
+      .getByDoi("") should matchPattern {
       case Failure(e: SAXParseException) if e.getMessage ==
         "Premature end of file." =>
     }
@@ -48,7 +48,7 @@ class BagIndexSpec extends TestSupportFixture with BagIndexSupport with MockFact
 
   it should "return not expected response code" in {
     mockBagIndexRespondsWith(body = "", code = 300)
-      .bagInfoByDoi("") should matchPattern {
+      .getByDoi("") should matchPattern {
       case Failure(e: Exception) if e.getMessage ==
         "Not expected response code from bag-index. url='https://does.not.exist.dans.knaw.nl:20120/search', doi='', response: 300 - " =>
     }

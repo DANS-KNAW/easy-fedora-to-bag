@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.fedora2vault.check
+package nl.knaw.dans.easy.fedora2vault.filter
 
-import nl.knaw.dans.easy.fedora2vault.BagIndex
+import scala.util.{ Success, Try }
 
-class SimpleChecker(override val bagIndex: BagIndex) extends TransformationChecker {
-  override def forbiddenTitle(title: String): Boolean = {
-    title.toLowerCase.contains("thematische collectie")
-  }
+class TargetIndex {
+
+  // override to check for existence in an external source
+  def getByDoi(doi: String): Try[Option[String]] = Success(None)
 }

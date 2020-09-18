@@ -13,10 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.fedora2vault.check
+package nl.knaw.dans.easy.fedora2vault.filter
 
-import nl.knaw.dans.easy.fedora2vault.BagIndex
-
-class ThemaChecker(override val bagIndex: BagIndex) extends SimpleChecker(bagIndex) {
+class ThemaFilter(override val targetIndex: BagIndex) extends SimpleFilter(targetIndex) {
   override def forbiddenTitle(title: String): Boolean = !super.forbiddenTitle(title)
 }

@@ -23,7 +23,7 @@ import com.yourmediashelf.fedora.client.FedoraClientException
 import javax.naming.NamingEnumeration
 import javax.naming.directory.{ BasicAttributes, SearchControls, SearchResult }
 import javax.naming.ldap.InitialLdapContext
-import nl.knaw.dans.easy.fedora2vault.check.{ InvalidTransformationException, SimpleChecker, TransformationChecker }
+import nl.knaw.dans.easy.fedora2vault.filter.{ BagIndex, Filter, InvalidTransformationException, SimpleFilter }
 import nl.knaw.dans.easy.fedora2vault.fixture.{ AudienceSupport, BagIndexSupport, FileSystemSupport, TestSupportFixture }
 import org.scalamock.scalatest.MockFactory
 import resource.managed
@@ -47,13 +47,13 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
     override lazy val fedoraProvider: FedoraProvider = mock[FedoraProvider]
     override lazy val ldapContext: InitialLdapContext = mock[MockedLdapContext]
     override lazy val bagIndex: BagIndex = mockedBagIndex
-    val simpleChecker: SimpleChecker = new SimpleChecker(bagIndex)
+    val simpleChecker: SimpleFilter = new SimpleFilter(bagIndex)
   }
 
   private class OverriddenApp extends MockedApp {
     /** overrides the method called by the method under test */
     override def simpleTransform(datasetId: DatasetId, outputDir: File, strict: Boolean)
-                                (implicit transformationChecker: TransformationChecker): Try[CsvRecord] = {
+                                (implicit transformationChecker: Filter): Try[CsvRecord] = {
       datasetId match {
         case _ if datasetId.startsWith("fatal") =>
           Failure(new FedoraClientException(300, "mocked exception"))
@@ -97,7 +97,7 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
       """easyDatasetId,uuid,doi,depositor,transformationType,comment
         |success:1,.*,,,simple,OK
         |failure:2,.*,,,simple,FAILED: java.lang.Exception: failure:2
-        |notSimple:3,.*,,,simple,FAILED: nl.knaw.dans.easy.fedora2vault.check.InvalidTransformationException: mocked
+        |notSimple:3,.*,,,simple,FAILED: .*InvalidTransformationException: mocked
         |success:4,.*,,,simple,OK
         |""".stripMargin
       )

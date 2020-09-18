@@ -18,7 +18,7 @@ package nl.knaw.dans.easy.fedora2vault
 import java.net.URI
 
 import com.typesafe.scalalogging.Logger
-import nl.knaw.dans.easy.fedora2vault.check.{ SimpleChecker, ThemaChecker }
+import nl.knaw.dans.easy.fedora2vault.filter.{ BagIndex, SimpleFilter, ThemaFilter }
 import nl.knaw.dans.easy.fedora2vault.fixture.{ BagIndexSupport, EmdSupport, TestSupportFixture }
 import org.scalamock.scalatest.MockFactory
 import org.slf4j.{ Logger => UnderlyingLogger }
@@ -26,7 +26,7 @@ import org.slf4j.{ Logger => UnderlyingLogger }
 import scala.util.Success
 import scala.xml.Elem
 
-class TransformationCheckerSpec extends TestSupportFixture with BagIndexSupport with MockFactory with EmdSupport {
+class FilterSpec extends TestSupportFixture with BagIndexSupport with MockFactory with EmdSupport {
 
   private class MockedBagIndex extends BagIndex(new URI("http://localhost:20120/"))
 
@@ -155,7 +155,7 @@ class TransformationCheckerSpec extends TestSupportFixture with BagIndexSupport 
       (mockLogger.warn(_: String)) expects s once()
     )
 
-    new SimpleChecker(bagIndex) {
+    new SimpleFilter(bagIndex) {
       override lazy val logger: Logger = Logger(mockLogger)
     }
   }
@@ -169,7 +169,7 @@ class TransformationCheckerSpec extends TestSupportFixture with BagIndexSupport 
       (mockLogger.warn(_: String)) expects s once()
     )
 
-    new ThemaChecker(bagIndex) {
+    new ThemaFilter(bagIndex) {
       override lazy val logger: Logger = Logger(mockLogger)
     }
   }

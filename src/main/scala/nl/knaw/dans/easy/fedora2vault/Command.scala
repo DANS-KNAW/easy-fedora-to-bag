@@ -18,7 +18,7 @@ package nl.knaw.dans.easy.fedora2vault
 import better.files.File
 import nl.knaw.dans.easy.fedora2vault.OutputFormat._
 import nl.knaw.dans.easy.fedora2vault.TransformationType._
-import nl.knaw.dans.easy.fedora2vault.check._
+import nl.knaw.dans.easy.fedora2vault.filter._
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
@@ -52,19 +52,14 @@ object Command extends App with DebugEnhancedLogging {
     lazy val outputDir = commandLine.outputDir()
 
     (commandLine.transformation(), commandLine.outputFormat()) match {
-      case (SIMPLE, AIP) if commandLine.strictMode() =>
-        // TODO we would need a TargetIndex trait with BagIndex and DataverseIndex as implementations
-        Failure(new NotImplementedError(s"strict mode for SIPs would exclude datasets in the vault for dataverse"))
-      case (SIMPLE, AIP) =>
-        // TODO construct SIPs in a staging directory, move completed SIPs to outputDir,
-        Failure(new NotImplementedError(s"simple SIP is not implemented"))
-      case (SIMPLE, SIP) => app
-        .simpleTransForms(ids, outputDir, strict, writer)(new SimpleChecker(app.bagIndex))
-      case (THEMA, SIP) => app
-        .simpleTransForms(ids, outputDir, strict, writer)(new ThemaChecker(app.bagIndex))
-      case (THEMA, _) =>
-        Failure(new NotImplementedError(s"Only AIPs for 'theamtische collecties'"))
-
+      case (SIMPLE, SIP) =>
+        app.simpleSips(ids, outputDir, strict, writer)(new SimpleFilter(new TargetIndex()))
+      case (SIMPLE, AIP) => app
+        .simpleTransForms(ids, outputDir, strict, writer)(new SimpleFilter(app.bagIndex))
+      case (THEMA, AIP) => app
+        .simpleTransForms(ids, outputDir, strict, writer)(new ThemaFilter(app.bagIndex))
+      case tuple =>
+        Failure(new NotImplementedError(s"$tuple not implemented"))
     }
   }.map(msg => s"$msg, for details see ${ commandLine.logFile().toJava.getAbsolutePath }")
 }

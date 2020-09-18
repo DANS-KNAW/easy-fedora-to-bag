@@ -13,23 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.fedora2vault.fixture
+package nl.knaw.dans.easy.fedora2vault.filter
 
-import java.net.URI
-
-import nl.knaw.dans.easy.fedora2vault.filter.BagIndex
-import scalaj.http.HttpResponse
-
-trait BagIndexSupport {
-  /**
-   * Limited to test scenarios where the BagIndex service
-   * always gives the the same response
-   */
-  def mockBagIndexRespondsWith(body: String, code: Int): BagIndex = {
-    new BagIndex(new URI("https://does.not.exist.dans.knaw.nl:20120")) {
-      override def execute(doi: String): HttpResponse[String] = {
-        new HttpResponse[String](body, code, headers = Map.empty)
-      }
-    }
+class SimpleFilter(override val targetIndex: TargetIndex) extends Filter {
+  override def forbiddenTitle(title: String): Boolean = {
+    title.toLowerCase.contains("thematische collectie")
   }
 }

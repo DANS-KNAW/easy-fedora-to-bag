@@ -31,12 +31,13 @@ import nl.knaw.dans.easy.fedora2vault.Command.FeedBackMessage
 import nl.knaw.dans.easy.fedora2vault.FileItem.{ checkNotImplemented, filesXml }
 import nl.knaw.dans.easy.fedora2vault.FoXml.{ getEmd, _ }
 import nl.knaw.dans.easy.fedora2vault.TransformationType._
-import nl.knaw.dans.easy.fedora2vault.check._
+import nl.knaw.dans.easy.fedora2vault.filter._
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import nl.knaw.dans.pf.language.emd.EasyMetadataImpl
 import nl.knaw.dans.pf.language.emd.binding.EmdUnmarshaller
 import org.apache.commons.csv.CSVPrinter
+import org.apache.commons.lang.NotImplementedException
 import org.joda.time.DateTime
 
 import scala.collection.JavaConverters._
@@ -46,23 +47,39 @@ import scala.xml.{ Elem, Node }
 class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLogging {
   lazy val fedoraProvider: FedoraProvider = new FedoraProvider(new FedoraClient(configuration.fedoraCredentials))
   lazy val ldapContext: InitialLdapContext = new InitialLdapContext(configuration.ldapEnv, null)
-  lazy val bagIndex: BagIndex = BagIndex(configuration.bagIndexUrl)
+  lazy val bagIndex: BagIndex = filter.BagIndex(configuration.bagIndexUrl)
   private lazy val ldap = new Ldap(ldapContext)
   private val emdUnmarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
 
   def simpleTransForms(datasetIds: Iterator[DatasetId], outputDir: File, strict: Boolean, writer: Writer)
-                      (implicit transformationChecker: TransformationChecker): Try[FeedBackMessage] = {
+                      (implicit transformationChecker: Filter): Try[FeedBackMessage] = {
     new Dispose(CsvRecord.csvFormat.print(writer))
       .apply(simpleTransForms(_, datasetIds, outputDir, strict))
   }
 
+  def simpleSips(datasetIds: Iterator[DatasetId], outputDir: File, strict: Boolean, writer: Writer)
+                (implicit transformationChecker: Filter): Try[FeedBackMessage] = {
+    new Dispose(CsvRecord.csvFormat.print(writer))
+      .apply(simpleSips(_, datasetIds, outputDir, strict))
+  }
+
+  private def simpleSips(printer: CSVPrinter, input: Iterator[DatasetId], outputDir: File, strict: Boolean)
+                        (implicit transformationChecker: Filter): Try[FeedBackMessage] = input
+    .map { datasetId =>
+      val uuid = UUID.randomUUID.toString
+      simpleTransform(datasetId, configuration.stagingDir / uuid / "bag", strict, printer)
+      // TODO
+      throw new NotImplementedException(s"add deposit.properties, atomic move to $outputDir/$uuid")
+    }
+    .failFastOr(Success("no fedora/IO errors"))
+
   private def simpleTransForms(printer: CSVPrinter, input: Iterator[DatasetId], outputDir: File, strict: Boolean)
-                              (implicit transformationChecker: TransformationChecker): Try[FeedBackMessage] = input
+                              (implicit transformationChecker: Filter): Try[FeedBackMessage] = input
     .map(simpleTransform(_, outputDir / UUID.randomUUID.toString, strict, printer))
     .failFastOr(Success("no fedora/IO errors"))
 
   private def simpleTransform(datasetId: DatasetId, bagDir: File, strict: Boolean, printer: CSVPrinter)
-                             (implicit transformationChecker: TransformationChecker): Try[Any] = {
+                             (implicit transformationChecker: Filter): Try[Any] = {
     simpleTransform(datasetId, bagDir, strict)
       .doIfFailure {
         case t: InvalidTransformationException => logger.warn(s"$datasetId -> $bagDir failed: ${ t.getMessage }")
@@ -77,7 +94,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
   }
 
   def simpleTransform(datasetId: DatasetId, bagDir: File, strict: Boolean)
-                     (implicit transformationChecker: TransformationChecker): Try[CsvRecord] = {
+                     (implicit transformationChecker: Filter): Try[CsvRecord] = {
 
     def managedMetadataStream(foXml: Elem, streamId: String, bag: DansV0Bag, metadataFile: String) = {
       managedStreamLabel(foXml, streamId)

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.fedora2vault.check
+package nl.knaw.dans.easy.fedora2vault.filter
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory.{ OPEN_ACCESS, REQUEST_PERMISSION }
 import nl.knaw.dans.easy.fedora2vault._
@@ -25,13 +25,13 @@ import scala.xml.Node
 
 case class InvalidTransformationException(msg: String) extends Exception(msg)
 
-trait TransformationChecker extends DebugEnhancedLogging {
-  val bagIndex: BagIndex
+trait Filter extends DebugEnhancedLogging {
+  val targetIndex: TargetIndex
 
   def violations(emd: EasyMetadataImpl, ddm: Node, amd: Node, fedoraIDs: Seq[String]): Try[Option[String]] = {
     val maybeDoi = Option(emd.getEmdIdentifier.getDansManagedDoi)
     val triedMaybeVaultResponse: Try[Option[String]] = maybeDoi
-      .map(bagIndex.bagInfoByDoi)
+      .map(targetIndex.getByDoi)
       .getOrElse(Success(None)) // no DOI => no bag found by DOI
     val violations = Seq(
       "1: DANS DOI" -> (if (maybeDoi.isEmpty) Seq("not found")

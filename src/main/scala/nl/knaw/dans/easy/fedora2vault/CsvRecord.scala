@@ -15,9 +15,11 @@
  */
 package nl.knaw.dans.easy.fedora2vault
 
+import java.io.IOException
 import java.util.UUID
 
-import nl.knaw.dans.easy.fedora2vault.Command.FeedBackMessage
+import better.files.{ Dispose, File }
+import nl.knaw.dans.easy.fedora2vault.Command.{ FeedBackMessage, commandLine }
 import org.apache.commons.csv.{ CSVFormat, CSVPrinter }
 
 import scala.util.Try
@@ -41,4 +43,10 @@ object CsvRecord {
     .withDelimiter(',')
     .withRecordSeparator('\n')
     .withAutoFlush(true)
+
+  @throws[IOException]
+  def printer(file: File): Dispose[CSVPrinter] = {
+    val writer = file.newFileWriter(append = true)
+    new Dispose(csvFormat.print(writer))
+  }
 }

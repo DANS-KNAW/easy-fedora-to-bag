@@ -15,8 +15,12 @@
  */
 package nl.knaw.dans.easy.fedora2vault.filter
 
-class SimpleFilter(override val targetIndex: TargetIndex) extends Filter {
+class SimpleFilter(override val targetIndex: TargetIndex = new TargetIndex()) extends Filter {
   override def forbiddenTitle(title: String): Boolean = {
     title.toLowerCase.contains("thematische collectie")
   }
+}
+object SimpleFilter {
+  def apply(targetIndex: TargetIndex = new TargetIndex()) =
+    new SimpleFilter(targetIndex)
 }

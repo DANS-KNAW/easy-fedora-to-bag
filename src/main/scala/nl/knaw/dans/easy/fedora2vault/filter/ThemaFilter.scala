@@ -15,6 +15,6 @@
  */
 package nl.knaw.dans.easy.fedora2vault.filter
 
-class ThemaFilter(override val targetIndex: BagIndex) extends SimpleFilter(targetIndex) {
+case class ThemaFilter(override val targetIndex: BagIndex) extends SimpleFilter(targetIndex) {
   override def forbiddenTitle(title: String): Boolean = !super.forbiddenTitle(title)
 }

@@ -51,36 +51,21 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
   private lazy val ldap = new Ldap(ldapContext)
   private val emdUnmarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
 
-  def simpleTransForms(datasetIds: Iterator[DatasetId], outputDir: File, strict: Boolean, writer: Writer)
-                      (implicit transformationChecker: Filter): Try[FeedBackMessage] = {
-    new Dispose(CsvRecord.csvFormat.print(writer))
-      .apply(simpleTransForms(_, datasetIds, outputDir, strict))
-  }
-
-  def simpleSips(datasetIds: Iterator[DatasetId], outputDir: File, strict: Boolean, writer: Writer)
-                (implicit transformationChecker: Filter): Try[FeedBackMessage] = {
-    new Dispose(CsvRecord.csvFormat.print(writer))
-      .apply(simpleSips(_, datasetIds, outputDir, strict))
-  }
-
-  private def simpleSips(printer: CSVPrinter, input: Iterator[DatasetId], outputDir: File, strict: Boolean)
-                        (implicit transformationChecker: Filter): Try[FeedBackMessage] = input
+  def simpleSips(input: Iterator[DatasetId], outputDir: File, strict: Boolean, filter: Filter)( printer: CSVPrinter): Try[FeedBackMessage] = input
     .map { datasetId =>
       val uuid = UUID.randomUUID.toString
-      simpleTransform(datasetId, configuration.stagingDir / uuid / "bag", strict, printer)
+      simpleTransform(datasetId, configuration.stagingDir / uuid / "bag", strict, printer, filter)
       // TODO
       throw new NotImplementedException(s"add deposit.properties, atomic move to $outputDir/$uuid")
     }
     .failFastOr(Success("no fedora/IO errors"))
 
-  private def simpleTransForms(printer: CSVPrinter, input: Iterator[DatasetId], outputDir: File, strict: Boolean)
-                              (implicit transformationChecker: Filter): Try[FeedBackMessage] = input
-    .map(simpleTransform(_, outputDir / UUID.randomUUID.toString, strict, printer))
+  def simpleTransForms(input: Iterator[DatasetId], outputDir: File, strict: Boolean, transformationChecker: Filter)( printer: CSVPrinter): Try[FeedBackMessage] = input
+    .map(simpleTransform(_, outputDir / UUID.randomUUID.toString, strict, printer, transformationChecker))
     .failFastOr(Success("no fedora/IO errors"))
 
-  private def simpleTransform(datasetId: DatasetId, bagDir: File, strict: Boolean, printer: CSVPrinter)
-                             (implicit transformationChecker: Filter): Try[Any] = {
-    simpleTransform(datasetId, bagDir, strict)
+  private def simpleTransform(datasetId: DatasetId, bagDir: File, strict: Boolean, printer: CSVPrinter, filter: Filter): Try[Any] = {
+    simpleTransform(datasetId, bagDir, strict, filter)
       .doIfFailure {
         case t: InvalidTransformationException => logger.warn(s"$datasetId -> $bagDir failed: ${ t.getMessage }")
       }.recoverWith {
@@ -93,8 +78,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       .doIfSuccess(_.print(printer))
   }
 
-  def simpleTransform(datasetId: DatasetId, bagDir: File, strict: Boolean)
-                     (implicit transformationChecker: Filter): Try[CsvRecord] = {
+  def simpleTransform(datasetId: DatasetId, bagDir: File, strict: Boolean, transformationChecker: Filter): Try[CsvRecord] = {
 
     def managedMetadataStream(foXml: Elem, streamId: String, bag: DansV0Bag, metadataFile: String) = {
       managedStreamLabel(foXml, streamId)

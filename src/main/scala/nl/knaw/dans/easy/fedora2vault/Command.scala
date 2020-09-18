@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.easy.fedora2vault
 
-import better.files.File
+import better.files.{ Dispose, File }
 import nl.knaw.dans.easy.fedora2vault.OutputFormat._
 import nl.knaw.dans.easy.fedora2vault.TransformationType._
 import nl.knaw.dans.easy.fedora2vault.filter._
@@ -47,17 +47,17 @@ object Command extends App with DebugEnhancedLogging {
         .lineIterator
         .filterNot(_.startsWith("#"))
       )
-    lazy val strict = commandLine.strictMode()
-    lazy val writer = commandLine.logFile().newFileWriter(append = true)
     lazy val outputDir = commandLine.outputDir()
+    lazy val strict = commandLine.strictMode()
+    lazy val printer = CsvRecord.printer(commandLine.logFile())
 
     (commandLine.transformation(), commandLine.outputFormat()) match {
       case (SIMPLE, SIP) =>
-        app.simpleSips(ids, outputDir, strict, writer)(new SimpleFilter(new TargetIndex()))
-      case (SIMPLE, AIP) => app
-        .simpleTransForms(ids, outputDir, strict, writer)(new SimpleFilter(app.bagIndex))
-      case (THEMA, AIP) => app
-        .simpleTransForms(ids, outputDir, strict, writer)(new ThemaFilter(app.bagIndex))
+        printer.apply(app.simpleSips(ids, outputDir, strict, SimpleFilter()))
+      case (SIMPLE, AIP) =>
+        printer.apply(app.simpleTransForms(ids, outputDir, strict, SimpleFilter(app.bagIndex)))
+      case (THEMA, AIP) =>
+        printer.apply(app.simpleTransForms(ids, outputDir, strict, ThemaFilter(app.bagIndex)))
       case tuple =>
         Failure(new NotImplementedError(s"$tuple not implemented"))
     }

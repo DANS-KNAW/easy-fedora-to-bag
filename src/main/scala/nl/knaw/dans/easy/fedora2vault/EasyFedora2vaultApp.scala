@@ -15,11 +15,12 @@
  */
 package nl.knaw.dans.easy.fedora2vault
 
-import java.io.{ IOException, InputStream, Writer }
+import java.io.{ IOException, InputStream }
 import java.nio.file.Paths
 import java.util.UUID
 
-import better.files.{ Dispose, File, StringExtensions }
+import better.files.File.CopyOptions
+import better.files.{ File, StringExtensions }
 import cats.instances.list._
 import cats.instances.try_._
 import cats.syntax.traverse._
@@ -37,7 +38,6 @@ import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import nl.knaw.dans.pf.language.emd.EasyMetadataImpl
 import nl.knaw.dans.pf.language.emd.binding.EmdUnmarshaller
 import org.apache.commons.csv.CSVPrinter
-import org.apache.commons.lang.NotImplementedException
 import org.joda.time.DateTime
 
 import scala.collection.JavaConverters._
@@ -51,17 +51,22 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
   private lazy val ldap = new Ldap(ldapContext)
   private val emdUnmarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
 
-  def simpleSips(input: Iterator[DatasetId], outputDir: File, strict: Boolean, filter: Filter)( printer: CSVPrinter): Try[FeedBackMessage] = input
+  def simpleSips(input: Iterator[DatasetId], outputDir: File, strict: Boolean, filter: Filter)
+                (printer: CSVPrinter): Try[FeedBackMessage] = input
     .map { datasetId =>
       val uuid = UUID.randomUUID.toString
-      simpleTransform(datasetId, configuration.stagingDir / uuid / "bag", strict, printer, filter)
-      // TODO
-      throw new NotImplementedException(s"add deposit.properties, atomic move to $outputDir/$uuid")
+      val depositDir = (configuration.stagingDir / uuid).createDirectories()
+      for {
+        _ <- simpleTransform(datasetId, depositDir / UUID.randomUUID.toString, strict, printer, filter)
+        _ = (depositDir / "deposit.properties").write("") // TODO
+        _ = depositDir.moveTo(outputDir / uuid)(CopyOptions.atomically)
+      } yield ()
     }
     .failFastOr(Success("no fedora/IO errors"))
 
-  def simpleTransForms(input: Iterator[DatasetId], outputDir: File, strict: Boolean, transformationChecker: Filter)( printer: CSVPrinter): Try[FeedBackMessage] = input
-    .map(simpleTransform(_, outputDir / UUID.randomUUID.toString, strict, printer, transformationChecker))
+  def simpleTransForms(input: Iterator[DatasetId], outputDir: File, strict: Boolean, filter: Filter)
+                      (printer: CSVPrinter): Try[FeedBackMessage] = input
+    .map(simpleTransform(_, outputDir / UUID.randomUUID.toString, strict, printer, filter))
     .failFastOr(Success("no fedora/IO errors"))
 
   private def simpleTransform(datasetId: DatasetId, bagDir: File, strict: Boolean, printer: CSVPrinter, filter: Filter): Try[Any] = {
@@ -78,7 +83,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       .doIfSuccess(_.print(printer))
   }
 
-  def simpleTransform(datasetId: DatasetId, bagDir: File, strict: Boolean, transformationChecker: Filter): Try[CsvRecord] = {
+  def simpleTransform(datasetId: DatasetId, bagDir: File, strict: Boolean, filter: Filter): Try[CsvRecord] = {
 
     def managedMetadataStream(foXml: Elem, streamId: String, bag: DansV0Bag, metadataFile: String) = {
       managedStreamLabel(foXml, streamId)
@@ -101,8 +106,8 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
         .map(id => getAudience(id.getValue)).collectResults
       ddm <- DDM(emd, audiences)
       fedoraIDs <- fedoraProvider.getSubordinates(datasetId)
-      maybeTransformationViolations <- transformationChecker.violations(emd, ddm, amd, fedoraIDs)
-      _ = if (strict) maybeTransformationViolations.foreach(msg => throw InvalidTransformationException(msg))
+      maybeFilterViolations <- filter.violations(emd, ddm, amd, fedoraIDs)
+      _ = if (strict) maybeFilterViolations.foreach(msg => throw InvalidTransformationException(msg))
       _ = logger.info(s"Creating $bagDir from $datasetId with owner $depositor")
       bag <- DansV0Bag.empty(bagDir)
         .map(_.withEasyUserAccount(depositor).withCreated(DateTime.now()))
@@ -137,8 +142,8 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       UUID.fromString(bagDir.name),
       doi,
       depositor,
-      transformationType = maybeTransformationViolations.map(_ => "not strict simple").getOrElse(SIMPLE.toString),
-      maybeTransformationViolations.getOrElse("OK"),
+      transformationType = maybeFilterViolations.map(_ => "not strict simple").getOrElse(SIMPLE.toString),
+      maybeFilterViolations.getOrElse("OK"),
     )
   }
 

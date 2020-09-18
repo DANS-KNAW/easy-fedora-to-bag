@@ -63,20 +63,20 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
     val uuid = UUID.randomUUID.toString
     val depositDir = (configuration.stagingDir / uuid).createDirectories()
     val triedCsvRecord = for {
-      csvRecord <- simpleTransform(datasetId, depositDir / "bag", strict, filter)
+      csvRecord <- simpleAip(datasetId, depositDir / "bag", strict, filter)
       _ = (depositDir / "deposit.properties").write("") // TODO
       _ = depositDir.moveTo(outputDir / uuid)(CopyOptions.atomically)
     } yield csvRecord
     errorHandling(printer, triedCsvRecord, datasetId, depositDir)
   }
 
-  def simpleTransForms(input: Iterator[DatasetId], outputDir: File, strict: Boolean, filter: Filter)
-                      (printer: CSVPrinter): Try[FeedBackMessage] = input
-    .map(simpleTransform(_, outputDir / UUID.randomUUID.toString, strict, printer, filter))
+  def simpleAips(input: Iterator[DatasetId], outputDir: File, strict: Boolean, filter: Filter)
+                (printer: CSVPrinter): Try[FeedBackMessage] = input
+    .map(simpleAip(_, outputDir / UUID.randomUUID.toString, strict, printer, filter))
     .failFastOr(Success("no fedora/IO errors"))
 
-  private def simpleTransform(datasetId: DatasetId, bagDir: File, strict: Boolean, printer: CSVPrinter, filter: Filter): Try[Any] = {
-    val triedCsvRecord = simpleTransform(datasetId, bagDir, strict, filter)
+  private def simpleAip(datasetId: DatasetId, bagDir: File, strict: Boolean, printer: CSVPrinter, filter: Filter): Try[Any] = {
+    val triedCsvRecord = simpleAip(datasetId, bagDir, strict, filter)
     errorHandling(printer, triedCsvRecord, datasetId, bagDir)
   }
 
@@ -94,7 +94,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       }.doIfSuccess(_.print(printer))
   }
 
-  def simpleTransform(datasetId: DatasetId, bagDir: File, strict: Boolean, filter: Filter): Try[CsvRecord] = {
+  def simpleAip(datasetId: DatasetId, bagDir: File, strict: Boolean, filter: Filter): Try[CsvRecord] = {
 
     def managedMetadataStream(foXml: Elem, streamId: String, bag: DansV0Bag, metadataFile: String) = {
       managedStreamLabel(foXml, streamId)

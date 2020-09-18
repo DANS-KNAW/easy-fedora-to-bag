@@ -51,34 +51,34 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
   private lazy val ldap = new Ldap(ldapContext)
   private val emdUnmarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
 
-  def simpleSips(input: Iterator[DatasetId], outputDir: File, strict: Boolean, filter: Filter)
+  def createSips(input: Iterator[DatasetId], outputDir: File, strict: Boolean, filter: Filter)
                 (printer: CSVPrinter): Try[FeedBackMessage] = {
     input
-      .map(simpleSip(outputDir, strict, filter, printer))
+      .map(createSip(outputDir, strict, filter, printer))
       .failFastOr(Success("no fedora/IO errors"))
   }
 
-  private def simpleSip(outputDir: File, strict: Boolean, filter: Filter, printer: CSVPrinter)
+  private def createSip(outputDir: File, strict: Boolean, filter: Filter, printer: CSVPrinter)
                        (datasetId: DatasetId): Try[CsvRecord] = {
     val uuid = UUID.randomUUID.toString
     val depositDir = (configuration.stagingDir / uuid).createDirectories()
     val triedCsvRecord = for {
-      csvRecord <- simpleAip(datasetId, depositDir / "bag", strict, filter)
+      csvRecord <- createAip(datasetId, depositDir / "bag", strict, filter)
       _ <- DepositProperties.create(depositDir, csvRecord)
       _ = depositDir.moveTo(outputDir / uuid)(CopyOptions.atomically)
     } yield csvRecord
     errorHandling(printer, triedCsvRecord, datasetId, depositDir)
   }
 
-  def simpleAips(input: Iterator[DatasetId], outputDir: File, strict: Boolean, filter: Filter)
+  def createAips(input: Iterator[DatasetId], outputDir: File, strict: Boolean, filter: Filter)
                 (printer: CSVPrinter): Try[FeedBackMessage] = {
     input
-      .map(simpleAip(_, outputDir / UUID.randomUUID.toString, strict, printer, filter))
+      .map(createAip(_, outputDir / UUID.randomUUID.toString, strict, printer, filter))
       .failFastOr(Success("no fedora/IO errors"))
   }
 
-  private def simpleAip(datasetId: DatasetId, bagDir: File, strict: Boolean, printer: CSVPrinter, filter: Filter): Try[Any] = {
-    val triedCsvRecord = simpleAip(datasetId, bagDir, strict, filter)
+  private def createAip(datasetId: DatasetId, bagDir: File, strict: Boolean, printer: CSVPrinter, filter: Filter): Try[Any] = {
+    val triedCsvRecord = createAip(datasetId, bagDir, strict, filter)
     errorHandling(printer, triedCsvRecord, datasetId, bagDir)
   }
 
@@ -96,7 +96,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
       }.doIfSuccess(_.print(printer))
   }
 
-  def simpleAip(datasetId: DatasetId, bagDir: File, strict: Boolean, filter: Filter): Try[CsvRecord] = {
+  def createAip(datasetId: DatasetId, bagDir: File, strict: Boolean, filter: Filter): Try[CsvRecord] = {
 
     def managedMetadataStream(foXml: Elem, streamId: String, bag: DansV0Bag, metadataFile: String) = {
       managedStreamLabel(foXml, streamId)

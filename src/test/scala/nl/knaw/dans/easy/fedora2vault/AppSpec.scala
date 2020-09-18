@@ -79,7 +79,7 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
     triedMessage shouldBe Success("no fedora/IO errors")
 
     val files = outputDir.listRecursively.toSeq
-    files should have length 6 // two directories plus two files each
+    files should have length 6 // two directories with two entries each
     files.filter(_.name == "bag") should have length 2
     val props = files.filter(_.name == "deposit.properties")
     props should have length 2

@@ -51,36 +51,25 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
   private lazy val ldap = new Ldap(ldapContext)
   private val emdUnmarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
 
-  def createSips(input: Iterator[DatasetId], outputDir: File, strict: Boolean, filter: Filter)
-                (printer: CSVPrinter): Try[FeedBackMessage] = {
-    input
-      .map(createSip(outputDir, strict, filter, printer))
-      .failFastOr(Success("no fedora/IO errors"))
-  }
-
-  private def createSip(outputDir: File, strict: Boolean, filter: Filter, printer: CSVPrinter)
-                       (datasetId: DatasetId): Try[CsvRecord] = {
-    val uuid = UUID.randomUUID.toString
-    val depositDir = (configuration.stagingDir / uuid).createDirectories()
-    val triedCsvRecord = for {
-      csvRecord <- createAip(datasetId, depositDir / "bag", strict, filter)
-      _ <- DepositProperties.create(depositDir, csvRecord)
-      _ = depositDir.moveTo(outputDir / uuid)(CopyOptions.atomically)
-    } yield csvRecord
-    errorHandling(printer, triedCsvRecord, datasetId, depositDir)
-  }
-
   def createAips(input: Iterator[DatasetId], outputDir: File, strict: Boolean, filter: Filter)
-                (printer: CSVPrinter): Try[FeedBackMessage] = {
-    input
-      .map(createAip(_, outputDir / UUID.randomUUID.toString, strict, printer, filter))
-      .failFastOr(Success("no fedora/IO errors"))
-  }
-
-  private def createAip(datasetId: DatasetId, bagDir: File, strict: Boolean, printer: CSVPrinter, filter: Filter): Try[Any] = {
+                (printer: CSVPrinter): Try[FeedBackMessage] = input.map { datasetId =>
+    val bagDir = outputDir / UUID.randomUUID.toString
     val triedCsvRecord = createAip(datasetId, bagDir, strict, filter)
     errorHandling(printer, triedCsvRecord, datasetId, bagDir)
-  }
+  }.failFastOr(Success("no fedora/IO errors"))
+
+  def createSips(input: Iterator[DatasetId], outputDir: File, strict: Boolean, filter: Filter)
+                (printer: CSVPrinter): Try[FeedBackMessage] = input.map { datasetId =>
+    val sipUUID = UUID.randomUUID.toString
+    val bagUUID = UUID.randomUUID.toString
+    val depositDir = (configuration.stagingDir / sipUUID).createDirectories()
+    val triedCsvRecord = for {
+      csvRecord <- createAip(datasetId, depositDir / bagUUID, strict, filter)
+      _ <- DepositProperties.create(depositDir, csvRecord)
+      _ = depositDir.moveTo(outputDir / sipUUID)(CopyOptions.atomically)
+    } yield csvRecord
+    errorHandling(printer, triedCsvRecord, datasetId, depositDir)
+  }.failFastOr(Success("no fedora/IO errors"))
 
   private def errorHandling(printer: CSVPrinter, triedCsvRecord: Try[CsvRecord], datasetId: DatasetId, ipDir: File) = {
     triedCsvRecord

@@ -71,17 +71,24 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
   }
 
   "createSips" should "report success" in {
-    val ids = Iterator("success:1", "notSimple:1", "success:1")
+    val ids = Iterator("success:1", "notSimple:1", "whoops:1", "success:1")
     val outputDir = (testDir / "output").createDirectories()
-    val app = new OverriddenApp(Configuration(null, null, null, null, testDir / "staging"))
+    val stagingDir = testDir / "staging"
+    val app = new OverriddenApp(Configuration(null, null, null, null, stagingDir))
     val printer = CsvRecord.csvFormat.print(new StringWriter()) // content verified with simpleTransforms
     val triedMessage = app.createSips(ids, outputDir, strict = true, SimpleFilter())(printer)
     triedMessage shouldBe Success("no fedora/IO errors")
 
-    val files = outputDir.listRecursively.toSeq
-    files should have length 6 // two directories with two entries each
-    files.filter(_.name == "bag") should have length 2
-    val props = files.filter(_.name == "deposit.properties")
+    // two directories with one entry each
+    stagingDir.list.toList should have length 2
+    stagingDir.listRecursively.toList should have length 4
+
+    // two directories with two entries each
+    outputDir.list.toList should have length 2
+    outputDir.listRecursively.toList should have length 6
+
+    // two deposits with almost the same deposit.properties
+    val props = outputDir.listRecursively.toList.filter(_.name == "deposit.properties")
     props should have length 2
     props.map(linesWithoutTimestamp).toList.distinct shouldBe List(
       """state.label = SUBMITTED

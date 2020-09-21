@@ -53,7 +53,7 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
 
   private class OverriddenApp(configuration: Configuration = null) extends MockedApp(configuration) {
     /** overrides the method called by the method under test */
-    override def createAip(datasetId: DatasetId, outputDir: File, strict: Boolean, filter: Filter): Try[CsvRecord] = {
+    override def createBag(datasetId: DatasetId, outputDir: File, strict: Boolean, filter: Filter): Try[CsvRecord] = {
       datasetId match {
         case _ if datasetId.startsWith("fatal") =>
           Failure(new FedoraClientException(300, "mocked exception"))
@@ -149,7 +149,7 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
     )
 
     val uuid = UUID.randomUUID
-    app.createAip("easy-dataset:17", testDir / "bags" / uuid.toString, strict = true, app.filter) shouldBe
+    app.createBag("easy-dataset:17", testDir / "bags" / uuid.toString, strict = true, app.filter) shouldBe
       Success(CsvRecord("easy-dataset:17", uuid, "10.17026/test-Iiib-z9p-4ywa", "user001", "simple", "OK"))
 
     val metadata = (testDir / "bags").children.next() / "metadata"
@@ -173,7 +173,7 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
     )
 
     val uuid = UUID.randomUUID
-    app.createAip("easy-dataset:17", testDir / "bags" / uuid.toString, strict = false, app.filter) shouldBe
+    app.createBag("easy-dataset:17", testDir / "bags" / uuid.toString, strict = false, app.filter) shouldBe
       Success(CsvRecord("easy-dataset:17", uuid, "10.17026/test-Iiib-z9p-4ywa", "user001", "not strict simple", "Violates 2: has jump off"))
 
     val metadata = (testDir / "bags").children.next() / "metadata"
@@ -193,7 +193,7 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
     expectedFoXmls(app.fedoraProvider, sampleFoXML / "DepositApi.xml")
 
     val uuid = UUID.randomUUID
-    app.createAip("easy-dataset:17", testDir / "bags" / uuid.toString, strict = true, app.filter) should matchPattern {
+    app.createBag("easy-dataset:17", testDir / "bags" / uuid.toString, strict = true, app.filter) should matchPattern {
       case Failure(_: InvalidTransformationException) =>
     }
 
@@ -212,7 +212,7 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
     expectedManagedStreams(app.fedoraProvider, mockContentOfFile35)
 
     val uuid = UUID.randomUUID
-    app.createAip("easy-dataset:13", testDir / "bags" / uuid.toString, strict = true, app.filter) shouldBe
+    app.createBag("easy-dataset:13", testDir / "bags" / uuid.toString, strict = true, app.filter) shouldBe
       Success(CsvRecord("easy-dataset:13", uuid, "10.17026/mocked-Iiib-z9p-4ywa", "user001", "simple", "OK"))
 
     val metadata = (testDir / "bags").children.next() / "metadata"
@@ -247,7 +247,7 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
     expectedSubordinates(app.fedoraProvider, "easy-file:35")
     expectedManagedStreams(app.fedoraProvider, mockContentOfFile35)
 
-    app.createAip("easy-dataset:13", testDir / "bags" / UUID.randomUUID.toString, strict = true, app.filter) should matchPattern {
+    app.createBag("easy-dataset:13", testDir / "bags" / UUID.randomUUID.toString, strict = true, app.filter) should matchPattern {
       case Failure(e) if e.getMessage == "easy-file:35 <visibleTo> not found" =>
     }
   }

@@ -49,6 +49,10 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
     override lazy val ldapContext: InitialLdapContext = mock[MockedLdapContext]
     override lazy val bagIndex: BagIndex = mockedBagIndex
     val filter: SimpleFilter = SimpleFilter(bagIndex)
+
+    // make protected method available for tests
+    override def createBag(datasetId: DatasetId, bagDir: File, strict: Boolean, filter: Filter): Try[CsvRecord] =
+      super.createBag(datasetId, bagDir, strict, filter)
   }
 
   private class OverriddenApp(configuration: Configuration = null) extends MockedApp(configuration) {
@@ -90,7 +94,7 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
     // two deposits with almost the same deposit.properties
     val props = outputDir.listRecursively.toList.filter(_.name == "deposit.properties")
     props should have length 2
-    props.map(linesWithoutTimestamp).toList.distinct shouldBe List(
+    props.map(linesWithoutTimestamp).distinct shouldBe List(
       """state.label = SUBMITTED
         |state.description = Deposit is valid and ready for post-submission processing
         |depositor.userId = testUser
@@ -137,7 +141,7 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
     outputDir.list.toSeq should have length 4
   }
 
-  "createAip" should "process DepositApi" in {
+  "createBag" should "process DepositApi" in {
     val app = new MockedApp()
     implicit val fedoraProvider: FedoraProvider = app.fedoraProvider
     expectedAudiences(Map("easy-discipline:77" -> "D13200"))

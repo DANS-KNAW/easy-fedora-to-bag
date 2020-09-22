@@ -50,7 +50,7 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
     override lazy val bagIndex: BagIndex = mockedBagIndex
     val filter: SimpleFilter = SimpleFilter(bagIndex)
 
-    // make protected method available for tests
+    // make almost private method available for tests
     override def createBag(datasetId: DatasetId, bagDir: File, strict: Boolean, filter: Filter): Try[CsvRecord] =
       super.createBag(datasetId, bagDir, strict, filter)
   }
@@ -58,6 +58,7 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
   private class OverriddenApp(configuration: Configuration = null) extends MockedApp(configuration) {
     /** overrides the method called by the method under test */
     override def createBag(datasetId: DatasetId, outputDir: File, strict: Boolean, filter: Filter): Try[CsvRecord] = {
+      outputDir.parent.createDirectories()
       datasetId match {
         case _ if datasetId.startsWith("fatal") =>
           Failure(new FedoraClientException(300, "mocked exception"))

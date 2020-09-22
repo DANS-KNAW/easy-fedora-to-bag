@@ -62,7 +62,7 @@ class EasyFedora2vaultApp(configuration: Configuration) extends DebugEnhancedLog
                 (printer: CSVPrinter): Try[FeedBackMessage] = input.map { datasetId =>
     val sipUUID = UUID.randomUUID.toString
     val bagUUID = UUID.randomUUID.toString
-    val depositDir = (configuration.stagingDir / sipUUID).createDirectories()
+    val depositDir = (configuration.stagingDir / sipUUID)
     // exceptions after createAip are fatal for the batch,
     // hence not reported in comment field of csvRecord
     val triedCsvRecord = for {

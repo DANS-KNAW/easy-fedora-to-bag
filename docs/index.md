@@ -7,7 +7,7 @@ Retrieves a dataset from Fedora and transforms it to an AIP bag conforming to DA
 SYNOPSIS
 --------
 
-    easy-fedora2vault {-d <dataset-id> | -i <dataset-ids-file>} [-o <staged-AIP-dir>] [-u <depositor>] [-s] [-l <log-file>] <transformation>
+    easy-fedora2vault {-d <dataset-id> | -i <dataset-ids-file>} -o <staged-AIP-dir> [-s] [-l <log-file>] <transformation>
 
 DESCRIPTION
 -----------
@@ -21,8 +21,6 @@ ARGUMENTS
 
      -d, --datasetId  <arg>       A single easy-dataset-id to be transformed. Use either this or the input-file
                                   argument
-     -u, --depositor  <arg>       The depositor for these datasets. If provided, only datasets from this
-                                  depositor are transformed.
      -i, --input-file  <arg>      File containing a newline-separated list of easy-dataset-ids to be transformed.
                                   Use either this or the dataset-id argument
      -l, --log-file  <arg>        The name of the logfile in csv format. If not provided a file

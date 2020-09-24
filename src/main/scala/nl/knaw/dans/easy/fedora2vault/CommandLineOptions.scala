@@ -32,7 +32,7 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   val description: String = s"""Tool for exporting datasets from Fedora and constructing Archival/Submission Information Packages."""
   val synopsis: String =
     s"""
-       |  easy-fedora2vault {-d <dataset-id> | -i <dataset-ids-file>} [-o <staged-AIP-dir>] [-u <depositor>] [-s] [-l <log-file>] <transformation>
+       |  easy-fedora2vault {-d <dataset-id> | -i <dataset-ids-file>} -o <staged-AIP-dir> [-s] [-l <log-file>] <transformation>
      """.stripMargin
 
   version(s"$printedName v${ configuration.version }")
@@ -60,8 +60,6 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   val outputDir: ScallopOption[File] = outputDirPath.map(File(_))
   val outputFormat: ScallopOption[OutputFormat] = opt(name = "output-format", short = 'f',
     descr = OutputFormat.values.mkString("Output format: ", ", ", ". Only required for transformation type simple."))
-  val depositor: ScallopOption[Depositor] = opt(name = "depositor", short = 'u',
-    descr = "The depositor for these datasets. If provided, only datasets from this depositor are transformed.")
   private val logFilePath: ScallopOption[Path] = opt(name = "log-file", short = 'l',
     descr = s"The name of the logfile in csv format. If not provided a file $printedName-<timestamp>.csv will be created in the home-dir of the user.",
     default = Some(Paths.get(Properties.userHome).resolve(s"$printedName-$now.csv")))
@@ -71,7 +69,6 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   val transformation: ScallopOption[TransformationType] = trailArg(name = "transformation",
     descr = TransformationType.values.mkString("The type of transformation used: ", ", ", "."))
 
-  requireOne(datasetId, inputPath)
 
   validatePathExists(inputPath)
   validatePathIsFile(inputPath)

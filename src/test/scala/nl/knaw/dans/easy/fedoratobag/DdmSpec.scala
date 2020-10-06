@@ -215,6 +215,32 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     triedDDM.flatMap(validate) shouldBe Success(())
   }
 
+  "identifiers" should "" in {
+    val emd = parseEmdContent(Seq(
+      emdTitle, emdCreator, emdDescription, emdDates,
+        <emd:identifier>
+          <dc:identifier
+            eas:scheme="Archis_onderzoek_m_nr"
+            eas:schemeId="archaeology.dc.identifier"
+            eas:identification-system="https://archis.cultureelerfgoed.nl"
+        >4763492100</dc:identifier>
+        </emd:identifier>,
+      emdRights,
+    ))
+    val triedDDM = DDM(emd, Seq("D35400"))
+    triedDDM.map(normalized) shouldBe Success(normalized(
+      <ddm:DDM xsi:schemaLocation={ schemaLocation }>
+        { ddmProfile("D35400") }
+        <ddm:dcmiMetadata>
+          <dct:identifier xsi:type="id-type:ARCHIS-ZAAK-IDENTIFICATIE">4763492100</dct:identifier>
+          <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
+        </ddm:dcmiMetadata>
+      </ddm:DDM>
+    ))
+    assume(schemaIsAvailable)
+    triedDDM.flatMap(validate) shouldBe Success(())
+  }
+
   "license" should "be copied from <dct:license>" in {
     val emd = parseEmdContent(Seq(
       emdTitle, emdCreator, emdDescription, emdDates,

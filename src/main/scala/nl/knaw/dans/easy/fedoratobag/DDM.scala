@@ -144,21 +144,28 @@ object DDM extends DebugEnhancedLogging {
 
   private def toXml(author: Author): Seq[Node] = {
     val surname = author.getSurname
+    val maybeRole = Option(author.getRole).map(_.getRole).filter(_.trim.nonEmpty)
     if (surname == null || surname.trim.isEmpty)
-      Option(author.getOrganization).toSeq.map(toXml(_, Option(author.getRole)))
+      Option(author.getOrganization).toSeq.map(toXml(_, maybeRole))
     else
       <dcx-dai:author>
         { seq(author.getTitle).map(str => <dcx-dai:titles>{ str }</dcx-dai:titles>) }
         { seq(author.getInitials).map(str => <dcx-dai:initials>{ str }</dcx-dai:initials>) }
         { seq(author.getPrefix).map(str => <dcx-dai:insertions>{ str }</dcx-dai:insertions>) }
         <dcx-dai:surname>{ surname }</dcx-dai:surname>
-        { Option(author.getOrcid).toSeq.map(id => { <dcx-dai:ORCID>{ toURI(id) }</dcx-dai:ORCID> }) }
-        { Option(author.getIsni).toSeq.map(id => { <dcx-dai:ISNI>{ toURI(id) }</dcx-dai:ISNI> }) }
-        { Option(author.getDigitalAuthorId).toSeq.map(dai => { <dcx-dai:DAI>{ dai.getURI }</dcx-dai:DAI> }) }
-        { Option(author.getRole).toSeq.map(role =>  <dcx-dai:role>{ role.getRole }</dcx-dai:role>) }
+        { Option(author.getOrcid).toSeq.map(id => <dcx-dai:ORCID>{ toURI(id) }</dcx-dai:ORCID>) }
+        { Option(author.getIsni).toSeq.map(id => <dcx-dai:ISNI>{ toURI(id) }</dcx-dai:ISNI>) }
+        { Option(author.getDigitalAuthorId).toSeq.map(dai => <dcx-dai:DAI>{ dai.getURI }</dcx-dai:DAI>) }
+        { maybeRole.toSeq.map(str => <dcx-dai:role>{ str }</dcx-dai:role>) }
         { seq(author.getOrganization).map(toXml(_, maybeRole = None)) }
       </dcx-dai:author>
   }
+
+  private def toXml(organization: String, maybeRole: Option[String]): Elem =
+      <dcx-dai:organization>
+        { <dcx-dai:name>{ organization }</dcx-dai:name> }
+        { maybeRole.toSeq.map(str => <dcx-dai:role>{ str }</dcx-dai:role>) }
+      </dcx-dai:organization>
 
   private def toURI(id: EntityId): String = {
     val uri = id.getIdentificationSystem.toString.replaceAll("/*$", "")
@@ -292,12 +299,6 @@ object DDM extends DebugEnhancedLogging {
 
   /** @return an empty Seq for a null or blank String */
   private def seq(s: String): Seq[String] = Option(s).flatMap(_.trim.toOption).toSeq
-
-  private def toXml(organization: String, maybeRole: Option[Author.Role]): Elem =
-      <dcx-dai:organization>
-        { <dcx-dai:name>{ organization }</dcx-dai:name> }
-        { maybeRole.toSeq.map(role => <dcx-dai:role>{ role.getRole }</dcx-dai:role>) }
-      </dcx-dai:organization>
 
   private def toLicenseUrl(emdRights: EmdRights) = {
     emdRights.getTermsLicense.asScala

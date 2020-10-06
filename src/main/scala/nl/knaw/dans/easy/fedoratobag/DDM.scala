@@ -55,10 +55,10 @@ object DDM extends DebugEnhancedLogging {
      xsi:schemaLocation={s"$schemaNameSpace $schemaLocation"}
    >
      <ddm:profile>
-       { emd.getEmdTitle.getDcTitle.asScala.map(bs => <dc:title xml:lang={ lang(bs) }>{ bs.getValue }</dc:title>) }
-       { emd.getEmdDescription.getDcDescription.asScala.map(bs => <dct:description xml:lang={ lang(bs) }>{ bs.getValue }</dct:description>) }
+       { emd.getEmdTitle.getDcTitle.asScala.map(bs => <dc:title xml:lang={ lang(bs) }>{ bs.getValue.trim }</dc:title>) }
+       { emd.getEmdDescription.getDcDescription.asScala.map(bs => <dct:description xml:lang={ lang(bs) }>{ bs.getValue.trim }</dct:description>) }
        { /* instructions for reuse not specified as such in EMD */ }
-       { emd.getEmdCreator.getDcCreator.asScala.map(bs => <dc:creator>{ bs.getValue }</dc:creator>) }
+       { emd.getEmdCreator.getDcCreator.asScala.map(bs => <dc:creator>{ bs.getValue.trim }</dc:creator>) }
        { emd.getEmdCreator.getEasCreator.asScala.map(author => <dcx-dai:creatorDetails>{ toXml(author)} </dcx-dai:creatorDetails>) }
        { dateCreated.map(node =>  <ddm:created>{ node.text }</ddm:created>) }
        { dateAvailable.map(node =>  <ddm:available>{ node.text }</ddm:available>) }
@@ -66,25 +66,25 @@ object DDM extends DebugEnhancedLogging {
        <ddm:accessRights>{ emd.getEmdRights.getAccessCategory }</ddm:accessRights>
      </ddm:profile>
      <ddm:dcmiMetadata>
-       { emd.getEmdIdentifier.getDcIdentifier.asScala.filter(_.getScheme != "DMO_ID").map(bi => <dct:identifier xsi:type={ idType(bi) }>{ bi.getValue }</dct:identifier>) }
+       { emd.getEmdIdentifier.getDcIdentifier.asScala.filter(_.getScheme != "DMO_ID").map(bi => <dct:identifier xsi:type={ idType(bi) }>{ bi.getValue.trim }</dct:identifier>) }
        { emd.getEmdTitle.getTermsAlternative.asScala.map(str => <dct:alternative>{ str }</dct:alternative>) }
-       { emd.getEmdDescription.getTermsAbstract.asScala.map(bs => <ddm:description xml:lang={ lang(bs) } descriptionType='Abstract'>{ bs.getValue }</ddm:description>) }
-       { emd.getEmdDescription.getTermsTableOfContents.asScala.map(bs => <ddm:description xml:lang={ lang(bs) } descriptionType='TableOfContents'>{ bs.getValue }</ddm:description>) }
+       { emd.getEmdDescription.getTermsAbstract.asScala.map(bs => <ddm:description xml:lang={ lang(bs) } descriptionType='Abstract'>{ bs.getValue.trim }</ddm:description>) }
+       { emd.getEmdDescription.getTermsTableOfContents.asScala.map(bs => <ddm:description xml:lang={ lang(bs) } descriptionType='TableOfContents'>{ bs.getValue.trim }</ddm:description>) }
        { emd.getEmdRelation.getDCRelationMap.asScala.map { case (key, values) => values.asScala.map(toRelationXml(key, _)) } }
        { emd.getEmdRelation.getRelationMap.asScala.map { case (key, values) => values.asScala.map(toRelationXml(key, _)) } }
-       { emd.getEmdContributor.getDcContributor.asScala.map(bs => <dc:contributor>{ bs.getValue }</dc:contributor>) }
+       { emd.getEmdContributor.getDcContributor.asScala.map(bs => <dc:contributor>{ bs.getValue.trim }</dc:contributor>) }
        { emd.getEmdContributor.getEasContributor.asScala.map(author => <dcx-dai:contributorDetails>{ toXml(author)} </dcx-dai:contributorDetails>) }
        { emd.getEmdRights.getTermsRightsHolder.asScala.map(bs => <dct:rightsHolder>{ bs.toString }</dct:rightsHolder>) }
-       { emd.getEmdPublisher.getDcPublisher.asScala.map(bs => <dct:publisher xml:lang={ lang(bs) }>{ bs.getValue }</dct:publisher>) }
-       { emd.getEmdSource.getDcSource.asScala.map(bs => <dc:source xml:lang={ lang(bs) }>{ bs.getValue }</dc:source>) }
-       { emd.getEmdType.getDcType.asScala.map(bs => <dct:type xsi:type={ xsiType(bs) }>{ bs.getValue }</dct:type>) }
-       { emd.getEmdFormat.getDcFormat.asScala.map(bs => <dct:format>{ bs.getValue }</dct:format>) }
-       { emd.getEmdFormat.getTermsExtent.asScala.map(bs => <dct:extent>{ bs.getValue }</dct:extent>) }
-       { emd.getEmdFormat.getTermsMedium.asScala.map(bs => <dct:medium>{ bs.getValue }</dct:medium>) }
-       { emd.getEmdSubject.getDcSubject.asScala.map(bs => <dct:subject xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue }</dct:subject>) }
-       { emd.getEmdCoverage.getDcCoverage.asScala.map(bs => <dct:coverage xml:lang={ lang(bs) }>{ bs.getValue }</dct:coverage>) }
-       { emd.getEmdCoverage.getTermsSpatial.asScala.map(bs => <dct:spatial xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue }</dct:spatial>) }
-       { emd.getEmdCoverage.getTermsTemporal.asScala.map(bs => <dct:temporal xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue }</dct:temporal>) }
+       { emd.getEmdPublisher.getDcPublisher.asScala.map(bs => <dct:publisher xml:lang={ lang(bs) }>{ bs.getValue.trim }</dct:publisher>) }
+       { emd.getEmdSource.getDcSource.asScala.map(bs => <dc:source xml:lang={ lang(bs) }>{ bs.getValue.trim }</dc:source>) }
+       { emd.getEmdType.getDcType.asScala.map(bs => <dct:type xsi:type={ xsiType(bs) }>{ bs.getValue.trim }</dct:type>) }
+       { emd.getEmdFormat.getDcFormat.asScala.map(bs => <dct:format>{ bs.getValue.trim }</dct:format>) }
+       { emd.getEmdFormat.getTermsExtent.asScala.map(bs => <dct:extent>{ bs.getValue.trim }</dct:extent>) }
+       { emd.getEmdFormat.getTermsMedium.asScala.map(bs => <dct:medium>{ bs.getValue.trim }</dct:medium>) }
+       { emd.getEmdSubject.getDcSubject.asScala.map(bs => <dct:subject xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue.trim }</dct:subject>) }
+       { emd.getEmdCoverage.getDcCoverage.asScala.map(bs => <dct:coverage xml:lang={ lang(bs) }>{ bs.getValue.trim }</dct:coverage>) }
+       { emd.getEmdCoverage.getTermsSpatial.asScala.map(bs => <dct:spatial xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue.trim }</dct:spatial>) }
+       { emd.getEmdCoverage.getTermsTemporal.asScala.map(bs => <dct:temporal xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue.trim }</dct:temporal>) }
        { dateMap.filter(isOtherDate).map { case (key, values) => values.map(_.withLabel(dateLabel(key))) } }
        { emd.getEmdCoverage.getEasSpatial.asScala.map(spatial => toXml(spatial))}
        <dct:license xsi:type="dct:URI">{ toLicenseUrl(emd.getEmdRights) }</dct:license>
@@ -98,7 +98,7 @@ object DDM extends DebugEnhancedLogging {
     case _ => null
   }
 
-  private def langValue(bs: BasicString): String = bs.getValue match {
+  private def langValue(bs: BasicString): String = bs.getValue.trim match {
     case "fra/fre" => "fra"
     case "deu/ger" => "deu"
     case "nld/dut" | "dut/nld" => "nld"
@@ -121,7 +121,8 @@ object DDM extends DebugEnhancedLogging {
 
   private def idType(bs: BasicString): String = {
     Option(bs.getScheme) match {
-      case Some("PID") if bs.getValue.toLowerCase.contains("urn") => "id-type:URN"
+      case Some("PID") if bs.getValue.trim.toLowerCase.contains("urn") => "id-type:URN"
+      case Some("Archis_onderzoek_m_nr") => "id-type:ARCHIS-ZAAK-IDENTIFICATIE"
       case Some(s) => "id-type:" + s
       case None => null
     }
@@ -264,7 +265,7 @@ object DDM extends DebugEnhancedLogging {
     <label scheme={ relationType(rel) }
            href={ rel.getSubjectLink.toURL.toString }
            xml:lang={ rel.getSubjectTitle.getLanguage }
-    >{ rel.getSubjectTitle.getValue }</label>
+    >{ rel.getSubjectTitle.getValue.trim }</label>
   }.withLabel(relationLabel("ddm:", key))
 
   private def toRelationXml(key: String, bs: BasicString): Node = {
@@ -274,7 +275,7 @@ object DDM extends DebugEnhancedLogging {
     }
     else <label xsi:type={ idType(bs) }
                 xml:lang={ bs.getLanguage }
-         >{ bs.getValue }</label>.withLabel(relationLabel("dct:", key))
+         >{ bs.getValue.trim }</label>.withLabel(relationLabel("dct:", key))
   }
 
   private def relationType(rel: Relation): String = {
@@ -300,7 +301,7 @@ object DDM extends DebugEnhancedLogging {
 
   private def toLicenseUrl(emdRights: EmdRights) = {
     emdRights.getTermsLicense.asScala
-      .find(_.getValue.startsWith("http"))
+      .find(_.getValue.trim.startsWith("http"))
       .getOrElse(emdRights.getAccessCategory match {
         case ANONYMOUS_ACCESS | OPEN_ACCESS | FREELY_AVAILABLE | OPEN_ACCESS_FOR_REGISTERED_USERS => cc0
         case _ => dansLicense

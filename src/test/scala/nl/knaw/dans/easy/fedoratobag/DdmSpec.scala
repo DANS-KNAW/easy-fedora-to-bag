@@ -64,11 +64,11 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
             </dcx-dai:organization>
           </dcx-dai:creatorDetails>
 
-  private def ddmProfile(audience: String) =
+  private def ddmProfile(audience: String, creator: Elem = ddmCreator) =
        <ddm:profile>
           <dc:title>XXX</dc:title>
           <dct:description>YYY</dct:description>
-          { ddmCreator }
+          { creator }
           <ddm:created>2017-09-30</ddm:created>
           <ddm:available>2017-09-30</ddm:available>
           <ddm:audience>{ audience }</ddm:audience>
@@ -215,16 +215,16 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     triedDDM.flatMap(validate) shouldBe Success(())
   }
 
-  "identifiers" should "" in {
+  "identifiers" should "produce " in {
     val emd = parseEmdContent(Seq(
       emdTitle, emdCreator, emdDescription, emdDates,
-        <emd:identifier>
-          <dc:identifier
-            eas:scheme="Archis_onderzoek_m_nr"
-            eas:schemeId="archaeology.dc.identifier"
-            eas:identification-system="https://archis.cultureelerfgoed.nl"
-        >4763492100</dc:identifier>
-        </emd:identifier>,
+      <emd:identifier>
+        <dc:identifier
+          eas:scheme="Archis_onderzoek_m_nr"
+          eas:schemeId="archaeology.dc.identifier"
+          eas:identification-system="https://archis.cultureelerfgoed.nl"
+      >4763492100</dc:identifier>
+      </emd:identifier>,
       emdRights,
     ))
     val triedDDM = DDM(emd, Seq("D35400"))
@@ -233,6 +233,51 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
         { ddmProfile("D35400") }
         <ddm:dcmiMetadata>
           <dct:identifier xsi:type="id-type:ARCHIS-ZAAK-IDENTIFICATIE">4763492100</dct:identifier>
+          <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
+        </ddm:dcmiMetadata>
+      </ddm:DDM>
+    ))
+    assume(schemaIsAvailable)
+    triedDDM.flatMap(validate) shouldBe Success(())
+  }
+
+  "creator" should "not produce an empty role" in {
+    val emd = parseEmdContent(Seq(
+      emdTitle,
+      <emd:creator>
+        <eas:creator>
+            <eas:title>Drs.</eas:title>
+            <eas:initials>E.A.</eas:initials>
+            <eas:surname>Schorn</eas:surname>
+            <eas:organization>KSP Archeologie vof</eas:organization>
+            <eas:entityId eas:scheme="DAI"></eas:entityId>
+            <eas:role eas:scheme="DATACITE"></eas:role>
+        </eas:creator>
+      </emd:creator>,
+      emdDescription, emdDates, emdRights,
+    ))
+    val triedDDM = DDM(emd, Seq("D35400"))
+    triedDDM.map(normalized) shouldBe Success(normalized(
+      <ddm:DDM xsi:schemaLocation={ schemaLocation }>
+        <ddm:profile>
+          <dc:title>XXX</dc:title>
+          <dct:description>YYY</dct:description>
+          <dcx-dai:creatorDetails>
+            <dcx-dai:author>
+              <dcx-dai:titles>Drs.</dcx-dai:titles>
+              <dcx-dai:initials>E.A.</dcx-dai:initials>
+              <dcx-dai:surname>Schorn</dcx-dai:surname>
+              <dcx-dai:organization>
+                <dcx-dai:name>KSP Archeologie vof</dcx-dai:name>
+              </dcx-dai:organization>
+            </dcx-dai:author>
+          </dcx-dai:creatorDetails>
+          <ddm:created>2017-09-30</ddm:created>
+          <ddm:available>2017-09-30</ddm:available>
+          <ddm:audience>{ "D35400" }</ddm:audience>
+          <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
+        </ddm:profile>
+        <ddm:dcmiMetadata>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>

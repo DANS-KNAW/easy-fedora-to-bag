@@ -33,7 +33,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
     val fileMetadata = <name>something.txt</name>
                        <path>original/something.txt</path>
                        <mimeType>text/plain</mimeType>
-                       <size>30</size>
+                       <size>30000000</size>
                        <creatorRole>DEPOSITOR</creatorRole>
                        <visibleTo>ANONYMOUS</visibleTo>
                        <accessibleTo>RESTRICTED_REQUEST</accessibleTo>
@@ -44,6 +44,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
         <dct:identifier>easy-file:35</dct:identifier>
         <dct:title>something.txt</dct:title>
         <dct:format>text/plain</dct:format>
+        <dct:extent>28.6MB</dct:extent>
         <accessibleToRights>RESTRICTED_REQUEST</accessibleToRights>
         <visibleToRights>ANONYMOUS</visibleToRights>
       </file>
@@ -55,6 +56,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
   it should "use a default for accessibleTo" in {
     val fileMetadata = <name>something.txt</name>
                        <path>original/something.txt</path>
+                       <size>100000</size>
                        <mimeType>text/plain</mimeType>
                        <visibleTo>NONE</visibleTo>
 
@@ -64,6 +66,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
         <dct:identifier>easy-file:35</dct:identifier>
         <dct:title>something.txt</dct:title>
         <dct:format>text/plain</dct:format>
+        <dct:extent>0.1MB</dct:extent>
         <accessibleToRights>NONE</accessibleToRights>
         <visibleToRights>NONE</visibleToRights>
       </file>
@@ -87,6 +90,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
   it should "report a repeated mandatory tag" in {
     val fileMetadata = <name>something.txt</name>
                        <path>original/something.txt</path>
+                       <size>1</size>
                        <name>blabla</name>
                        <visibleTo>NONE</visibleTo>
 
@@ -130,6 +134,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
         <dct:identifier>easy-file:35</dct:identifier>
         <dct:title>SKKJ6_spoor.mix</dct:title>
         <dct:format>application/x-framemaker</dct:format>
+        <dct:extent>0.9MB</dct:extent>
         <afm:file_category>GIS</afm:file_category>
         <dct:isFormatOf>Skkj6_spoor.TAB</dct:isFormatOf>
         <dct:abstract>Alle sporenkwaart</dct:abstract>
@@ -179,6 +184,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
           <dct:identifier>easy-file:35</dct:identifier>
           <dct:title>A</dct:title>
           <dct:format>C</dct:format>
+          <dct:extent>0.0MB</dct:extent>
           <dct:isFormatOf>G</dct:isFormatOf>
           <dct:title>I</dct:title>
           <dct:requires>J</dct:requires>
@@ -222,6 +228,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
           <dct:identifier>easy-file:35</dct:identifier>
           <dct:title>A</dct:title>
           <dct:format>C</dct:format>
+          <dct:extent>0.0MB</dct:extent>
           <notImplemented>blabla: K</notImplemented>
           <notImplemented>original_file AND archival_name</notImplemented>
           <dct:isFormatOf>I</dct:isFormatOf>

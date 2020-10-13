@@ -15,6 +15,8 @@
  */
 package nl.knaw.dans.easy.fedoratobag
 
+import java.util.Locale
+
 import com.typesafe.scalalogging.Logger
 
 import scala.util.{ Failure, Success, Try }
@@ -64,10 +66,12 @@ object FileItem {
         case "NONE" => "NONE"
         case _ => get("accessibleTo")
       }
+
       <file filepath={ "data/" + get("path") }>
         <dct:identifier>{ foXml \@ "PID" }</dct:identifier>
         <dct:title>{ get("name") }</dct:title>
         <dct:format>{ get("mimeType") }</dct:format>
+        <dct:extent>{ toMB(get("size")) }</dct:extent>
         { (fileMetadata \ "additional-metadata" \ "additional" \ "content").flatMap(convert) }
         <accessibleToRights>{ accessibleTo }</accessibleToRights>
         <visibleToRights>{ visibleTo }</visibleToRights>

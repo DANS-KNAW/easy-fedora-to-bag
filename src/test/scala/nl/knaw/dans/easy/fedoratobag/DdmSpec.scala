@@ -156,10 +156,10 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <dct:hasVersion eas:scheme="ISSN">my-issn-related-identifier</dct:hasVersion>
           <dct:requires eas:scheme="ISBN">my-isbn-related-identifier</dct:requires>
           <dct:isPartOf>my own related identifier</dct:isPartOf>
-          <dct:isFormatOf eas:scheme="NWO-PROJECTNR">my-nwo-related-identifier</dct:isFormatOf>
+          <dct:isFormatOf eas:scheme="NWO-projectnummer">my-nwo-related-identifier</dct:isFormatOf>
           <dct:isFormatOf eas:scheme="ISBN">my-isbn-alternative-identifier</dct:isFormatOf>
           <dct:isFormatOf eas:scheme="ISSN">my-issn-alternative-identifier</dct:isFormatOf>
-          <dct:isFormatOf eas:scheme="NWO-PROJECTNR">my-nwo-alternative-identifier</dct:isFormatOf>
+          <dct:isFormatOf eas:scheme="NWO-projectnummer">my-nwo-alternative-identifier</dct:isFormatOf>
           <dct:isFormatOf>my own alternative identifier</dct:isFormatOf>
           <eas:relation>
               <eas:subject-title xml:lang="eng">Google</eas:subject-title>

@@ -119,14 +119,37 @@ object DDM extends DebugEnhancedLogging {
     }
   }
 
-  private def idType(bs: BasicString): String = {
-    Option(bs.getScheme) match {
-      case Some("PID") if bs.getValue.trim.toLowerCase.contains("urn") => "id-type:URN"
-      case Some("Archis_onderzoek_m_nr") => "id-type:ARCHIS-ZAAK-IDENTIFICATIE"
-      case Some(s) => "id-type:" + s
-      case None => null
-    }
-  }
+  private val schemeToIdType = Map(
+    "PID" -> "URN",
+    "Archis_onderzoek_m_nr" -> "ARCHIS-ZAAK-IDENTIFICATIE",
+    "ARCHIS-ZAAK-IDENTIFICATIE" -> "ARCHIS-ZAAK-IDENTIFICATIE",
+    "DOI" -> "DOI",
+    "DMO_ID" -> "EASY2",
+    "AIP_ID" -> "EASY1",
+    "ISBN" -> "ISBN",
+    "ISNI" -> "ISNI",
+    "ISSN" -> "ISSN",
+    "DOI_OTHER_ACCESS" -> "DOI",
+    "eDNA-project" -> "EDNA-PROJECT",
+    "EDNA-PROJECT" -> "EDNA-PROJECT",
+    "Archis_onderzoek" -> "ARCHIS-ONDERZOEK",
+    "ARCHIS-ONDERZOEK" -> "ARCHIS-ONDERZOEK",
+    "Archis_vondstmelding" -> "ARCHIS-VONDSTMELDING",
+    "ARCHIS-VONDSTMELDING" -> "ARCHIS-VONDSTMELDING",
+    "Archis_art.41" -> "ARCHIS-ZAAK-IDENTIFICATIE",
+    "ARCHIS-ZAAK-IDENTIFICATIE" -> "ARCHIS-ZAAK-IDENTIFICATIE",
+    "Archis_waarneming" -> "ARCHIS-WAARNEMING",
+    "ARCHIS-WAARNEMING" -> "ARCHIS-WAARNEMING",
+    "Archis_monument" -> "ARCHIS-MONUMENT",
+    "ARCHIS-MONUMENT" -> "ARCHIS-MONUMENT",
+    "NWO-projectnummer" -> "NWO-PROJECTNR",
+    "NWO-PROJECTNR" -> "NWO-PROJECTNR",
+  )
+  private def idType(bs: BasicString): DatasetId = Option(bs.getScheme)
+    .filterNot(_.trim.isEmpty)
+    .flatMap(schemeToIdType.get)
+    .map("id-type:" + _)
+    .orNull // meaning: or omit attribute
 
   private def notImplementedAttribute(msg: String)(data: Any): String = {
     logger.error(s"not implemented $msg [$data]")

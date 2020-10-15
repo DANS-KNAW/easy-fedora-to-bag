@@ -738,6 +738,38 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     triedDDM.flatMap(validate) should failWithNotImplementedAttribute
   }
 
+  "temporal coverage" should "map ABR" in {
+    val emd = parseEmdContent(Seq(
+      emdTitle, emdCreator, emdDescription, emdDates,
+        <emd:coverage>
+          <dct:temporal eas:scheme="ABR" eas:schemeId="archaeology.dcterms.temporal">ROM</dct:temporal>
+          <dct:temporal eas:scheme="ABR" eas:schemeId="archaeology.dcterms.temporal">XME</dct:temporal>
+        </emd:coverage>,
+      emdRights,
+    ))
+    val triedDDM = DDM(emd, Seq("D13200"))
+    triedDDM.map(normalized) shouldBe Success(normalized(
+      <ddm:DDM xsi:schemaLocation={ schemaLocation }>
+        { ddmProfile("D13200") }
+        <ddm:dcmiMetadata>
+          <ddm:temporal xml:lang="en"
+                        valueURI="http://www.rnaproject.org/data/000c6eeb-83ac-47d5-b18f-c9e5d5f08b69"
+                        subjectScheme="Archeologisch Basis Register"
+                        schemeURI="http://www.rnaproject.org"
+          >Roman period (ROM)</ddm:temporal>
+          <ddm:temporal xml:lang="en"
+                        valueURI="http://www.rnaproject.org/data/9deee0d5-bf7f-48ab-9d17-c42f30fdfcce"
+                        subjectScheme="Archeologisch Basis Register"
+                        schemeURI="http://www.rnaproject.org"
+          >Middle Ages (XME)</ddm:temporal>
+          <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
+        </ddm:dcmiMetadata>
+      </ddm:DDM>
+    ))
+    assume(schemaIsAvailable)
+    triedDDM.flatMap(validate) should failWithNotImplementedAttribute
+  }
+
   it should "report not implemented attributes" in {
     val emd = parseEmdContent(Seq(
       emdTitle, emdCreator,

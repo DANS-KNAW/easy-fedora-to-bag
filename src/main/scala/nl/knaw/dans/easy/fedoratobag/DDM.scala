@@ -32,7 +32,7 @@ object DDM extends DebugEnhancedLogging {
   val dansLicense = "http://dans.knaw.nl/en/about/organisation-and-policy/legal-information/DANSLicence.pdf"
   val cc0 = "http://creativecommons.org/publicdomain/zero/1.0"
 
-  def apply(emd: EasyMetadataImpl, audiences: Seq[String]): Try[Elem] = Try {
+  def apply(emd: EasyMetadataImpl, audiences: Seq[String], acdm: Elem): Try[Elem] = Try {
     //    println(new EmdMarshaller(emd).getXmlString)
 
     val dateMap: Map[String, Iterable[Elem]] = getDateMap(emd)

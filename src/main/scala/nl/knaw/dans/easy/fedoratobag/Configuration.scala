@@ -23,11 +23,14 @@ import com.yourmediashelf.fedora.client.FedoraCredentials
 import javax.naming.Context
 import org.apache.commons.configuration.PropertiesConfiguration
 
+import scala.xml.{ Elem, XML }
+
 case class Configuration(version: String,
                          fedoraCredentials: FedoraCredentials,
                          ldapEnv: LdapEnv,
                          bagIndexUrl: URI,
                          stagingDir: File,
+                        acdm: Elem,
                         )
 
 object Configuration {
@@ -59,6 +62,7 @@ object Configuration {
       },
       new URI(properties.getString("bag-index.url")),
       File(properties.getString("staging.dir")),
+      XML.loadFile((cfgPath / "EMD_acdm.xsl").toJava)
     )
   }
 }

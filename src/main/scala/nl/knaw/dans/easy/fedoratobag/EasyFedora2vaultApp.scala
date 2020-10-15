@@ -108,7 +108,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       amd <- getAmd(foXml)
       audiences <- emd.getEmdAudience.getDisciplines.asScala
         .map(id => getAudience(id.getValue)).collectResults
-      ddm <- DDM(emd, audiences)
+      ddm <- DDM(emd, audiences, configuration.acdm)
       fedoraIDs <- fedoraProvider.getSubordinates(datasetId)
       maybeFilterViolations <- filter.violations(emd, ddm, amd, fedoraIDs)
       _ = if (strict) maybeFilterViolations.foreach(msg => throw InvalidTransformationException(msg))

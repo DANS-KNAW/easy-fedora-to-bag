@@ -738,6 +738,29 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     triedDDM.flatMap(validate) should failWithNotImplementedAttribute
   }
 
+  it should "report not implemented attributes" in {
+    val emd = parseEmdContent(Seq(
+      emdTitle, emdCreator,
+      <emd:subject>
+          <dc:subject eas:scheme="ABR" eas:schemeId="archaeologie.subject">DEPO</dc:subject>
+      </emd:subject>,
+      emdDescription, emdDates, emdRights,
+    ))
+    val triedDDM = DDM(emd, Seq("D35400"), acdm)
+    // logs ERROR not implemented ABR schemeId [DEPO]
+    triedDDM.map(normalized) shouldBe Success(normalized(
+      <ddm:DDM xsi:schemaLocation={ schemaLocation }>
+        { ddmProfile("D13200") }
+        <ddm:dcmiMetadata>
+          <dct:subject xsi:type="-">DEPO</dct:subject>
+          <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
+        </ddm:dcmiMetadata>
+      </ddm:DDM>
+    ))
+    assume(schemaIsAvailable)
+    triedDDM.flatMap(validate) should failWithNotImplementedAttribute
+  }
+
   "temporal coverage" should "map ABR" in {
     val emd = parseEmdContent(Seq(
       emdTitle, emdCreator, emdDescription, emdDates,
@@ -768,29 +791,6 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     ))
     assume(schemaIsAvailable)
     triedDDM.flatMap(validate) shouldBe Success(())
-  }
-
-  it should "report not implemented attributes" in {
-    val emd = parseEmdContent(Seq(
-      emdTitle, emdCreator,
-      <emd:subject>
-          <dc:subject eas:scheme="ABR" eas:schemeId="archaeologie.subject">DEPO</dc:subject>
-      </emd:subject>,
-      emdDescription, emdDates, emdRights,
-    ))
-    val triedDDM = DDM(emd, Seq("D35400"), acdm)
-    // logs ERROR not implemented ABR schemeId [DEPO]
-    triedDDM.map(normalized) shouldBe Success(normalized(
-      <ddm:DDM xsi:schemaLocation={ schemaLocation }>
-        { ddmProfile("D13200") }
-        <ddm:dcmiMetadata>
-          <dct:subject xsi:type="-">DEPO</dct:subject>
-          <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
-        </ddm:dcmiMetadata>
-      </ddm:DDM>
-    ))
-    assume(schemaIsAvailable)
-    triedDDM.flatMap(validate) should failWithNotImplementedAttribute
   }
 
   "author" should "succeed" in {

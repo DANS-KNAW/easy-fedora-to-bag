@@ -30,7 +30,8 @@ case class Configuration(version: String,
                          ldapEnv: LdapEnv,
                          bagIndexUrl: URI,
                          stagingDir: File,
-                         acdm: Node,
+                         abrTemporalMapping: Node,
+                         abrComplexMapping: Node,
                         )
 
 object Configuration {
@@ -46,7 +47,8 @@ object Configuration {
       load((cfgPath / "application.properties").toJava)
     }
 
-    val acmXsml = cfgPath / "EMD_acdm.xsl"
+    val acdmFile = cfgPath / "EMD_acdm.xsl"
+    val acdmXml = XML.loadFile(acdmFile.toJava)
     new Configuration(
       version = (home / "bin" / "version").contentAsString.stripLineEnd,
       fedoraCredentials = new FedoraCredentials(
@@ -63,8 +65,10 @@ object Configuration {
       },
       new URI(properties.getString("bag-index.url")),
       File(properties.getString("staging.dir")),
-      (XML.loadFile(acmXsml.toJava) \ "periods")
-        .headOption.getOrElse(throw new IllegalArgumentException(s"could not find <periods> in $acmXsml"))
+      (acdmXml \ "periods")
+        .headOption.getOrElse(throw new IllegalArgumentException(s"could not find <periods> in $acdmFile")),
+      (acdmXml \ "complexlist")
+        .headOption.getOrElse(throw new IllegalArgumentException(s"could not find <complexlist> in $acdmFile")),
     )
   }
 }

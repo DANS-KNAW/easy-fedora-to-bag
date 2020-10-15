@@ -26,7 +26,7 @@ import scala.xml.{ Elem, Node, NodeSeq, XML }
 
 trait EmdSupport {
   private val emdUnmarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
-  val acdm: Node = (XML.loadFile("src/main/assembly/dist/cfg/EMD_acdm.xsl") \ "periods")
+  val abrTemporalMapping: Node = (XML.loadFile("src/main/assembly/dist/cfg/EMD_acdm.xsl") \ "periods")
     .headOption.getOrElse(fail("could not load configured xsl"))
 
   def parseEmdContent(xml: NodeSeq): EasyMetadataImpl = {
@@ -41,7 +41,7 @@ trait EmdSupport {
   }
 
   def emd2ddm(emd: EasyMetadataImpl): Elem = {
-    DDM(emd, Seq.empty, acdm)
+    DDM(emd, Seq.empty, abrTemporalMapping)
       .getOrRecover(e => fail("could not create DDM from test EMD", e))
   }
 }

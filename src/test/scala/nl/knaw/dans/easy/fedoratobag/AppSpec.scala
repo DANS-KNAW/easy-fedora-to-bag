@@ -42,7 +42,7 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
 
   private class MockedLdapContext extends InitialLdapContext(new java.util.Hashtable[String, String](), null)
 
-  private class MockedApp(configuration: Configuration = new Configuration("test-version", null, null, null, null, acdm = <abr:periods/>),
+  private class MockedApp(configuration: Configuration = new Configuration("test-version", null, null, null, null, abrTemporalMapping = <abr:periods/>, abrComplexMapping = <abr:complexlist/>),
                           mockedBagIndex: BagIndex = mockBagIndexRespondsWith(body = "<result/>", code = 200),
                          ) extends EasyFedoraToBagApp(configuration) {
     override lazy val fedoraProvider: FedoraProvider = mock[FedoraProvider]
@@ -79,7 +79,7 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
     val ids = Iterator("success:1", "notSimple:1", "whoops:1", "success:1")
     val outputDir = (testDir / "output").createDirectories()
     val stagingDir = testDir / "staging"
-    val app = new OverriddenApp(Configuration(null, null, null, null, stagingDir, null))
+    val app = new OverriddenApp(Configuration(null, null, null, null, stagingDir, null, null))
     val printer = CsvRecord.csvFormat.print(new StringWriter()) // content verified with simpleTransforms
     val triedMessage = app.createSips(ids, outputDir, strict = true, SimpleFilter())(printer)
     triedMessage shouldBe Success("no fedora/IO errors")

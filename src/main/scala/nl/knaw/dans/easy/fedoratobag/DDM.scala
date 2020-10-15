@@ -32,7 +32,7 @@ object DDM extends DebugEnhancedLogging {
   val dansLicense = "http://dans.knaw.nl/en/about/organisation-and-policy/legal-information/DANSLicence.pdf"
   val cc0 = "http://creativecommons.org/publicdomain/zero/1.0"
 
-  def apply(emd: EasyMetadataImpl, audiences: Seq[String], acdm: Node): Try[Elem] = Try {
+  def apply(emd: EasyMetadataImpl, audiences: Seq[String], abrTemporalMapping: Node, abrComplexMapping: Node): Try[Elem] = Try {
     //    println(new EmdMarshaller(emd).getXmlString)
 
     val dateMap: Map[String, Iterable[Elem]] = getDateMap(emd)
@@ -84,7 +84,7 @@ object DDM extends DebugEnhancedLogging {
        { emd.getEmdSubject.getDcSubject.asScala.map(bs => <dct:subject xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue.trim }</dct:subject>) }
        { emd.getEmdCoverage.getDcCoverage.asScala.map(bs => <dct:coverage xml:lang={ lang(bs) }>{ bs.getValue.trim }</dct:coverage>) }
        { emd.getEmdCoverage.getTermsSpatial.asScala.map(bs => <dct:spatial xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue.trim }</dct:spatial>) }
-       { emd.getEmdCoverage.getTermsTemporal.asScala.map(toTemporal(acdm)) }
+       { emd.getEmdCoverage.getTermsTemporal.asScala.map(toTemporal(abrTemporalMapping)) }
        { dateMap.filter(isOtherDate).map { case (key, values) => values.map(_.withLabel(dateLabel(key))) } }
        { emd.getEmdCoverage.getEasSpatial.asScala.map(toXml) }
        <dct:license xsi:type="dct:URI">{ toLicenseUrl(emd.getEmdRights) }</dct:license>
@@ -129,8 +129,6 @@ object DDM extends DebugEnhancedLogging {
       case (Some("ABR"), Some("archaeology.dc.subject")) => "abr:ABRcomplex"
       case (Some("ABR"), Some("archaeology.dct.subject")) => "abr:ABRcomplex"
       case (Some("ABR"), Some("archaeology.dcterms.subject")) => "abr:ABRcomplex"
-      case (Some("ABR"), Some("archaeology.dct.temporal")) => "abr:ABRperiode"
-      case (Some("ABR"), Some("archaeology.dcterms.temporal")) => "abr:ABRperiode"
       case (Some("ABR"), Some("archaeology.dc.temporal")) => "abr:ABRperiode"
       case (Some("ABR"), Some("archaeology.dct.temporal")) => "abr:ABRperiode"
       case (Some("ABR"), Some("archaeology.dcterms.temporal")) => "abr:ABRperiode"

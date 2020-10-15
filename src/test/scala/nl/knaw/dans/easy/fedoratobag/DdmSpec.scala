@@ -750,7 +750,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     val triedDDM = DDM(emd, Seq("D35400"), acdm)
     triedDDM.map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
-        { ddmProfile("D13200") }
+        { ddmProfile("D35400") }
         <ddm:dcmiMetadata>
           <ddm:temporal xml:lang="en"
                         valueURI="http://www.rnaproject.org/data/000c6eeb-83ac-47d5-b18f-c9e5d5f08b69"
@@ -767,7 +767,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       </ddm:DDM>
     ))
     assume(schemaIsAvailable)
-    triedDDM.flatMap(validate) should failWithNotImplementedAttribute
+    triedDDM.flatMap(validate) shouldBe Success(())
   }
 
   it should "report not implemented attributes" in {

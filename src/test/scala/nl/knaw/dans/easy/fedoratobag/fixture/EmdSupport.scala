@@ -22,11 +22,12 @@ import nl.knaw.dans.pf.language.emd.binding.EmdUnmarshaller
 import org.scalatest.Assertions._
 
 import scala.util.Try
-import scala.xml.{ Elem, NodeSeq, XML }
+import scala.xml.{ Elem, Node, NodeSeq, XML }
 
 trait EmdSupport {
   private val emdUnmarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
-  val acdm: Elem = XML.loadFile("src/main/assembly/dist/cfg/EMD_acdm.xsl")
+  val acdm: Node = (XML.loadFile("src/main/assembly/dist/cfg/EMD_acdm.xsl") \ "periods")
+    .headOption.getOrElse(fail("could not load configured xsl"))
 
   def parseEmdContent(xml: NodeSeq): EasyMetadataImpl = {
     val emd = <emd:easymetadata xmlns:emd="http://easy.dans.knaw.nl/easy/easymetadata/"

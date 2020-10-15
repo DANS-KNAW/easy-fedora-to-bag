@@ -23,14 +23,14 @@ import com.yourmediashelf.fedora.client.FedoraCredentials
 import javax.naming.Context
 import org.apache.commons.configuration.PropertiesConfiguration
 
-import scala.xml.{ Elem, XML }
+import scala.xml.{ Node, XML }
 
 case class Configuration(version: String,
                          fedoraCredentials: FedoraCredentials,
                          ldapEnv: LdapEnv,
                          bagIndexUrl: URI,
                          stagingDir: File,
-                        acdm: Elem,
+                         acdm: Node,
                         )
 
 object Configuration {
@@ -46,6 +46,7 @@ object Configuration {
       load((cfgPath / "application.properties").toJava)
     }
 
+    val acmXsml = cfgPath / "EMD_acdm.xsl"
     new Configuration(
       version = (home / "bin" / "version").contentAsString.stripLineEnd,
       fedoraCredentials = new FedoraCredentials(
@@ -62,7 +63,8 @@ object Configuration {
       },
       new URI(properties.getString("bag-index.url")),
       File(properties.getString("staging.dir")),
-      XML.loadFile((cfgPath / "EMD_acdm.xsl").toJava)
+      (XML.loadFile(acmXsml.toJava) \ "periods")
+        .headOption.getOrElse(throw new IllegalArgumentException(s"could not find <periods> in $acmXsml"))
     )
   }
 }

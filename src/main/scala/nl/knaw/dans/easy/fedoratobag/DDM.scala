@@ -32,7 +32,7 @@ object DDM extends DebugEnhancedLogging {
   val dansLicense = "http://dans.knaw.nl/en/about/organisation-and-policy/legal-information/DANSLicence.pdf"
   val cc0 = "http://creativecommons.org/publicdomain/zero/1.0"
 
-  def apply(emd: EasyMetadataImpl, audiences: Seq[String], acdm: Elem): Try[Elem] = Try {
+  def apply(emd: EasyMetadataImpl, audiences: Seq[String], acdm: Node): Try[Elem] = Try {
     //    println(new EmdMarshaller(emd).getXmlString)
 
     val dateMap: Map[String, Iterable[Elem]] = getDateMap(emd)
@@ -66,7 +66,7 @@ object DDM extends DebugEnhancedLogging {
        <ddm:accessRights>{ emd.getEmdRights.getAccessCategory }</ddm:accessRights>
      </ddm:profile>
      <ddm:dcmiMetadata>
-       { emd.getEmdIdentifier.getDcIdentifier.asScala.filter(_.getScheme != "DMO_ID").map(bi => <dct:identifier xsi:type={ idType(bi) }>{ bi.getValue.trim }</dct:identifier>) }
+       { emd.getEmdIdentifier.getDcIdentifier.asScala.withFilter(_.getScheme != "DMO_ID").map(bi => <dct:identifier xsi:type={ idType(bi) }>{ bi.getValue.trim }</dct:identifier>) }
        { emd.getEmdTitle.getTermsAlternative.asScala.map(str => <dct:alternative>{ str }</dct:alternative>) }
        { emd.getEmdDescription.getTermsAbstract.asScala.map(bs => <ddm:description xml:lang={ lang(bs) } descriptionType='Abstract'>{ bs.getValue.trim }</ddm:description>) }
        { emd.getEmdDescription.getTermsTableOfContents.asScala.map(bs => <ddm:description xml:lang={ lang(bs) } descriptionType='TableOfContents'>{ bs.getValue.trim }</ddm:description>) }
@@ -84,9 +84,9 @@ object DDM extends DebugEnhancedLogging {
        { emd.getEmdSubject.getDcSubject.asScala.map(bs => <dct:subject xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue.trim }</dct:subject>) }
        { emd.getEmdCoverage.getDcCoverage.asScala.map(bs => <dct:coverage xml:lang={ lang(bs) }>{ bs.getValue.trim }</dct:coverage>) }
        { emd.getEmdCoverage.getTermsSpatial.asScala.map(bs => <dct:spatial xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue.trim }</dct:spatial>) }
-       { emd.getEmdCoverage.getTermsTemporal.asScala.map(bs => <dct:temporal xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue.trim }</dct:temporal>) }
+       { emd.getEmdCoverage.getTermsTemporal.asScala.map(toTemporal(acdm)) }
        { dateMap.filter(isOtherDate).map { case (key, values) => values.map(_.withLabel(dateLabel(key))) } }
-       { emd.getEmdCoverage.getEasSpatial.asScala.map(spatial => toXml(spatial))}
+       { emd.getEmdCoverage.getEasSpatial.asScala.map(toXml) }
        <dct:license xsi:type="dct:URI">{ toLicenseUrl(emd.getEmdRights) }</dct:license>
        { emd.getEmdLanguage.getDcLanguage.asScala.map(bs => <dct:language xsi:type={langType(bs)}>{ langValue(bs) }</dct:language>) }
      </ddm:dcmiMetadata>
@@ -103,6 +103,24 @@ object DDM extends DebugEnhancedLogging {
     case "deu/ger" => "deu"
     case "nld/dut" | "dut/nld" => "nld"
     case s => s
+  }
+
+  private def toTemporal(acdmPeriods: Node)(bs: BasicString): Elem = {
+    val maybe = if (bs.getScheme == "ABR" && bs.getSchemeId.matches("archaeology.*temporal")) {
+      // TODO optimize: create a map when loading the xsl
+      (acdmPeriods \ "period").theSeq
+        .find(node => (node \ "code").text == bs.getValue)
+        .map(node =>
+          <ddm:temporal xml:lang="en"
+                          valueURI={ (node \ "uri").text.trim }
+                          subjectScheme="Archeologisch Basis Register"
+                          schemeURI="http://www.rnaproject.org"
+          >{ s"${(node \ "name").text.trim } (${ bs.getValue })" }</ddm:temporal>
+      )
+    } else None
+    maybe.getOrElse(
+      <dct:temporal xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue.trim }</dct:temporal>
+    )
   }
 
   private def xsiType(bs: BasicString): String = {
@@ -145,6 +163,7 @@ object DDM extends DebugEnhancedLogging {
     "Archis_monument" -> "ARCHIS-MONUMENT",
     "NWO-projectnummer" -> "NWO-PROJECTNR",
   )
+
   private def idType(bs: BasicString): DatasetId = Option(bs.getScheme)
     .filterNot(_.trim.isEmpty)
     .flatMap(schemeToIdType.get)

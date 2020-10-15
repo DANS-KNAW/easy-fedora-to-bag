@@ -42,7 +42,7 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
 
   private class MockedLdapContext extends InitialLdapContext(new java.util.Hashtable[String, String](), null)
 
-  private class MockedApp(configuration: Configuration = null,
+  private class MockedApp(configuration: Configuration = new Configuration("test-version", null, null, null, null, acdm = <abr:periods/>),
                           mockedBagIndex: BagIndex = mockBagIndexRespondsWith(body = "<result/>", code = 200),
                          ) extends EasyFedoraToBagApp(configuration) {
     override lazy val fedoraProvider: FedoraProvider = mock[FedoraProvider]

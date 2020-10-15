@@ -717,7 +717,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     //  ERROR not implemented  [subject zero]
     triedDDM.map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
-        { ddmProfile("D13200") }
+        { ddmProfile("D35400") }
         <ddm:dcmiMetadata>
           <dct:format>format0</dct:format>
           <dct:format>format1</dct:format>
@@ -750,7 +750,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     // logs ERROR not implemented ABR schemeId [DEPO]
     triedDDM.map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
-        { ddmProfile("D13200") }
+        { ddmProfile("D35400") }
         <ddm:dcmiMetadata>
           <dct:subject xsi:type="-">DEPO</dct:subject>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
@@ -889,6 +889,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           { ddmCreator }
           <ddm:created>03-2013</ddm:created>
           <ddm:available>03-2013</ddm:available>
+          <ddm:audience>D35400</ddm:audience>
           <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
         </ddm:profile>
         <ddm:dcmiMetadata>
@@ -925,6 +926,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <ddm:created>2017-09-30</ddm:created>
           <ddm:created>1901-04</ddm:created>
           <ddm:available>2013-04</ddm:available>
+          <ddm:audience>D35400</ddm:audience>
           <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
         </ddm:profile>
         <ddm:dcmiMetadata>
@@ -962,6 +964,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <ddm:available>2013-04</ddm:available>
           <ddm:available>2017-09-30</ddm:available>
           <ddm:available>1901-04</ddm:available>
+          <ddm:audience>D35400</ddm:audience>
           <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
         </ddm:profile>
         <ddm:dcmiMetadata>

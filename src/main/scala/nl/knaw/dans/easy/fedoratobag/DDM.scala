@@ -109,9 +109,17 @@ object DDM extends DebugEnhancedLogging {
     val scheme = Option(bs.getScheme).map(_.toUpperCase())
     (scheme, Option(bs.getSchemeId)) match {
       case (Some("ABR"), Some("archaeology.dc.subject")) => "abr:ABRcomplex"
+      case (Some("ABR"), Some("archaeology.dct.subject")) => "abr:ABRcomplex"
+      case (Some("ABR"), Some("archaeology.dcterms.subject")) => "abr:ABRcomplex"
+      case (Some("ABR"), Some("archaeology.dct.temporal")) => "abr:ABRperiode"
+      case (Some("ABR"), Some("archaeology.dcterms.temporal")) => "abr:ABRperiode"
       case (Some("ABR"), Some("archaeology.dc.temporal")) => "abr:ABRperiode"
+      case (Some("ABR"), Some("archaeology.dct.temporal")) => "abr:ABRperiode"
+      case (Some("ABR"), Some("archaeology.dcterms.temporal")) => "abr:ABRperiode"
       case (Some("ABR"), _) => notImplementedAttribute("ABR schemeId")(bs)
       case (Some("DCMI"), Some("common.dc.type")) => "dct:DCMIType"
+      case (Some("DCMI"), Some("common.dct.type")) => "dct:DCMIType"
+      case (Some("DCMI"), Some("common.dcterms.type")) => "dct:DCMIType"
       case (Some("DCMI"), _) => notImplementedAttribute("DCMI schemeId")(bs)
       case (_, Some(scheme)) if scheme.startsWith("id-type:") => scheme
       case (None, None) => null

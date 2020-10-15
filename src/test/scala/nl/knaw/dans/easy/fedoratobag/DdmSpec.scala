@@ -742,8 +742,8 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     val emd = parseEmdContent(Seq(
       emdTitle, emdCreator, emdDescription, emdDates,
         <emd:coverage>
-          <dct:temporal eas:scheme="ABR" eas:schemeId="archaeology.dcterms.temporal">ROM</dct:temporal>
-          <dct:temporal eas:scheme="ABR" eas:schemeId="archaeology.dcterms.temporal">XME</dct:temporal>
+          <dct:temporal eas:scheme="ABR" eas:schemeId="archaeology.dct.temporal">ROM</dct:temporal>
+          <dct:temporal eas:scheme="ABR" eas:schemeId="archaeology.dct.temporal">XME</dct:temporal>
         </emd:coverage>,
       emdRights,
     ))

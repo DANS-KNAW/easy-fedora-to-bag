@@ -16,7 +16,6 @@
 package nl.knaw.dans.easy.fedoratobag.fixture
 
 import better.files.File
-import nl.knaw.dans.easy.fedoratobag.Configuration.abrMapping
 import nl.knaw.dans.easy.fedoratobag._
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.pf.language.emd.EasyMetadataImpl
@@ -28,7 +27,7 @@ import scala.xml.{ Elem, NodeSeq }
 
 trait EmdSupport {
   private val emdUnmarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
-  val (abrTemporalMapping, abrComplexMapping) = abrMapping(File("src/main/assembly/dist/cfg/EMD_acdm.xsl"))
+  val abrMapping = AbrMappings(File("src/main/assembly/dist/cfg/EMD_acdm.xsl"))
 
   def parseEmdContent(xml: NodeSeq): EasyMetadataImpl = {
     val emd = <emd:easymetadata xmlns:emd="http://easy.dans.knaw.nl/easy/easymetadata/"
@@ -42,7 +41,7 @@ trait EmdSupport {
   }
 
   def emd2ddm(emd: EasyMetadataImpl): Elem = {
-    DDM(emd, Seq.empty, abrTemporalMapping, abrComplexMapping)
+    DDM(emd, Seq.empty, abrMapping)
       .getOrRecover(e => fail("could not create DDM from test EMD", e))
   }
 }

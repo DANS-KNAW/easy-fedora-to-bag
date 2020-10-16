@@ -32,7 +32,7 @@ object DDM extends DebugEnhancedLogging {
   val dansLicense = "http://dans.knaw.nl/en/about/organisation-and-policy/legal-information/DANSLicence.pdf"
   val cc0 = "http://creativecommons.org/publicdomain/zero/1.0"
 
-  def apply(emd: EasyMetadataImpl, audiences: Seq[String], abrTemporalMapping: Node, abrComplexMapping: Node): Try[Elem] = Try {
+  def apply(emd: EasyMetadataImpl, audiences: Seq[String], abrMapping: AbrMappings): Try[Elem] = Try {
     //    println(new EmdMarshaller(emd).getXmlString)
 
     val dateMap: Map[String, Iterable[Elem]] = getDateMap(emd)
@@ -81,10 +81,10 @@ object DDM extends DebugEnhancedLogging {
        { emd.getEmdFormat.getDcFormat.asScala.map(bs => <dct:format>{ bs.getValue.trim }</dct:format>) }
        { emd.getEmdFormat.getTermsExtent.asScala.map(bs => <dct:extent>{ bs.getValue.trim }</dct:extent>) }
        { emd.getEmdFormat.getTermsMedium.asScala.map(bs => <dct:medium>{ bs.getValue.trim }</dct:medium>) }
-       { emd.getEmdSubject.getDcSubject.asScala.map(toSubject(abrComplexMapping)) }
+       { emd.getEmdSubject.getDcSubject.asScala.map(toXml("subject", abrMapping.subject)) }
        { emd.getEmdCoverage.getDcCoverage.asScala.map(bs => <dct:coverage xml:lang={ lang(bs) }>{ bs.getValue.trim }</dct:coverage>) }
        { emd.getEmdCoverage.getTermsSpatial.asScala.map(bs => <dct:spatial xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue.trim }</dct:spatial>) }
-       { emd.getEmdCoverage.getTermsTemporal.asScala.map(toTemporal(abrTemporalMapping)) }
+       { emd.getEmdCoverage.getTermsTemporal.asScala.map(toXml("temporal", abrMapping.temporal)) }
        { dateMap.filter(isOtherDate).map { case (key, values) => values.map(_.withLabel(dateLabel(key))) } }
        { emd.getEmdCoverage.getEasSpatial.asScala.map(toXml) }
        <dct:license xsi:type="dct:URI">{ toLicenseUrl(emd.getEmdRights) }</dct:license>
@@ -105,46 +105,13 @@ object DDM extends DebugEnhancedLogging {
     case s => s
   }
 
-  private def toSubject(abrComplexMapping: Node)(bs: BasicString) = {
-    val maybe = if (isABR(bs, "archaeology.*subject")) {
-      // TODO optimize: create a map when loading the xsl
-      (abrComplexMapping \ "complex").theSeq
-        .find(node => (node \ "code").text == bs.getValue)
-        .map(node =>
-          <ddm:subject xml:lang="nl"
-                        valueURI={ (node \ "uri").text.trim }
-                        subjectScheme="Archeologisch Basis Register"
-                        schemeURI="http://www.rnaproject.org"
-          >{ s"${ (node \ "label").text.trim } (${ bs.getValue })" }</ddm:subject>
-        )
-    }
-                else None
-    maybe.getOrElse(
-      <dct:subject xml:lang={lang(bs)} xsi:type={xsiType(bs)}>{bs.getValue.trim}</dct:subject>
-    )
-  }
-
-  private def toTemporal(abrPeriodMapping: Node)(bs: BasicString): Elem = {
-    val maybe = if (isABR(bs, "archaeology.*temporal")) {
-      // TODO optimize: create a map when loading the xsl
-      (abrPeriodMapping \ "period").theSeq
-        .find(node => (node \ "code").text == bs.getValue)
-        .map(node =>
-          <ddm:temporal xml:lang="en"
-                          valueURI={ (node \ "uri").text.trim }
-                          subjectScheme="Archeologisch Basis Register"
-                          schemeURI="http://www.rnaproject.org"
-          >{ s"${ (node \ "name").text.trim } (${ bs.getValue })" }</ddm:temporal>
-        )
-    }
-                else None
-    maybe.getOrElse(
-      <dct:temporal xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue.trim }</dct:temporal>
-    )
-  }
-
-  private def isABR(bs: BasicString, s: DatasetId) = {
-    bs.getScheme == "ABR" && bs.getSchemeId.matches(s)
+  private def toXml(label: String, abrMapping: Map[String, Elem])(bs: BasicString): Elem = {
+    if (bs.getScheme == "ABR" && bs.getSchemeId.matches(s"archaeology.dc.*$label"))
+      abrMapping.get(bs.getValue)
+    else None
+  }.getOrElse {
+    <dct:label xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue.trim }</dct:label>
+      .withLabel(s"dct:$label")
   }
 
   private def xsiType(bs: BasicString): String = {

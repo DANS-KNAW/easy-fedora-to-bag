@@ -66,7 +66,7 @@ object DDM extends DebugEnhancedLogging {
        <ddm:accessRights>{ emd.getEmdRights.getAccessCategory }</ddm:accessRights>
      </ddm:profile>
      <ddm:dcmiMetadata>
-       { emd.getEmdIdentifier.getDcIdentifier.asScala.withFilter(_.getScheme != "DMO_ID").map(bi => <dct:identifier xsi:type={ idType(bi) }>{ bi.getValue.trim }</dct:identifier>) }
+       { emd.getEmdIdentifier.getDcIdentifier.asScala.map(bi => <dct:identifier xsi:type={ idType(bi) }>{ bi.getValue.trim }</dct:identifier>) }
        { emd.getEmdTitle.getTermsAlternative.asScala.map(str => <dct:alternative>{ str }</dct:alternative>) }
        { emd.getEmdDescription.getTermsAbstract.asScala.map(bs => <ddm:description xml:lang={ lang(bs) } descriptionType='Abstract'>{ bs.getValue.trim }</ddm:description>) }
        { emd.getEmdDescription.getTermsTableOfContents.asScala.map(bs => <ddm:description xml:lang={ lang(bs) } descriptionType='TableOfContents'>{ bs.getValue.trim }</ddm:description>) }

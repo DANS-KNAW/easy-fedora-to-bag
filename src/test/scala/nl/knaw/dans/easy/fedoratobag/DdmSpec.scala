@@ -98,7 +98,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     // round trip test: create DDM from EMD
     // * easy-deposit-api created DDM + EMD
     // * easy-ingest-flow copied both into foXml and extended EMD, not DDM
-    triedDdm.map(normalized(_).split("\n").filterNot(_.contains("URN")).mkString("\n")
+    triedDdm.map(normalized(_).split("\n").filterNot(_.contains("URN")).filterNot(_.contains("EASY2")).mkString("\n")
     ) shouldBe triedFoXml.map(foXml =>
       normalized((foXml \\ "DDM").head)
         // just another prefix for the namespace

@@ -79,7 +79,10 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
            else if (!dir.isWriteable) Left(s"outputDir $dir exists and is empty but is not writeable by the current user")
                 else Right(())
     }
-    else Right(())
+    else {
+      dir.createDirectories()
+      Right(())
+    }
   })
 
   footer("")

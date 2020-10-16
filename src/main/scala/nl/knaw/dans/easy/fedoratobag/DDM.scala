@@ -81,7 +81,7 @@ object DDM extends DebugEnhancedLogging {
        { emd.getEmdFormat.getDcFormat.asScala.map(bs => <dct:format>{ bs.getValue.trim }</dct:format>) }
        { emd.getEmdFormat.getTermsExtent.asScala.map(bs => <dct:extent>{ bs.getValue.trim }</dct:extent>) }
        { emd.getEmdFormat.getTermsMedium.asScala.map(bs => <dct:medium>{ bs.getValue.trim }</dct:medium>) }
-       { emd.getEmdSubject.getDcSubject.asScala.map(bs => <dct:subject xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue.trim }</dct:subject>) }
+       { emd.getEmdSubject.getDcSubject.asScala.map(toSubject(abrComplexMapping)) }
        { emd.getEmdCoverage.getDcCoverage.asScala.map(bs => <dct:coverage xml:lang={ lang(bs) }>{ bs.getValue.trim }</dct:coverage>) }
        { emd.getEmdCoverage.getTermsSpatial.asScala.map(bs => <dct:spatial xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue.trim }</dct:spatial>) }
        { emd.getEmdCoverage.getTermsTemporal.asScala.map(toTemporal(abrTemporalMapping)) }
@@ -105,10 +105,28 @@ object DDM extends DebugEnhancedLogging {
     case s => s
   }
 
-  private def toTemporal(acdmPeriods: Node)(bs: BasicString): Elem = {
-    val maybe = if (bs.getScheme == "ABR" && bs.getSchemeId.matches("archaeology.*temporal")) {
+  private def toSubject(abrComplexMapping: Node)(bs: BasicString) = {
+    val maybe = if (isABR(bs, "archaeology.*subject")) {
       // TODO optimize: create a map when loading the xsl
-      (acdmPeriods \ "period").theSeq
+      (abrComplexMapping \ "complex").theSeq
+        .find(node => (node \ "code").text == bs.getValue)
+        .map(node =>
+          <ddm:subject xml:lang="nl"
+                        valueURI={ (node \ "uri").text.trim }
+                        subjectScheme="Archeologisch Basis Register"
+                        schemeURI="http://www.rnaproject.org"
+          >{ s"${(node \ "label").text.trim } (${ bs.getValue })" }</ddm:subject>
+        )
+    } else None
+    maybe.getOrElse(
+      <dct:subject xml:lang={lang(bs)} xsi:type={xsiType(bs)}>{bs.getValue.trim}</dct:subject>
+    )
+  }
+
+  private def toTemporal(abrPeriodMapping: Node)(bs: BasicString): Elem = {
+    val maybe = if (isABR(bs, "archaeology.*temporal")) {
+      // TODO optimize: create a map when loading the xsl
+      (abrPeriodMapping \ "period").theSeq
         .find(node => (node \ "code").text == bs.getValue)
         .map(node =>
           <ddm:temporal xml:lang="en"
@@ -121,6 +139,10 @@ object DDM extends DebugEnhancedLogging {
     maybe.getOrElse(
       <dct:temporal xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue.trim }</dct:temporal>
     )
+  }
+
+  private def isABR(bs: BasicString, s: DatasetId) = {
+    bs.getScheme == "ABR" && bs.getSchemeId.matches(s)
   }
 
   private def xsiType(bs: BasicString): String = {

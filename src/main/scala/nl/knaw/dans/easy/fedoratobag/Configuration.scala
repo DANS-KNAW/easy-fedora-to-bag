@@ -49,6 +49,7 @@ object Configuration {
 
     val acdmFile = cfgPath / "EMD_acdm.xsl"
     val acdmXml = XML.loadFile(acdmFile.toJava)
+    val (periodMapping, complexMapping) = abrMapping( acdmFile)
     new Configuration(
       version = (home / "bin" / "version").contentAsString.stripLineEnd,
       fedoraCredentials = new FedoraCredentials(
@@ -65,6 +66,14 @@ object Configuration {
       },
       new URI(properties.getString("bag-index.url")),
       File(properties.getString("staging.dir")),
+      periodMapping,
+      complexMapping,
+    )
+  }
+
+  def abrMapping(acdmFile: File): (Node,Node) = {
+    val acdmXml = XML.loadFile(acdmFile.toJava)
+    (
       (acdmXml \ "periods")
         .headOption.getOrElse(throw new IllegalArgumentException(s"could not find <periods> in $acdmFile")),
       (acdmXml \ "complexlist")

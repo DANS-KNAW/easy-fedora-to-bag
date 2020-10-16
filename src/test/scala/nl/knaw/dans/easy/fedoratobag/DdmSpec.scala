@@ -725,7 +725,11 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <dct:extent>extent1</dct:extent>
           <dct:medium>medium0</dct:medium>
           <dct:medium>medium1</dct:medium>
-          <dct:subject xsi:type="abr:ABRcomplex">DEPO</dct:subject>
+          <ddm:subject  xml:lang="nl"
+                        valueURI="http://www.rnaproject.org/data/b97ef902-059a-4c14-b925-273c74bace30"
+                        subjectScheme="Archeologisch Basis Register"
+                        schemeURI="http://www.rnaproject.org"
+          >Depot (DEPO)</ddm:subject>
           <dct:subject>hello world</dct:subject>
           <dct:subject xml:lang="nld-NLD" xsi:type="-">subject 0</dct:subject>
           <dct:subject xml:lang="nld-NLD" xsi:type="-">subject 1</dct:subject>
@@ -761,7 +765,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     triedDDM.flatMap(validate) should failWithNotImplementedAttribute
   }
 
-  it should "map ABR" in pendingUntilFixed {
+  it should "map ABR" in {
     val emd = parseEmdContent(Seq(
       emdTitle, emdCreator,
         <emd:subject>
@@ -779,7 +783,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
                        valueURI="http://www.rnaproject.org/data/85ae2aa0-caae-4745-aecb-6cc765a8782f"
                        subjectScheme="Archeologisch Basis Register"
                        schemeURI="http://www.rnaproject.org"
-          >Nederzetting, onbepaald (XN)</ddm:subject>
+          >Nederzetting, onbepaald (NX)</ddm:subject>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>

@@ -67,7 +67,6 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     // hence not reported in comment field of csvRecord
     val triedCsvRecord = for {
       csvRecord <- createBag(datasetId, depositDir / bagUUID, strict, filter)
-      _ <- DepositProperties.create(depositDir, csvRecord)
       _ = depositDir.moveTo(outputDir / sipUUID)(CopyOptions.atomically)
     } yield csvRecord
     errorHandling(triedCsvRecord, printer, datasetId, depositDir)

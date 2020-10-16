@@ -90,18 +90,7 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
 
     // two directories with two entries each
     outputDir.list.toList should have length 2
-    outputDir.listRecursively.toList should have length 6
-
-    // two deposits with almost the same deposit.properties
-    val props = outputDir.listRecursively.toList.filter(_.name == "deposit.properties")
-    props should have length 2
-    props.map(linesWithoutTimestamp).distinct shouldBe List(
-      """state.label = SUBMITTED
-        |state.description = Deposit is valid and ready for post-submission processing
-        |depositor.userId = testUser
-        |identifier.doi = testDOI
-        |identifier.fedora = success:1
-        |deposit.origin = easy-fedora-to-bag""".stripMargin)
+    outputDir.listRecursively.toList should have length 4
   }
 
   private def linesWithoutTimestamp(file: File) = {

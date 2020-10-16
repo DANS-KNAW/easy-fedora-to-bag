@@ -28,7 +28,9 @@ ARGUMENTS
                                   (default = /home/vagrant/easy-fedora-to-bag-2020-02-02T20:20:02.000Z.csv)
      -o, --output-dir  <arg>      Empty directory in which to stage the created IPs. It will be created if it
                                   doesn't exist.
-     -f, --output-format  <arg>   Output format: AIP, SIP. Only required for transformation type simple.
+     -f, --output-format  <arg>   Output format: AIP, SIP. 'SIP' is only implemented for simple, it creates the
+                                  bags one directory level deeper. easy-bag-to-deposit completes these sips with
+                                  deposit.properties
      -s, --strict                 If provided, the transformation will check whether the datasets adhere to the
                                   requirements of the chosen transformation.
      -h, --help                   Show help message

@@ -59,7 +59,7 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
     descr = "Empty directory in which to stage the created IPs. It will be created if it doesn't exist.")
   val outputDir: ScallopOption[File] = outputDirPath.map(File(_))
   val outputFormat: ScallopOption[OutputFormat] = opt(name = "output-format", short = 'f',
-    descr = OutputFormat.values.mkString("Output format: ", ", ", ". Only required for transformation type simple."))
+    descr = OutputFormat.values.mkString("Output format: ", ", ", ". 'SIP' is only implemented for simple, it creates the bags one directory level deeper. easy-bag-to-deposit completes these sips with deposit.properties"))
   private val logFilePath: ScallopOption[Path] = opt(name = "log-file", short = 'l',
     descr = s"The name of the logfile in csv format. If not provided a file $printedName-<timestamp>.csv will be created in the home-dir of the user.",
     default = Some(Paths.get(Properties.userHome).resolve(s"$printedName-$now.csv")))

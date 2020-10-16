@@ -77,6 +77,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     triedCsvRecord
       .doIfFailure {
         case t: InvalidTransformationException => logger.warn(s"$datasetId -> $ipDir failed: ${ t.getMessage }")
+        case t: Throwable => logger.error(s"$datasetId -> $ipDir had a not expected exception: ${ t.getMessage }", t)
       }
       .recoverWith {
         case t: FedoraClientException if t.getStatus != 404 => Failure(t)

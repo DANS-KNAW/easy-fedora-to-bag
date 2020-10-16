@@ -761,7 +761,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     triedDDM.flatMap(validate) should failWithNotImplementedAttribute
   }
 
-  it should "map ABR" in {
+  it should "map ABR" in pendingUntilFixed {
     val emd = parseEmdContent(Seq(
       emdTitle, emdCreator,
         <emd:subject>

@@ -69,7 +69,6 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   val transformation: ScallopOption[TransformationType] = trailArg(name = "transformation",
     descr = TransformationType.values.mkString("The type of transformation used: ", ", ", "."))
 
-
   validatePathExists(inputPath)
   validatePathIsFile(inputPath)
 

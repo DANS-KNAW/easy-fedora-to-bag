@@ -15,8 +15,6 @@
  */
 package nl.knaw.dans.easy.fedoratobag
 
-import java.util.Locale
-
 import com.typesafe.scalalogging.Logger
 
 import scala.util.{ Failure, Success, Try }

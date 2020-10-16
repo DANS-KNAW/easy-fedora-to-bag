@@ -24,7 +24,7 @@ import nl.knaw.dans.pf.language.emd.binding.EmdUnmarshaller
 import org.scalatest.Assertions._
 
 import scala.util.Try
-import scala.xml.{Elem, NodeSeq}
+import scala.xml.{ Elem, NodeSeq }
 
 trait EmdSupport {
   private val emdUnmarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])

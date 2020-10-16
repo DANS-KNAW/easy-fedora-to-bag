@@ -49,7 +49,7 @@ object Configuration {
 
     val acdmFile = cfgPath / "EMD_acdm.xsl"
     val acdmXml = XML.loadFile(acdmFile.toJava)
-    val (periodMapping, complexMapping) = abrMapping( acdmFile)
+    val (periodMapping, complexMapping) = abrMapping(acdmFile)
     new Configuration(
       version = (home / "bin" / "version").contentAsString.stripLineEnd,
       fedoraCredentials = new FedoraCredentials(
@@ -71,7 +71,7 @@ object Configuration {
     )
   }
 
-  def abrMapping(acdmFile: File): (Node,Node) = {
+  def abrMapping(acdmFile: File): (Node, Node) = {
     val acdmXml = XML.loadFile(acdmFile.toJava)
     (
       (acdmXml \ "periods")

@@ -115,9 +115,10 @@ object DDM extends DebugEnhancedLogging {
                         valueURI={ (node \ "uri").text.trim }
                         subjectScheme="Archeologisch Basis Register"
                         schemeURI="http://www.rnaproject.org"
-          >{ s"${(node \ "label").text.trim } (${ bs.getValue })" }</ddm:subject>
+          >{ s"${ (node \ "label").text.trim } (${ bs.getValue })" }</ddm:subject>
         )
-    } else None
+    }
+                else None
     maybe.getOrElse(
       <dct:subject xml:lang={lang(bs)} xsi:type={xsiType(bs)}>{bs.getValue.trim}</dct:subject>
     )
@@ -133,9 +134,10 @@ object DDM extends DebugEnhancedLogging {
                           valueURI={ (node \ "uri").text.trim }
                           subjectScheme="Archeologisch Basis Register"
                           schemeURI="http://www.rnaproject.org"
-          >{ s"${(node \ "name").text.trim } (${ bs.getValue })" }</ddm:temporal>
-      )
-    } else None
+          >{ s"${ (node \ "name").text.trim } (${ bs.getValue })" }</ddm:temporal>
+        )
+    }
+                else None
     maybe.getOrElse(
       <dct:temporal xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue.trim }</dct:temporal>
     )

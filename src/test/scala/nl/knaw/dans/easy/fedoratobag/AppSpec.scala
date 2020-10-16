@@ -190,7 +190,7 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
       Seq("agreements.xml", "depositor-agreement.pdf", "message-from-depositor.txt")
   }
 
-  it should "reproduce null pointer exception" in {
+  it should "reproduce (the now fixed) null pointer exception" in {
     val app = new MockedApp()
     implicit val fedoraProvider: FedoraProvider = app.fedoraProvider
     expectedFoXmls(app.fedoraProvider, sampleFoXML / "easy-dataset-159876.xml")

@@ -310,9 +310,9 @@ object DDM extends DebugEnhancedLogging {
 
   private def toRelationXml(key: String, rel: Relation): Elem = {
     <label scheme={ relationType(rel) }
-           href={ rel.getSubjectLink.toURL.toString }
-           xml:lang={ rel.getSubjectTitle.getLanguage }
-    >{ rel.getSubjectTitle.getValue.trim }</label>
+           href={ Option(rel.getSubjectLink).map(_.toURL.toString).orNull }
+           xml:lang={ Option(rel.getSubjectTitle).map(_.getLanguage).orNull }
+    >{ Option(rel.getSubjectTitle).map(_.getValue.trim).getOrElse("") }</label>
   }.withLabel(relationLabel("ddm:", key))
 
   private def toRelationXml(key: String, bs: BasicString): Node = {
@@ -326,11 +326,11 @@ object DDM extends DebugEnhancedLogging {
   }
 
   private def relationType(rel: Relation): String = {
-    rel.getSubjectLink.getAuthority match {
+    Option(rel.getSubjectLink).map(_.getAuthority match {
       case "persistent-identifier.nl" => "id-type:URN"
       case "doi.org" => "id-type:DOI"
       case _ => null
-    }
+    }).orNull
   }
 
   private def relationLabel(prefix: String, key: String): String = prefix + {

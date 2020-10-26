@@ -100,8 +100,70 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
     }
   }
 
+  it should "map key-value pairs" in {
+    val fileMetadata = {
+      <sid>easy-file:3165833</sid>
+      <name>R0011867.jpg</name>
+      <parentSid>easy-folder:169296</parentSid>
+      <datasetSid>easy-dataset:50012</datasetSid>
+      <path>Fotos/R0011867.jpg</path>
+      <mimeType>image/jpeg</mimeType>
+      <size>2927389</size>
+      <creatorRole>ARCHIVIST</creatorRole>
+      <visibleTo>ANONYMOUS</visibleTo>
+      <accessibleTo>RESTRICTED_REQUEST</accessibleTo>
+      <addmd:additional-metadata>
+          <properties></properties>
+          <addmd:additional id="addi" label="archaeology-filemetadata">
+              <content>
+                  <original_file>R0011867.JPG</original_file>
+                  <file_name>R0011867.jpg</file_name>
+                  <file_content>Veldfoto</file_content>
+                  <othmat_codebook>Fotolijst.csv</othmat_codebook>
+                  <DIA_KL_ZW>X</DIA_KL_ZW>
+                  <DATUM>9-12-2009</DATUM>
+                  <WERKPUT>2</WERKPUT>
+                  <VLAK>1</VLAK>
+                  <PROFIEL>N</PROFIEL>
+                  <FOTOGRAAF>RvW</FOTOGRAAF>
+                  <RICHTING>N</RICHTING>
+                  <OMSCHRIJVING>foto van het ingestorte noordprofiel (met ladder zichtbaar)</OMSCHRIJVING>
+                  <ID-Foto>18435</ID-Foto>
+              </content>
+          </addmd:additional>
+      </addmd:additional-metadata>
+    }
+
+    val triedFileItem = FileItem(fileFoXml(fileMetadata))
+    triedFileItem.map(trim) shouldBe Success(trim(
+      <file filepath="data/Fotos/R0011867.jpg">
+          <dct:identifier>easy-file:35</dct:identifier>
+          <dct:title>R0011867.jpg</dct:title>
+          <dct:format>image/jpeg</dct:format>
+          <dct:extent>2.8MB</dct:extent>
+          <dct:isFormatOf>R0011867.JPG</dct:isFormatOf>
+          <dct:title>R0011867.jpg</dct:title>
+          <dct:abstract>Veldfoto</dct:abstract>
+          <afm:othmat_codebook>Fotolijst.csv</afm:othmat_codebook>
+          <notImplemented>DIA_KL_ZW: X</notImplemented>
+          <notImplemented>DATUM: 9-12-2009</notImplemented>
+          <notImplemented>WERKPUT: 2</notImplemented>
+          <notImplemented>VLAK: 1</notImplemented>
+          <notImplemented>PROFIEL: N</notImplemented>
+          <notImplemented>FOTOGRAAF: RvW</notImplemented>
+          <notImplemented>RICHTING: N</notImplemented>
+          <notImplemented>OMSCHRIJVING: foto van het ingestorte noordprofiel (met ladder zichtbaar)</notImplemented>
+          <notImplemented>ID-Foto: 18435</notImplemented>
+          <accessibleToRights>RESTRICTED_REQUEST</accessibleToRights>
+          <visibleToRights>ANONYMOUS</visibleToRights>
+      </file>
+    ))
+    assume(schemaIsAvailable)
+    triedFileItem.flatMap(validateItem) shouldBe Success(())
+  }
+
   it should "use file name as second title (first title from mandatory name)" in {
-    val fileMetadata =
+    val fileMetadata = {
       <name>SKKJ6_spoor.mix</name>
       <path>GIS/SKKJ6_spoor.mif</path>
       <mimeType>application/x-framemaker</mimeType>
@@ -125,6 +187,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
           </content>
         </addmd:additional>
       </addmd:additional-metadata>
+   }
 
     // note that we have two times <dct:title>,
     // once from <name>, once from <addmd:additional-metadata><file_name>
@@ -153,7 +216,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
   }
 
   it should "use archival_name as title and skip quantity 1" in {
-    val fileMetadata =
+    val fileMetadata = {
       <name>A</name>
       <path>B</path>
       <mimeType>C</mimeType>
@@ -177,6 +240,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
           </content>
         </addmd:additional>
       </addmd:additional-metadata>
+    }
 
     val triedFileItem = FileItem(fileFoXml(fileMetadata))
     triedFileItem.map(trim) shouldBe Success(trim(
@@ -203,7 +267,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
   }
 
   "checkNotImplemented" should "report an original_file combined with archival_name" in {
-    val fileMetadata =
+    val fileMetadata = {
       <name>A</name>
       <path>B</path>
       <mimeType>C</mimeType>
@@ -221,6 +285,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
           </content>
         </addmd:additional>
       </addmd:additional-metadata>
+    }
 
     val triedFileItem = FileItem(fileFoXml(fileMetadata))
     triedFileItem.map(trim) shouldBe Success(trim(
@@ -250,7 +315,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
   }
 
   it should "report items once" in {
-    val items =
+    val items = {
       <file filepath="data/GIS/SKKJ6_spoor.mif">
         <dct:identifier>easy-file:35</dct:identifier>
         <notImplemented>analytic_units: abc</notImplemented>
@@ -264,6 +329,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
         <notImplemented>analytic_units: blabla</notImplemented>
         <notImplemented>opmerkingen: rabarbera</notImplemented>
       </file>
+    }
 
     val mockLogger = mock[UnderlyingLogger]
     Seq(

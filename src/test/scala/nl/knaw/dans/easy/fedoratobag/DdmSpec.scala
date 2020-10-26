@@ -799,6 +799,17 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <eas:isPartOf>
               <eas:subject-title>Second Timothy: When and Where? Text and Traditions in the Subscriptions</eas:subject-title>
           </eas:isPartOf>
+          <eas:isPartOf>
+              <eas:subject-title>Briefrapport</eas:subject-title>
+              <eas:subject-link/>
+          </eas:isPartOf>
+          <eas:isPartOf>
+              <eas:subject-title>2005-09/11</eas:subject-title>
+              <eas:subject-link/>
+          </eas:isPartOf>
+          <eas:isPartOf>
+              <eas:subject-title>blabla</eas:subject-title>
+          </eas:isPartOf>
           <eas:references>
               <eas:subject-title>Archeologisch onderzoek verbreding Hunzeloop Elzemaat</eas:subject-title>
               <eas:subject-link>urn:nbn:nl:ui:13-svxg-8g</eas:subject-link>
@@ -813,12 +824,38 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
         <ddm:dcmiMetadata>
           <ddm:references href="http://persistent-identifier.nl/urn:nbn:nl:ui:13-svxg-8g">Archeologisch onderzoek verbreding Hunzeloop Elzemaat</ddm:references>
           <ddm:isPartOf>Second Timothy: When and Where? Text and Traditions in the Subscriptions</ddm:isPartOf>
+          <ddm:isPartOf>Briefrapport</ddm:isPartOf>
+          <ddm:isPartOf>2005-09/11</ddm:isPartOf>
+          <ddm:isPartOf>blabla</ddm:isPartOf>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>
     ))
     assume(schemaIsAvailable)
     triedDDM.flatMap(validate) shouldBe Success(())
+  }
+
+  it should "report not implemented href" in {
+    val emd = parseEmdContent(Seq(
+      emdTitle, emdCreator, emdDescription, emdDates,
+      <emd:relation>
+          <eas:references>
+              <eas:subject-title>rababera</eas:subject-title>
+              <eas:subject-link>isbn:9053566937</eas:subject-link>
+          </eas:references>
+      </emd:relation>,
+      emdRights,
+    ))
+    val triedDDM = DDM(emd, Seq("D13200"), abrMapping)
+    triedDDM.map(normalized) shouldBe Success(normalized(
+      <ddm:DDM xsi:schemaLocation={ schemaLocation }>
+        { ddmProfile("D13200") }
+        <ddm:dcmiMetadata>
+          <not:implemented/>
+          <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
+        </ddm:dcmiMetadata>
+      </ddm:DDM>
+    ))
   }
 
   "temporal coverage" should "map ABR" in {

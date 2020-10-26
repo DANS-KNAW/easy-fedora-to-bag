@@ -15,6 +15,8 @@
  */
 package nl.knaw.dans.easy.fedoratobag
 
+import java.net.URI
+
 import nl.knaw.dans.common.lang.dataset.AccessCategory._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import nl.knaw.dans.lib.string._
@@ -299,24 +301,20 @@ object DDM extends DebugEnhancedLogging {
       .mapValues(_.flatMap(_._2))
   }
 
-  private def toRelationXml(key: String, rel: Relation): Elem = {
-    <label scheme={ relationType(rel) }
-           href={ toURL(rel) }
-           xml:lang={ Option(rel.getSubjectTitle).map(_.getLanguage).orNull }
-    >{ Option(rel.getSubjectTitle).map(_.getValue.trim).getOrElse("") }</label>
-  }.withLabel(relationLabel("ddm:", key))
+  private def toRelationXml(key: String, rel: Relation): Elem = Try {
+    {
+      <label scheme={ relationType(rel) }
+             href={ Option(rel.getSubjectLink).map(toHref).orNull }
+             xml:lang={ Option(rel.getSubjectTitle).map(_.getLanguage).orNull }
+      >{ Option(rel.getSubjectTitle).map(_.getValue.trim).getOrElse("") }</label>
+    }.withLabel(relationLabel("ddm:", key))
+  }.getOrElse(notImplemented(s"relation ($key)")(rel))
 
-  private def toURL(rel: Relation) = {
-    Option(rel.getSubjectLink).map { uri =>
-      uri.getScheme.toLowerCase() match {
-        case "urn" =>
-          "http://persistent-identifier.nl/" + uri.toString
-        case "http" | "https" =>
-          uri.toURL.toString
-        case _ => ???
-      }
-    }.orNull
-  }
+  private def toHref(uri: URI) = Option(uri.getScheme).map {
+    case "urn" => "http://persistent-identifier.nl/" + uri.toString
+    case "http" | "https" => uri.toString
+    case _ => ??? // recover with Try{...}.getOrElse of caller to fail slow
+  }.orNull
 
   private def toRelationXml(key: String, bs: BasicString): Node = {
     if (bs.getScheme == "STREAMING_SURROGATE_RELATION") {

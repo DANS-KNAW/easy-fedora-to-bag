@@ -179,26 +179,6 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
       Seq("agreements.xml", "depositor-agreement.pdf", "message-from-depositor.txt")
   }
 
-  it should "reproduce (the now fixed) null pointer exception" in {
-    val app = new MockedApp()
-    implicit val fedoraProvider: FedoraProvider = app.fedoraProvider
-    expectedFoXmls(app.fedoraProvider, sampleFoXML / "easy-dataset-159876.xml")
-    expectedSubordinates(app.fedoraProvider)
-    expectedManagedStreams(app.fedoraProvider,
-      (testDir / "dataset-license").write("blablabla"),
-    )
-    expectedAudiences(Map(
-      "easy-discipline:9" -> "D13200a",
-      "easy-discipline:10" -> "D13200e",
-      "easy-discipline:20" -> "D13200b",
-      "easy-discipline:22" -> "D13200c",
-      "easy-discipline:209" -> "D13200d",
-    ))
-    // TODO isolate the culprit and move to DdmSpec
-    val bag = testDir / "bags" / UUID.randomUUID.toString
-    app.createBag("easy-dataset:159876", bag, strict = false, app.filter) shouldBe a[Success[_]]
-  }
-
   it should "report strict simple violation" in {
     val app = new MockedApp()
     implicit val fedoraProvider: FedoraProvider = app.fedoraProvider

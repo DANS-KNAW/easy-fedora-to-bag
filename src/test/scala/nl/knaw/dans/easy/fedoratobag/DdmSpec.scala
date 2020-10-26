@@ -792,6 +792,30 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     triedDDM.flatMap(validate) shouldBe Success(())
   }
 
+  "relation" should "not not throw null pointer exception" in {
+    val emd = parseEmdContent(Seq(
+      emdTitle, emdCreator, emdDescription, emdDates,
+      <emd:relation>
+          <eas:isPartOf>
+              <eas:subject-title>Second Timothy: When and Where? Text and Traditions in the Subscriptions</eas:subject-title>
+          </eas:isPartOf>
+      </emd:relation>,
+      emdRights,
+    ))
+    val triedDDM = DDM(emd, Seq("D13200"), abrMapping)
+    triedDDM.map(normalized) shouldBe Success(normalized(
+      <ddm:DDM xsi:schemaLocation={ schemaLocation }>
+        { ddmProfile("D13200") }
+        <ddm:dcmiMetadata>
+          <ddm:isPartOf>Second Timothy: When and Where? Text and Traditions in the Subscriptions</ddm:isPartOf>
+          <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
+        </ddm:dcmiMetadata>
+      </ddm:DDM>
+    ))
+    assume(schemaIsAvailable)
+    triedDDM.flatMap(validate) shouldBe Success(())
+  }
+
   "temporal coverage" should "map ABR" in {
     val emd = parseEmdContent(Seq(
       emdTitle, emdCreator, emdDescription, emdDates,

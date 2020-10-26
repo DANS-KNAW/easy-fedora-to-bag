@@ -792,7 +792,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     triedDDM.flatMap(validate) shouldBe Success(())
   }
 
-  "relation" should "not not exceptions" in {
+  "relation" should "not throw exceptions" in {
     val emd = parseEmdContent(Seq(
       emdTitle, emdCreator, emdDescription, emdDates,
       <emd:relation>
@@ -811,6 +811,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D13200") }
         <ddm:dcmiMetadata>
+          <ddm:references href="http://persistent-identifier.nl/urn:nbn:nl:ui:13-svxg-8g">Archeologisch onderzoek verbreding Hunzeloop Elzemaat</ddm:references>
           <ddm:isPartOf>Second Timothy: When and Where? Text and Traditions in the Subscriptions</ddm:isPartOf>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>

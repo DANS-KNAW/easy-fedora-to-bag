@@ -301,10 +301,22 @@ object DDM extends DebugEnhancedLogging {
 
   private def toRelationXml(key: String, rel: Relation): Elem = {
     <label scheme={ relationType(rel) }
-           href={ Option(rel.getSubjectLink).map(_.toURL.toString).orNull }
+           href={ toURL(rel) }
            xml:lang={ Option(rel.getSubjectTitle).map(_.getLanguage).orNull }
     >{ Option(rel.getSubjectTitle).map(_.getValue.trim).getOrElse("") }</label>
   }.withLabel(relationLabel("ddm:", key))
+
+  private def toURL(rel: Relation) = {
+    Option(rel.getSubjectLink).map { uri =>
+      uri.getScheme.toLowerCase() match {
+        case "urn" =>
+          "http://persistent-identifier.nl/" + uri.toString
+        case "http" | "https" =>
+          uri.toURL.toString
+        case _ => ???
+      }
+    }.orNull
+  }
 
   private def toRelationXml(key: String, bs: BasicString): Node = {
     if (bs.getScheme == "STREAMING_SURROGATE_RELATION") {
@@ -321,7 +333,7 @@ object DDM extends DebugEnhancedLogging {
       case "persistent-identifier.nl" => "id-type:URN"
       case "doi.org" => "id-type:DOI"
       case _ => null
-    }).orNull
+    }).orNull // omits the attribute
   }
 
   private def relationLabel(prefix: String, key: String): String = prefix + {

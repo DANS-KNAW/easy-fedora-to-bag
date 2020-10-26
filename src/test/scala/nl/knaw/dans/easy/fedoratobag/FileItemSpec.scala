@@ -145,15 +145,15 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
           <dct:title>R0011867.jpg</dct:title>
           <dct:abstract>Veldfoto</dct:abstract>
           <afm:othmat_codebook>Fotolijst.csv</afm:othmat_codebook>
-          <notImplemented>DIA_KL_ZW: X</notImplemented>
-          <notImplemented>DATUM: 9-12-2009</notImplemented>
-          <notImplemented>WERKPUT: 2</notImplemented>
-          <notImplemented>VLAK: 1</notImplemented>
-          <notImplemented>PROFIEL: N</notImplemented>
-          <notImplemented>FOTOGRAAF: RvW</notImplemented>
-          <notImplemented>RICHTING: N</notImplemented>
-          <notImplemented>OMSCHRIJVING: foto van het ingestorte noordprofiel (met ladder zichtbaar)</notImplemented>
-          <notImplemented>ID-Foto: 18435</notImplemented>
+          <afm:keyvaluepair><afm:key>DIA_KL_ZW</afm:key><afm:value>X</afm:value></afm:keyvaluepair>
+          <afm:keyvaluepair><afm:key>DATUM</afm:key><afm:value>9-12-2009</afm:value>
+          </afm:keyvaluepair><afm:keyvaluepair><afm:key>WERKPUT</afm:key><afm:value>2</afm:value></afm:keyvaluepair>
+          <afm:keyvaluepair><afm:key>VLAK</afm:key><afm:value>1</afm:value></afm:keyvaluepair>
+          <afm:keyvaluepair><afm:key>PROFIEL</afm:key><afm:value>N</afm:value></afm:keyvaluepair>
+          <afm:keyvaluepair><afm:key>FOTOGRAAF</afm:key><afm:value>RvW</afm:value></afm:keyvaluepair>
+          <afm:keyvaluepair><afm:key>RICHTING</afm:key><afm:value>N</afm:value></afm:keyvaluepair>
+          <afm:keyvaluepair><afm:key>OMSCHRIJVING</afm:key><afm:value>foto van het ingestorte noordprofiel (met ladder zichtbaar)</afm:value></afm:keyvaluepair>
+          <afm:keyvaluepair><afm:key>ID-Foto</afm:key><afm:value>18435</afm:value></afm:keyvaluepair>
           <accessibleToRights>RESTRICTED_REQUEST</accessibleToRights>
           <visibleToRights>ANONYMOUS</visibleToRights>
       </file>
@@ -294,7 +294,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
           <dct:title>A</dct:title>
           <dct:format>C</dct:format>
           <dct:extent>0.0MB</dct:extent>
-          <notImplemented>blabla: K</notImplemented>
+          <afm:keyvaluepair><afm:key>blabla</afm:key><afm:value>K</afm:value></afm:keyvaluepair>
           <notImplemented>original_file AND archival_name</notImplemented>
           <dct:isFormatOf>I</dct:isFormatOf>
           <dct:title>j</dct:title>
@@ -304,13 +304,12 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
     ))
     val mockLogger = mock[UnderlyingLogger]
     Seq(
-      "easy-file:35 (data/B) NOT IMPLEMENTED: blabla: K",
       "easy-file:35 (data/B) NOT IMPLEMENTED: original_file AND archival_name",
     ).foreach(s => (mockLogger.warn(_: String)) expects s once())
     (() => mockLogger.isWarnEnabled()) expects() anyNumberOfTimes() returning true
 
     FileItem.checkNotImplemented(List(triedFileItem.get), Logger(mockLogger)) should matchPattern {
-      case Failure(e) if e.getMessage == "1 file(s) with not implemented additional file metadata: List(blabla, original_file AND archival_name)" =>
+      case Failure(e) if e.getMessage == "1 file(s) with not implemented additional file metadata: List(original_file AND archival_name)" =>
     }
   }
 

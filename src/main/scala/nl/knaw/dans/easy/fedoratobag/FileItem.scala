@@ -97,7 +97,7 @@ object FileItem {
       case Elem(_, "file_content", _, _, Text(value)) => <dct:abstract>{ value }</dct:abstract>
       case Elem(_, label, _, _, Text(value)) if isNotes(label) => <afm:notes>{ value }</afm:notes>
       case Elem(_, label, _, _, Text(value)) if asIs(label) => <tag>{ value }</tag>.copy(prefix = "afm", label = label)
-      case Elem(_, label, _, _, Text(value)) => <notImplemented>{ s"$label: $value" }</notImplemented>
+      case Elem(_, label, _, _, Text(value)) => <afm:keyvaluepair><afm:key>{ label }</afm:key><afm:value>{ value }</afm:value></afm:keyvaluepair>
       case node => node // white space
     }
   }

@@ -792,13 +792,17 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     triedDDM.flatMap(validate) shouldBe Success(())
   }
 
-  "relation" should "not not throw null pointer exception" in {
+  "relation" should "not not exceptions" in {
     val emd = parseEmdContent(Seq(
       emdTitle, emdCreator, emdDescription, emdDates,
       <emd:relation>
           <eas:isPartOf>
               <eas:subject-title>Second Timothy: When and Where? Text and Traditions in the Subscriptions</eas:subject-title>
           </eas:isPartOf>
+          <eas:references>
+              <eas:subject-title>Archeologisch onderzoek verbreding Hunzeloop Elzemaat</eas:subject-title>
+              <eas:subject-link>urn:nbn:nl:ui:13-svxg-8g</eas:subject-link>
+          </eas:references>
       </emd:relation>,
       emdRights,
     ))

@@ -311,10 +311,11 @@ object DDM extends DebugEnhancedLogging {
   }.getOrElse(notImplemented(s"relation ($key)")(rel))
 
   private def toHref(uri: URI) = Option(uri.getScheme).map {
-    case "urn" => "http://persistent-identifier.nl/" + uri.toString
-    case "http" | "https" => uri.toString
+    case "urn" => "https://persistent-identifier.nl/"
+    case "doi" => "https://doi.org/10.17026/"
+    case "http" | "https" => ""
     case _ => ??? // recover with Try{...}.getOrElse of caller to fail slow
-  }.orNull
+  }.map(_ + uri).orNull
 
   private def toRelationXml(key: String, bs: BasicString): Node = {
     if (bs.getScheme == "STREAMING_SURROGATE_RELATION") {

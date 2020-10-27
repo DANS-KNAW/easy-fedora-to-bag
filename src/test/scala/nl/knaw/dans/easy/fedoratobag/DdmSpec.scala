@@ -805,7 +805,8 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           </eas:isPartOf>
           <eas:isPartOf>
               <eas:subject-title>2005-09/11</eas:subject-title>
-              <eas:subject-link/>
+              <eas:subject-link>
+              </eas:subject-link>
           </eas:isPartOf>
           <eas:isPartOf>
               <eas:subject-title>blabla</eas:subject-title>
@@ -818,6 +819,10 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
               <eas:subject-title>Acabadabra</eas:subject-title>
               <eas:subject-link>10.17026/dans-something</eas:subject-link>
           </eas:references>
+          <eas:references>
+              <eas:subject-title>Tralala</eas:subject-title>
+              <eas:subject-link>doi:10.17026/dans-something-else</eas:subject-link>
+          </eas:references>
       </emd:relation>,
       emdRights,
     ))
@@ -827,7 +832,8 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
         { ddmProfile("D13200") }
         <ddm:dcmiMetadata>
           <ddm:references href="https://persistent-identifier.nl/urn:nbn:nl:ui:13-svxg-8g">Archeologisch onderzoek verbreding Hunzeloop Elzemaat</ddm:references>
-          <ddm:references>Acabadabra</ddm:references>
+          <ddm:references href="https://doi.org/10.17026/dans-something">Acabadabra</ddm:references>
+          <ddm:references href="https://doi.org/10.17026/dans-something-else">Tralala</ddm:references>
           <ddm:isPartOf>Second Timothy: When and Where? Text and Traditions in the Subscriptions</ddm:isPartOf>
           <ddm:isPartOf>Briefrapport</ddm:isPartOf>
           <ddm:isPartOf>2005-09/11</ddm:isPartOf>

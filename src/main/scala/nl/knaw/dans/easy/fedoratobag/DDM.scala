@@ -310,12 +310,18 @@ object DDM extends DebugEnhancedLogging {
     }.withLabel(relationLabel("ddm:", key))
   }.getOrElse(notImplemented(s"relation ($key)")(rel))
 
-  private def toHref(uri: URI) = Option(uri.getScheme).map {
-    case "urn" => "https://persistent-identifier.nl/"
-    case "doi" => "https://doi.org/10.17026/"
-    case "http" | "https" => ""
-    case _ => ??? // recover with Try{...}.getOrElse of caller to fail slow
-  }.map(_ + uri).orNull
+  private def toHref(uri: URI) = {
+    Option(uri.getScheme).map {
+      case "urn" => "https://persistent-identifier.nl/" + uri
+      case "doi" => "https://doi.org/" + uri.getSchemeSpecificPart
+      case "http" | "https" => uri.toString
+      case _ => ??? // recover with Try{...}.getOrElse of caller to fail slow
+    }.getOrElse {
+      if (uri.toString.startsWith("10.17026/")) s"https://doi.org/$uri"
+      else if (uri.toString.isBlank) null
+           else ???
+    }
+  }
 
   private def toRelationXml(key: String, bs: BasicString): Node = {
     if (bs.getScheme == "STREAMING_SURROGATE_RELATION") {

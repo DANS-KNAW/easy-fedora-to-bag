@@ -206,19 +206,20 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
   }
 
   private def selectFileByType(fileFilterType: FileFilterType, fileInfos: List[FileInfo]): List[FileInfo] = {
-    val selected = fileInfos.filter(_.mimeType.startsWith(
+    val openAccessFileInfos = fileInfos.filter(_.accessibleTo == "ANONYMOUS")
+    val selected = openAccessFileInfos.filter(_.mimeType.startsWith(
       fileFilterType match {
         case FileFilterType.PDF => "application/pdf"
         case FileFilterType.IMAGE => "image/"
       }))
-    val reversedSelection = fileInfos.filter(_.mimeType.startsWith(
+    val reversedSelection = openAccessFileInfos.filter(_.mimeType.startsWith(
       fileFilterType match {
         case FileFilterType.PDF => "image/" // Sic!
         case FileFilterType.IMAGE => "application/pdf" // Sic!
       }))
     if (selected.nonEmpty) List(selected.maxBy(_.size))
     else if (reversedSelection.nonEmpty) List(reversedSelection.maxBy(_.size))
-         else if (fileInfos.nonEmpty) List(fileInfos.maxBy(_.size))
+         else if (openAccessFileInfos.nonEmpty) List(openAccessFileInfos.maxBy(_.size))
               else List.empty[FileInfo]
   }
 
@@ -228,8 +229,9 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       path <- Try { Paths.get((foXml \\ "file-item-md" \\ "path").text) }
       sizeString <- Try { (foXml \\ "file-item-md" \\ "size").text }
       mimeType <- Try { (foXml \\ "file-item-md" \\ "mimeType").text }
+      accessibleTo <- Try { (foXml \\ "file-item-md" \\ "accessibleTo").text }
       optContentDigest <- Try { FoXml.getStreamRoot("EASY_FILE", foXml).map((_ \\ "contentDigest")).flatMap(_.headOption) }
-    } yield FileInfo(fedoraFileId, path, sizeString.toLong, mimeType, optContentDigest, foXml)
+    } yield FileInfo(fedoraFileId, path, sizeString.toLong, mimeType, accessibleTo, optContentDigest, foXml)
   }
 
   private def addPayloadFileTo(bag: DansV0Bag)(fileInfo: FileInfo): Try[Node] = {

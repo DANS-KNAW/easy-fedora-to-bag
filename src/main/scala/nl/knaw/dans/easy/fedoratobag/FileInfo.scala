@@ -19,4 +19,4 @@ import java.nio.file.Path
 
 import scala.xml.{ Elem, Node }
 
-case class FileInfo(fedoraFileId: String, path: Path, size: Long, mimeType: String, contentDigest: Option[Node], foXml: Elem)
+case class FileInfo(fedoraFileId: String, path: Path, size: Long, mimeType: String, accessibleTo: String, contentDigest: Option[Node], foXml: Elem)

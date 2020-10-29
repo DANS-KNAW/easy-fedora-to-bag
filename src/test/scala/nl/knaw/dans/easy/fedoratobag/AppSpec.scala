@@ -25,14 +25,14 @@ import javax.naming.directory.{ BasicAttributes, SearchControls, SearchResult }
 import javax.naming.ldap.InitialLdapContext
 import nl.knaw.dans.easy.fedoratobag.OutputFormat.{ AIP, SIP }
 import nl.knaw.dans.easy.fedoratobag.filter.{ BagIndex, DatasetFilter, InvalidTransformationException, SimpleDatasetFilter }
-import nl.knaw.dans.easy.fedoratobag.fixture.{ AudienceSupport, BagIndexSupport, FileSystemSupport, TestSupportFixture }
+import nl.knaw.dans.easy.fedoratobag.fixture.{ AudienceSupport, BagIndexSupport, FileFoXmlSupport, FileSystemSupport, TestSupportFixture }
 import org.scalamock.scalatest.MockFactory
 import resource.managed
 
 import scala.util.{ Failure, Success, Try }
 import scala.xml.XML
 
-class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory with FileSystemSupport with AudienceSupport {
+class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupport with MockFactory with FileSystemSupport with AudienceSupport {
   implicit val logFile: File = testDir / "log.txt"
 
   override def beforeEach(): Unit = {
@@ -234,9 +234,10 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
     expectedFoXmls(
       app.fedoraProvider,
       sampleFoXML / "streaming.xml",
-      (testDir / "easy-file-35.xml").writeText(
-        (sampleFoXML / "easy-file-35.xml").contentAsString.split("\n")
-          .filterNot(_.contains("<visibleTo>")).mkString("\n")
+      (testDir / "easy-file-35.xml").writeText(fileFoXml().serialize
+          .split("\n")
+          .filterNot(_.contains("<visibleTo>"))
+          .mkString("\n")
       ),
     )
     expectedSubordinates(app.fedoraProvider, "easy-file:35")
@@ -244,6 +245,75 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
     app.createBag("easy-dataset:13", testDir / "bags" / UUID.randomUUID.toString, strict = true, europeana = false, app.filter) should matchPattern {
       case Failure(e) if e.getMessage == "easy-file:35 <visibleTo> not found" =>
     }
+  }
+
+  it should "create all files as payload" in {
+    val app = new MockedApp()
+    implicit val fedoraProvider: FedoraProvider = app.fedoraProvider
+    expectedAudiences(Map("easy-discipline:6" -> "D35400"))
+
+    expectAUser(app.ldapContext)
+    expectedFoXmls(
+      app.fedoraProvider,
+      sampleFoXML / "streaming.xml",
+      (testDir / "easy-file-1.xml").writeText(fileFoXml(id=1,name="a.txt").serialize),
+      (testDir / "easy-file-2.xml").writeText(fileFoXml(id=2,name="b.txt").serialize),
+      (testDir / "easy-file-3.xml").writeText(fileFoXml(id=3,name="c.txt").serialize),
+    )
+    expectedSubordinates(app.fedoraProvider, "easy-file:1", "easy-file:2", "easy-file:3")
+    expectedManagedStreams(app.fedoraProvider, (testDir / "a.txt").writeText("mocked content of easy-file:1"))
+    expectedManagedStreams(app.fedoraProvider, (testDir / "b.txt").writeText("mocked content of easy-file:2"))
+    expectedManagedStreams(app.fedoraProvider, (testDir / "c.txt").writeText("mocked content of easy-file:3"))
+
+    val bagDir = testDir / "bags" / UUID.randomUUID.toString
+    app.createBag("easy-dataset:13", bagDir, strict = true, europeana = false, app.filter) shouldBe a[Success[_]]
+    (bagDir / "data").listRecursively.toList.map(_.name) shouldBe List("original", "c.txt", "b.txt", "a.txt")
+  }
+
+  it should "create largest file as payload" in {
+    val app = new MockedApp()
+    implicit val fedoraProvider: FedoraProvider = app.fedoraProvider
+    expectedAudiences(Map("easy-discipline:6" -> "D35400"))
+
+    expectAUser(app.ldapContext)
+    expectedFoXmls(
+      app.fedoraProvider,
+      sampleFoXML / "streaming.xml",
+      (testDir / "easy-file-1.xml").writeText(fileFoXml(id=1,name="a.txt").serialize),
+      (testDir / "easy-file-2.xml").writeText(fileFoXml(id=2,name="b.png", mimeType = "image/png", size=10, accessibleTo = "ANONYMOUS").serialize),
+      (testDir / "easy-file-3.xml").writeText(fileFoXml(id=3,name="c.png", mimeType = "image/png", size=20, accessibleTo = "ANONYMOUS").serialize),
+      (testDir / "easy-file-4.xml").writeText(fileFoXml(id=4,name="d.png", mimeType = "image/png", size=15, accessibleTo = "ANONYMOUS").serialize),
+      (testDir / "easy-file-5.xml").writeText(fileFoXml(id=5,name="e.pdf", mimeType = "application/pdf", size=15).serialize),
+    )
+    expectedSubordinates(app.fedoraProvider, "easy-file:1", "easy-file:2", "easy-file:3", "easy-file:4", "easy-file:5")
+    expectedManagedStreams(app.fedoraProvider, (testDir / "c.png").writeText("mocked content of easy-file:3"))
+
+    val bagDir = testDir / "bags" / UUID.randomUUID.toString
+    app.createBag("easy-dataset:13", bagDir, strict = true, europeana = true, app.filter) shouldBe a[Success[_]]
+    (bagDir / "data").listRecursively.toList.map(_.name) shouldBe List("original", "c.png")
+  }
+
+  it should "fall back to pdf files" in {
+    val app = new MockedApp()
+    implicit val fedoraProvider: FedoraProvider = app.fedoraProvider
+    expectedAudiences(Map("easy-discipline:6" -> "D35400"))
+
+    expectAUser(app.ldapContext)
+    expectedFoXmls(
+      app.fedoraProvider,
+      sampleFoXML / "streaming.xml",
+      (testDir / "easy-file-1.xml").writeText(fileFoXml(id=1,name="a.txt").serialize),
+      (testDir / "easy-file-2.xml").writeText(fileFoXml(id=2,name="b.pdf", mimeType = "application/pdf", size=10, accessibleTo = "ANONYMOUS").serialize),
+      (testDir / "easy-file-3.xml").writeText(fileFoXml(id=3,name="c.pdf", mimeType = "application/pdf", size=20, accessibleTo = "ANONYMOUS").serialize),
+      (testDir / "easy-file-4.xml").writeText(fileFoXml(id=4,name="d.pdf", mimeType = "application/pdf", size=15, accessibleTo = "ANONYMOUS").serialize),
+      (testDir / "easy-file-5.xml").writeText(fileFoXml(id=5,name="e.png", mimeType = "image/png", size=15).serialize),
+    )
+    expectedSubordinates(app.fedoraProvider, "easy-file:1", "easy-file:2", "easy-file:3", "easy-file:4", "easy-file:5")
+    expectedManagedStreams(app.fedoraProvider, (testDir / "c.pdf").writeText("mocked content of easy-file:3"))
+
+    val bagDir = testDir / "bags" / UUID.randomUUID.toString
+    app.createBag("easy-dataset:13", bagDir, strict = true, europeana = true, app.filter) shouldBe a[Success[_]]
+    (bagDir / "data").listRecursively.toList.map(_.name) shouldBe List("original", "c.pdf")
   }
 
   private def mockContentOfFile35 = {

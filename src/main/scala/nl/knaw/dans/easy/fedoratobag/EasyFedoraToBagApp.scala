@@ -29,7 +29,7 @@ import javax.naming.ldap.InitialLdapContext
 import nl.knaw.dans.bag.ChecksumAlgorithm
 import nl.knaw.dans.bag.v0.DansV0Bag
 import nl.knaw.dans.easy.fedoratobag.Command.FeedBackMessage
-import nl.knaw.dans.easy.fedoratobag.FileFilterType._
+import nl.knaw.dans.easy.fedoratobag.FileFilterType.{ LARGEST_IMAGE, _ }
 import nl.knaw.dans.easy.fedoratobag.FileItem.{ checkNotImplemented, filesXml }
 import nl.knaw.dans.easy.fedoratobag.FoXml.{ getEmd, _ }
 import nl.knaw.dans.easy.fedoratobag.OutputFormat.OutputFormat
@@ -139,7 +139,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
         .getOrElse(Success(()))
       _ <- managedMetadataStream(foXml, "DATASET_LICENSE", bag, "depositor-info/depositor-agreement")
         .getOrElse(Success(()))
-      fileFilterType = getFileFilterType(europeana, emdXml)
+      fileFilterType = FileFilterType.from(europeana, emdXml)
       fileItems <- addPayloads(bag, fileFilterType, fedoraIDs.filter(_.startsWith("easy-file:")))
       _ <- checkNotImplemented(fileItems, logger)
       _ <- addXmlMetadataTo(bag, "files.xml")(filesXml(fileItems))
@@ -153,19 +153,6 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       transformationType = maybeFilterViolations.map(_ => "not strict simple").getOrElse(SIMPLE.toString),
       maybeFilterViolations.getOrElse("OK"),
     )
-  }
-
-  private def isDCMI(node: Node) = node
-    .attribute("http://easy.dans.knaw.nl/easy/easymetadata/eas/", "scheme")
-    .exists(_.text == "DCMI")
-
-  private def getFileFilterType(europeana: Boolean, emd: Node): FileFilterType = {
-    if (!europeana) ALL_FILES
-    else {
-      val dcmiType = (emd \ "type" \ "type").filter(isDCMI)
-      if (dcmiType.text.toLowerCase.trim == "text") LARGEST_PDF
-      else LARGEST_IMAGE
-    }
   }
 
   private def getAudience(id: String) = {
@@ -190,31 +177,30 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     fileIds.toList.traverse(getFileInfo)
       .flatMap {
         fileInfos =>
-          val selected = fileFilterType match {
-            case ALL_FILES => fileInfos
-            case t => selectFileByType(t, fileInfos)
-          }
+          val selected = selectFileInfos(fileFilterType, fileInfos)
           if (selected.nonEmpty) selected.traverse(addPayloadFileTo(bag))
           else Failure(NoPayloadFilesException())
       }
   }
 
-  private def selectFileByType(fileFilterType: FileFilterType, fileInfos: List[FileInfo]): List[FileInfo] = {
-    val openAccessFileInfos = fileInfos.filter(_.accessibleTo == "ANONYMOUS")
-    val selected = openAccessFileInfos.filter(_.mimeType.startsWith(
-      fileFilterType match {
-        case LARGEST_PDF => "application/pdf"
-        case LARGEST_IMAGE => "image/"
-      }))
-    val reversedSelection = openAccessFileInfos.filter(_.mimeType.startsWith(
-      fileFilterType match {
-        case LARGEST_PDF => "image/" // Sic!
-        case LARGEST_IMAGE => "application/pdf" // Sic!
-      }))
-    if (selected.nonEmpty) List(selected.maxBy(_.size))
-    else if (reversedSelection.nonEmpty) List(reversedSelection.maxBy(_.size))
-         else if (openAccessFileInfos.nonEmpty) List(openAccessFileInfos.maxBy(_.size))
-              else List.empty[FileInfo]
+  private def selectFileInfos(fileFilterType: FileFilterType, fileInfos: List[FileInfo]): List[FileInfo] = {
+    def largest(by: FileFilterType, orElseBy: FileFilterType): List[FileInfo] = {
+      val infosByType = fileInfos
+        .filter(_.accessibleTo == "ANONYMOUS")
+        .groupBy(fi => if (fi.mimeType.startsWith("image/")) LARGEST_IMAGE
+                       else if (fi.mimeType.startsWith("application/pdf")) LARGEST_PDF
+                            else ALL_FILES
+        )
+      val selected = infosByType.getOrElse(by, infosByType.getOrElse(orElseBy, List.empty))
+      if (selected.isEmpty) List.empty
+      else List(selected.maxBy(_.size))
+    }
+
+    fileFilterType match {
+      case LARGEST_PDF => largest(LARGEST_PDF, LARGEST_IMAGE)
+      case LARGEST_IMAGE => largest(LARGEST_IMAGE, LARGEST_PDF)
+      case ALL_FILES => fileInfos
+    }
   }
 
   private def getFileInfo(fedoraFileId: String): Try[FileInfo] = {

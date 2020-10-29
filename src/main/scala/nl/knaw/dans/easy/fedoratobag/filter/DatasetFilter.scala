@@ -25,7 +25,7 @@ import scala.xml.Node
 
 case class InvalidTransformationException(msg: String) extends Exception(msg)
 
-trait Filter extends DebugEnhancedLogging {
+trait DatasetFilter extends DebugEnhancedLogging {
   val targetIndex: TargetIndex
 
   def violations(emd: EasyMetadataImpl, ddm: Node, amd: Node, fedoraIDs: Seq[String]): Try[Option[String]] = {

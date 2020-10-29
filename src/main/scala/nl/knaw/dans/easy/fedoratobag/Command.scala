@@ -49,15 +49,17 @@ object Command extends App with DebugEnhancedLogging {
       )
     lazy val outputDir = commandLine.outputDir()
     lazy val strict = commandLine.strictMode()
+    lazy val europeana = commandLine.europeana()
     lazy val printer = CsvRecord.printer(commandLine.logFile())
 
-    (commandLine.transformation(), commandLine.outputFormat()) match {
+    val outputFormat = commandLine.outputFormat()
+    (commandLine.transformation(), outputFormat) match {
       case (SIMPLE, SIP) =>
-        printer.apply(app.createSips(ids, outputDir, strict, commandLine.europeana(), SimpleFilter()))
+        printer.apply(app.createExport(ids, outputDir, strict, europeana, SimpleDatasetFilter(), outputFormat))
       case (SIMPLE, AIP) =>
-        printer.apply(app.createAips(ids, outputDir, strict, commandLine.europeana(), SimpleFilter(app.bagIndex)))
+        printer.apply(app.createExport(ids, outputDir, strict, europeana, SimpleDatasetFilter(app.bagIndex), outputFormat))
       case (THEMA, AIP) =>
-        printer.apply(app.createAips(ids, outputDir, strict, commandLine.europeana(), ThemaFilter(app.bagIndex)))
+        printer.apply(app.createExport(ids, outputDir, strict, europeana, ThemaDatasetFilter(app.bagIndex), outputFormat))
       case tuple =>
         Failure(new NotImplementedError(s"$tuple not implemented"))
     }

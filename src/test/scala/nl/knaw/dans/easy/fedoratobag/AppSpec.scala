@@ -23,7 +23,8 @@ import com.yourmediashelf.fedora.client.FedoraClientException
 import javax.naming.NamingEnumeration
 import javax.naming.directory.{ BasicAttributes, SearchControls, SearchResult }
 import javax.naming.ldap.InitialLdapContext
-import nl.knaw.dans.easy.fedoratobag.filter.{ BagIndex, Filter, InvalidTransformationException, SimpleFilter }
+import nl.knaw.dans.easy.fedoratobag.OutputFormat.{ AIP, SIP }
+import nl.knaw.dans.easy.fedoratobag.filter.{ BagIndex, DatasetFilter, InvalidTransformationException, SimpleDatasetFilter }
 import nl.knaw.dans.easy.fedoratobag.fixture.{ AudienceSupport, BagIndexSupport, FileSystemSupport, TestSupportFixture }
 import org.scalamock.scalatest.MockFactory
 import resource.managed
@@ -48,16 +49,16 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
     override lazy val fedoraProvider: FedoraProvider = mock[FedoraProvider]
     override lazy val ldapContext: InitialLdapContext = mock[MockedLdapContext]
     override lazy val bagIndex: BagIndex = mockedBagIndex
-    val filter: SimpleFilter = SimpleFilter(bagIndex)
+    val filter: SimpleDatasetFilter = SimpleDatasetFilter(bagIndex)
 
     // make almost private method available for tests
-    override def createBag(datasetId: DatasetId, bagDir: File, strict: Boolean, europeana: Boolean, filter: Filter): Try[CsvRecord] =
-      super.createBag(datasetId, bagDir, strict, europeana, filter)
+    override def createBag(datasetId: DatasetId, bagDir: File, strict: Boolean, europeana: Boolean, datasetFilter: DatasetFilter): Try[CsvRecord] =
+      super.createBag(datasetId, bagDir, strict, europeana, datasetFilter)
   }
 
   private class OverriddenApp(configuration: Configuration = null) extends MockedApp(configuration) {
     /** overrides the method called by the method under test */
-    override def createBag(datasetId: DatasetId, outputDir: File, strict: Boolean, europeana: Boolean, filter: Filter): Try[CsvRecord] = {
+    override def createBag(datasetId: DatasetId, outputDir: File, strict: Boolean, europeana: Boolean, datasetFilter: DatasetFilter): Try[CsvRecord] = {
       outputDir.parent.createDirectories()
       datasetId match {
         case _ if datasetId.startsWith("fatal") =>
@@ -81,7 +82,7 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
     val stagingDir = testDir / "staging"
     val app = new OverriddenApp(Configuration(null, null, null, null, stagingDir, null))
     val printer = CsvRecord.csvFormat.print(new StringWriter()) // content verified with simpleTransforms
-    val triedMessage = app.createSips(ids, outputDir, strict = true, europeana = false, SimpleFilter())(printer)
+    val triedMessage = app.createExport(ids, outputDir, strict = true, europeana = false, SimpleDatasetFilter(), SIP)(printer)
     triedMessage shouldBe Success("no fedora/IO errors")
 
     // two directories with one entry each
@@ -99,7 +100,7 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
     val sw = new StringWriter()
     val stagingDir = testDir / "staging"
     val app = new OverriddenApp(Configuration(null, null, null, null, stagingDir, null))
-    app.createAips(ids, outputDir, strict = true, europeana = false, app.filter)(CsvRecord.csvFormat.print(sw)) shouldBe Success("no fedora/IO errors")
+    app.createExport(ids, outputDir, strict = true, europeana = false, app.filter,AIP)(CsvRecord.csvFormat.print(sw)) shouldBe Success("no fedora/IO errors")
     sw.toString should (fullyMatch regex
       """easyDatasetId,uuid,doi,depositor,transformationType,comment
         |success:1,.*,testDOI,testUser,simple,OK
@@ -115,7 +116,7 @@ class AppSpec extends TestSupportFixture with BagIndexSupport with MockFactory w
     val sw = new StringWriter()
     val stagingDir = testDir / "staging"
     val app = new OverriddenApp(Configuration(null, null, null, null, stagingDir, null))
-    app.createAips(ids, outputDir, strict = true, europeana = false, app.filter)(CsvRecord.csvFormat.print(sw)) should matchPattern {
+    app.createExport(ids, outputDir, strict = true, europeana = false, app.filter,AIP)(CsvRecord.csvFormat.print(sw)) should matchPattern {
       case Failure(t) if t.getMessage == "mocked exception" =>
     }
     sw.toString should (fullyMatch regex

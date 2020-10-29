@@ -18,7 +18,7 @@ package nl.knaw.dans.easy.fedoratobag
 import java.net.URI
 
 import com.typesafe.scalalogging.Logger
-import nl.knaw.dans.easy.fedoratobag.filter.{ BagIndex, SimpleFilter, ThemaFilter }
+import nl.knaw.dans.easy.fedoratobag.filter.{ BagIndex, SimpleDatasetFilter, ThemaDatasetFilter }
 import nl.knaw.dans.easy.fedoratobag.fixture.{ BagIndexSupport, EmdSupport, TestSupportFixture }
 import org.scalamock.scalatest.MockFactory
 import org.slf4j.{ Logger => UnderlyingLogger }
@@ -26,7 +26,7 @@ import org.slf4j.{ Logger => UnderlyingLogger }
 import scala.util.Success
 import scala.xml.Elem
 
-class FilterSpec extends TestSupportFixture with BagIndexSupport with MockFactory with EmdSupport {
+class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with MockFactory with EmdSupport {
 
   private class MockedBagIndex extends BagIndex(new URI("http://localhost:20120/"))
 
@@ -155,7 +155,7 @@ class FilterSpec extends TestSupportFixture with BagIndexSupport with MockFactor
       (mockLogger.warn(_: String)) expects s once()
     )
 
-    new SimpleFilter(bagIndex) {
+    new SimpleDatasetFilter(bagIndex) {
       override lazy val logger: Logger = Logger(mockLogger)
     }
   }
@@ -169,7 +169,7 @@ class FilterSpec extends TestSupportFixture with BagIndexSupport with MockFactor
       (mockLogger.warn(_: String)) expects s once()
     )
 
-    new ThemaFilter(bagIndex) {
+    new ThemaDatasetFilter(bagIndex) {
       override lazy val logger: Logger = Logger(mockLogger)
     }
   }

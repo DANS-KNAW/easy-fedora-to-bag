@@ -15,12 +15,12 @@
  */
 package nl.knaw.dans.easy.fedoratobag.filter
 
-class SimpleFilter(override val targetIndex: TargetIndex = new TargetIndex()) extends Filter {
+class SimpleDatasetFilter(override val targetIndex: TargetIndex = new TargetIndex()) extends DatasetFilter {
   override def forbiddenTitle(title: String): Boolean = {
     title.toLowerCase.contains("thematische collectie")
   }
 }
-object SimpleFilter {
+object SimpleDatasetFilter {
   def apply(targetIndex: TargetIndex = new TargetIndex()) =
-    new SimpleFilter(targetIndex)
+    new SimpleDatasetFilter(targetIndex)
 }

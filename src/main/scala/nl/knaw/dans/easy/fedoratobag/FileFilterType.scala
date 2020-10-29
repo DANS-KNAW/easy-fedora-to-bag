@@ -21,13 +21,13 @@ object FileFilterType extends Enumeration {
   type FileFilterType = Value
 
   // @formatter:off
-  val PDF: FileFilterType = Value("PDF")
-  val IMAGE: FileFilterType = Value("IMAGE")
-  val ALL: FileFilterType = Value("ALL")
+  val LARGEST_PDF: FileFilterType = Value("LARGEST_PDF")
+  val LARGEST_IMAGE: FileFilterType = Value("LARGEST_IMAGE")
+  val ALL_FILES: FileFilterType = Value("ALL_FILES")
   // @formatter:on
 
   def from(europeana: Boolean, emd: EasyMetadata): FileFilterType = {
-    if (!europeana) FileFilterType.ALL
+    if (!europeana) FileFilterType.ALL_FILES
     else null
   }
 }

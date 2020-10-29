@@ -29,7 +29,7 @@ import javax.naming.ldap.InitialLdapContext
 import nl.knaw.dans.bag.ChecksumAlgorithm
 import nl.knaw.dans.bag.v0.DansV0Bag
 import nl.knaw.dans.easy.fedoratobag.Command.FeedBackMessage
-import nl.knaw.dans.easy.fedoratobag.FileFilterType.FileFilterType
+import nl.knaw.dans.easy.fedoratobag.FileFilterType._
 import nl.knaw.dans.easy.fedoratobag.FileItem.{ checkNotImplemented, filesXml }
 import nl.knaw.dans.easy.fedoratobag.FoXml.{ getEmd, _ }
 import nl.knaw.dans.easy.fedoratobag.OutputFormat.OutputFormat
@@ -53,13 +53,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
   private lazy val ldap = new Ldap(ldapContext)
   private val emdUnmarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
 
-  def createAips(input: Iterator[DatasetId], outputDir: File, strict: Boolean, europeana: Boolean, filter: Filter)
-                (printer: CSVPrinter): Try[FeedBackMessage] = createExport(input, outputDir, strict, europeana, filter, OutputFormat.AIP)(printer)
-
-  def createSips(input: Iterator[DatasetId], outputDir: File, strict: Boolean, europeana: Boolean, filter: Filter)
-                (printer: CSVPrinter): Try[FeedBackMessage] = createExport(input, outputDir, strict, europeana, filter, OutputFormat.SIP)(printer)
-
-  def createExport(input: Iterator[DatasetId], outputDir: File, strict: Boolean, europeana: Boolean, filter: Filter, outputFormat: OutputFormat)
+  def createExport(input: Iterator[DatasetId], outputDir: File, strict: Boolean, europeana: Boolean, filter: DatasetFilter, outputFormat: OutputFormat)
                   (printer: CSVPrinter): Try[FeedBackMessage] = input.map { datasetId =>
     val bagUuid = UUID.randomUUID.toString
     val sipUuid = UUID.randomUUID.toString
@@ -97,7 +91,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       }.doIfSuccess(_.print(printer))
   }
 
-  protected[EasyFedoraToBagApp] def createBag(datasetId: DatasetId, bagDir: File, strict: Boolean, europeana: Boolean, filter: Filter): Try[CsvRecord] = {
+  protected[EasyFedoraToBagApp] def createBag(datasetId: DatasetId, bagDir: File, strict: Boolean, europeana: Boolean, datasetFilter: DatasetFilter): Try[CsvRecord] = {
 
     def managedMetadataStream(foXml: Elem, streamId: String, bag: DansV0Bag, metadataFile: String) = {
       managedStreamLabel(foXml, streamId)
@@ -120,7 +114,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
         .map(id => getAudience(id.getValue)).collectResults
       ddm <- DDM(emd, audiences, configuration.abrMapping)
       fedoraIDs <- fedoraProvider.getSubordinates(datasetId)
-      maybeFilterViolations <- filter.violations(emd, ddm, amd, fedoraIDs)
+      maybeFilterViolations <- datasetFilter.violations(emd, ddm, amd, fedoraIDs)
       _ = if (strict) maybeFilterViolations.foreach(msg => throw InvalidTransformationException(msg))
       _ = logger.info(s"Creating $bagDir from $datasetId with owner $depositor")
       bag <- DansV0Bag.empty(bagDir)
@@ -166,11 +160,11 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     .exists(_.text == "DCMI")
 
   private def getFileFilterType(europeana: Boolean, emd: Node): FileFilterType = {
-    if (!europeana) FileFilterType.ALL
+    if (!europeana) ALL_FILES
     else {
       val dcmiType = (emd \ "type" \ "type").filter(isDCMI)
-      if (dcmiType.text.toLowerCase.trim == "text") FileFilterType.PDF
-      else FileFilterType.IMAGE
+      if (dcmiType.text.toLowerCase.trim == "text") LARGEST_PDF
+      else LARGEST_IMAGE
     }
   }
 
@@ -197,8 +191,8 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       .flatMap {
         fileInfos =>
           val selected = fileFilterType match {
-            case FileFilterType.ALL => fileInfos
-            case t @ _ => selectFileByType(t, fileInfos)
+            case ALL_FILES => fileInfos
+            case t => selectFileByType(t, fileInfos)
           }
           if (selected.nonEmpty) selected.traverse(addPayloadFileTo(bag))
           else Failure(NoPayloadFilesException())
@@ -209,13 +203,13 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     val openAccessFileInfos = fileInfos.filter(_.accessibleTo == "ANONYMOUS")
     val selected = openAccessFileInfos.filter(_.mimeType.startsWith(
       fileFilterType match {
-        case FileFilterType.PDF => "application/pdf"
-        case FileFilterType.IMAGE => "image/"
+        case LARGEST_PDF => "application/pdf"
+        case LARGEST_IMAGE => "image/"
       }))
     val reversedSelection = openAccessFileInfos.filter(_.mimeType.startsWith(
       fileFilterType match {
-        case FileFilterType.PDF => "image/" // Sic!
-        case FileFilterType.IMAGE => "application/pdf" // Sic!
+        case LARGEST_PDF => "image/" // Sic!
+        case LARGEST_IMAGE => "application/pdf" // Sic!
       }))
     if (selected.nonEmpty) List(selected.maxBy(_.size))
     else if (reversedSelection.nonEmpty) List(reversedSelection.maxBy(_.size))

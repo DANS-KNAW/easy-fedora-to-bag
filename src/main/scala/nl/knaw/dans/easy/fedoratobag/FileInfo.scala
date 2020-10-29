@@ -15,8 +15,47 @@
  */
 package nl.knaw.dans.easy.fedoratobag
 
-import java.nio.file.Path
+import java.nio.file.{ Path, Paths }
 
-import scala.xml.{ Elem, Node }
+import scala.util.Try
+import scala.xml.Node
 
-case class FileInfo(fedoraFileId: String, path: Path, size: Long, mimeType: String, accessibleTo: String, contentDigest: Option[Node], foXml: Elem)
+case class FileInfo(fedoraFileId: String,
+                    path: Path,
+                    name: String,
+                    size: Double,
+                    mimeType: String,
+                    accessibleTo: String,
+                    visibleTo: String,
+                    contentDigest: Option[Node],
+                    additionalMetadata: Option[Node],
+                   )
+
+object FileInfo {
+  def apply(foXml: Node): Try[FileInfo] = {
+    FoXml.getFileMD(foXml).map { fileMetadata =>
+      def get(tag: String) = (fileMetadata \\ tag)
+        .map(_.text)
+        .headOption
+        .getOrElse(throw new Exception(s"<$tag> not found"))
+
+      val visibleTo = get("visibleTo")
+      val accessibleTo = visibleTo.toUpperCase() match {
+        case "NONE" => "NONE"
+        case _ => get("accessibleTo")
+      }
+
+      new FileInfo(
+        foXml \@ "PID",
+        Paths.get(get("path")),
+        get("name"),
+        get("size").toLong,
+        get("mimeType"),
+        accessibleTo,
+        visibleTo,
+        FoXml.getStreamRoot("EASY_FILE", foXml).map(_ \\ "contentDigest").flatMap(_.headOption),
+        (fileMetadata \ "additional-metadata" \ "additional" \ "content").headOption
+      )
+    }
+  }
+}

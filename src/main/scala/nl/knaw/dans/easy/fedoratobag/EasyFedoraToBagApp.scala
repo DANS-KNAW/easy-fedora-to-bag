@@ -60,7 +60,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
                 (printer: CSVPrinter): Try[FeedBackMessage] = createExport(input, outputDir, strict, europeana, filter, OutputFormat.SIP)(printer)
 
   def createExport(input: Iterator[DatasetId], outputDir: File, strict: Boolean, europeana: Boolean, filter: Filter, outputFormat: OutputFormat)
-                (printer: CSVPrinter): Try[FeedBackMessage] = input.map { datasetId =>
+                  (printer: CSVPrinter): Try[FeedBackMessage] = input.map { datasetId =>
     val bagUuid = UUID.randomUUID.toString
     val sipUuid = UUID.randomUUID.toString
     val sipDir = configuration.stagingDir / sipUuid
@@ -224,22 +224,18 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
   }
 
   private def getFileInfo(fedoraFileId: String): Try[FileInfo] = {
-    for {
-      foXml <- fedoraProvider.loadFoXml(fedoraFileId)
-      fileMD <- FoXml.getFileMD(foXml)
-      path <- Try { Paths.get((fileMD \\ "path").text) }
-      sizeString <- Try { (fileMD \\ "size").text }
-      mimeType <- Try { (fileMD \\ "mimeType").text }
-      accessibleTo <- Try { (fileMD \\ "accessibleTo").text }
-      optContentDigest = FoXml.getStreamRoot("EASY_FILE", foXml).map(_ \\ "contentDigest").flatMap(_.headOption)
-
-    } yield FileInfo(fedoraFileId, path, sizeString.toLong, mimeType, accessibleTo, optContentDigest, foXml)
+    fedoraProvider
+      .loadFoXml(fedoraFileId)
+      .flatMap(FileInfo(_))
+      .recoverWith {
+        case t: Throwable => Failure(new Exception(s"$fedoraFileId ${ t.getMessage }"))
+      }
   }
 
   private def addPayloadFileTo(bag: DansV0Bag)(fileInfo: FileInfo): Try[Node] = {
     val streamId = "EASY_FILE"
     for {
-      fileItem <- FileItem(fileInfo.foXml)
+      fileItem <- FileItem(fileInfo)
       _ <- fedoraProvider
         .disseminateDatastream(fileInfo.fedoraFileId, streamId)
         .map(bag.addPayloadFile(_, fileInfo.path))

@@ -17,8 +17,6 @@ package nl.knaw.dans.easy.fedoratobag
 
 import nl.knaw.dans.pf.language.emd.EasyMetadata
 
-import scala.collection.JavaConverters._
-
 object FileFilterType extends Enumeration {
   type FileFilterType = Value
 
@@ -32,5 +30,4 @@ object FileFilterType extends Enumeration {
     if (!europeana) FileFilterType.ALL
     else null
   }
-
 }

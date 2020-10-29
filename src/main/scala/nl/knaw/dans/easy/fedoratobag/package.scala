@@ -15,8 +15,6 @@
  */
 package nl.knaw.dans.easy
 
-import java.util.Locale
-
 import org.joda.time.format.{ DateTimeFormatter, ISODateTimeFormat }
 import org.joda.time.{ DateTime, DateTimeZone }
 
@@ -42,8 +40,6 @@ package object fedoratobag {
   private val prologue = """<?xml version='1.0' encoding='UTF-8'?>"""
   private val logPrinter = new PrettyPrinter(-1, 0)
   val printer = new PrettyPrinter(160, 2)
-
-  def toMB(str: String): String = "%.1fMB".formatLocal(Locale.US, str.toDouble / 1024 / 1024)
 
   implicit class XmlExtensions(val elem: Node) extends AnyVal {
 

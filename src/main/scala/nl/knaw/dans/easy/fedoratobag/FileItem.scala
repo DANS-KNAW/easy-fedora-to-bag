@@ -15,6 +15,8 @@
  */
 package nl.knaw.dans.easy.fedoratobag
 
+import java.util.Locale
+
 import com.typesafe.scalalogging.Logger
 
 import scala.util.{ Failure, Success, Try }
@@ -50,31 +52,16 @@ object FileItem {
     else Failure(new Exception(s"${ incompleteItems.size } file(s) with not implemented additional file metadata: $tags"))
   }
 
-  def apply(foXml: Node): Try[Node] = {
-    FoXml.getFileMD(foXml).map { fileMetadata =>
-      def get(tag: String) = {
-        val strings = (fileMetadata \\ tag).map(_.text)
-        if (strings.isEmpty) throw new Exception(s"<$tag> not found")
-        if (strings.tail.nonEmpty) throw new Exception(s"Multiple times <$tag>")
-        strings.headOption.getOrElse("")
-      }
-
-      val visibleTo = get("visibleTo")
-      val accessibleTo = visibleTo.toUpperCase() match {
-        case "NONE" => "NONE"
-        case _ => get("accessibleTo")
-      }
-
-      <file filepath={ "data/" + get("path") }>
-        <dct:identifier>{ foXml \@ "PID" }</dct:identifier>
-        <dct:title>{ get("name") }</dct:title>
-        <dct:format>{ get("mimeType") }</dct:format>
-        <dct:extent>{ toMB(get("size")) }</dct:extent>
-        { (fileMetadata \ "additional-metadata" \ "additional" \ "content").flatMap(convert) }
-        <accessibleToRights>{ accessibleTo }</accessibleToRights>
-        <visibleToRights>{ visibleTo }</visibleToRights>
+  def apply(fileInfo: FileInfo): Try[Node] = Try {
+      <file filepath={ "data/" + fileInfo.path }>
+        <dct:identifier>{ fileInfo.fedoraFileId }</dct:identifier>
+        <dct:title>{ fileInfo.name }</dct:title>
+        <dct:format>{ fileInfo.mimeType }</dct:format>
+        <dct:extent>{ "%.1fMB".formatLocal(Locale.US, fileInfo.size / 1024 / 1024) }</dct:extent>
+        { fileInfo.additionalMetadata.map(convert).getOrElse(Seq[Node]()) }
+        <accessibleToRights>{ fileInfo.accessibleTo }</accessibleToRights>
+        <visibleToRights>{ fileInfo.visibleTo }</visibleToRights>
       </file>
-    }
   }
 
   def convert(additionalContent: Node): NodeSeq = {

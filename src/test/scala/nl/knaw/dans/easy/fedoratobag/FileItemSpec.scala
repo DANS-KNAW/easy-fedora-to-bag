@@ -38,7 +38,9 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
                        <visibleTo>ANONYMOUS</visibleTo>
                        <accessibleTo>RESTRICTED_REQUEST</accessibleTo>
 
-    val triedFileItem = FileItem(fileFoXml(fileMetadata)).map(trim)
+    val triedFileItem = FileInfo(fileFoXml(fileMetadata))
+      .flatMap(FileItem(_))
+      .map(trim)
     triedFileItem shouldBe Success(trim(
       <file filepath="data/original/something.txt">
         <dct:identifier>easy-file:35</dct:identifier>
@@ -60,7 +62,9 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
                        <mimeType>text/plain</mimeType>
                        <visibleTo>NONE</visibleTo>
 
-    val triedFileItem = FileItem(fileFoXml(fileMetadata))
+    val triedFileItem = FileInfo(fileFoXml(fileMetadata))
+      .flatMap(FileItem(_))
+      .map(trim)
     triedFileItem.map(trim) shouldBe Success(trim(
       <file filepath="data/original/something.txt">
         <dct:identifier>easy-file:35</dct:identifier>
@@ -81,22 +85,11 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
                        <mimeType>text/plain</mimeType>
                        <visibleTo>ANONYMOUS</visibleTo>
 
-    FileItem(fileFoXml(fileMetadata)) should matchPattern {
+    FileInfo(fileFoXml(fileMetadata))
+      .flatMap(FileItem(_))
+      .map(trim) should matchPattern {
       case Failure(e: Exception) if e.getMessage ==
         "<accessibleTo> not found" =>
-    }
-  }
-
-  it should "report a repeated mandatory tag" in {
-    val fileMetadata = <name>something.txt</name>
-                       <path>original/something.txt</path>
-                       <size>1</size>
-                       <name>blabla</name>
-                       <visibleTo>NONE</visibleTo>
-
-    FileItem(fileFoXml(fileMetadata)) should matchPattern {
-      case Failure(e: Exception) if e.getMessage ==
-        "Multiple times <name>" =>
     }
   }
 
@@ -134,7 +127,9 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
       </addmd:additional-metadata>
     }
 
-    val triedFileItem = FileItem(fileFoXml(fileMetadata))
+    val triedFileItem = FileInfo(fileFoXml(fileMetadata))
+      .flatMap(FileItem(_))
+      .map(trim)
     triedFileItem.map(trim) shouldBe Success(trim(
       <file filepath="data/Fotos/R0011867.jpg">
           <dct:identifier>easy-file:35</dct:identifier>
@@ -191,7 +186,9 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
 
     // note that we have two times <dct:title>,
     // once from <name>, once from <addmd:additional-metadata><file_name>
-    val triedFileItem = FileItem(fileFoXml(fileMetadata))
+    val triedFileItem = FileInfo(fileFoXml(fileMetadata))
+      .flatMap(FileItem(_))
+      .map(trim)
     triedFileItem.map(trim) shouldBe Success(trim(
       <file filepath="data/GIS/SKKJ6_spoor.mif">
         <dct:identifier>easy-file:35</dct:identifier>
@@ -242,7 +239,9 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
       </addmd:additional-metadata>
     }
 
-    val triedFileItem = FileItem(fileFoXml(fileMetadata))
+    val triedFileItem = FileInfo(fileFoXml(fileMetadata))
+      .flatMap(FileItem(_))
+      .map(trim)
     triedFileItem.map(trim) shouldBe Success(trim(
       <file filepath="data/B">
           <dct:identifier>easy-file:35</dct:identifier>
@@ -287,7 +286,9 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
       </addmd:additional-metadata>
     }
 
-    val triedFileItem = FileItem(fileFoXml(fileMetadata))
+    val triedFileItem = FileInfo(fileFoXml(fileMetadata))
+      .flatMap(FileItem(_))
+      .map(trim)
     triedFileItem.map(trim) shouldBe Success(trim(
       <file filepath="data/B">
           <dct:identifier>easy-file:35</dct:identifier>

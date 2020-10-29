@@ -226,10 +226,11 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
   private def getFileInfo(fedoraFileId: String): Try[FileInfo] = {
     for {
       foXml <- fedoraProvider.loadFoXml(fedoraFileId)
-      path <- Try { Paths.get((foXml \\ "file-item-md" \\ "path").text) }
-      sizeString <- Try { (foXml \\ "file-item-md" \\ "size").text }
-      mimeType <- Try { (foXml \\ "file-item-md" \\ "mimeType").text }
-      accessibleTo <- Try { (foXml \\ "file-item-md" \\ "accessibleTo").text }
+      fileMD <- FoXml.getFileMD(foXml)
+      path <- Try { Paths.get((fileMD \\ "path").text) }
+      sizeString <- Try { (fileMD \\ "size").text }
+      mimeType <- Try { (fileMD \\ "mimeType").text }
+      accessibleTo <- Try { (fileMD \\ "accessibleTo").text }
       optContentDigest <- Try { FoXml.getStreamRoot("EASY_FILE", foXml).map((_ \\ "contentDigest")).flatMap(_.headOption) }
     } yield FileInfo(fedoraFileId, path, sizeString.toLong, mimeType, accessibleTo, optContentDigest, foXml)
   }

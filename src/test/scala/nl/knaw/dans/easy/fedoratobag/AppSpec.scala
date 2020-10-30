@@ -15,24 +15,21 @@
  */
 package nl.knaw.dans.easy.fedoratobag
 
-import java.io.StringWriter
 import java.util.UUID
 
 import better.files.{ File, _ }
-import com.yourmediashelf.fedora.client.FedoraClientException
 import javax.naming.NamingEnumeration
 import javax.naming.directory.{ BasicAttributes, SearchControls, SearchResult }
 import javax.naming.ldap.InitialLdapContext
 import nl.knaw.dans.bag.v0.DansV0Bag
 import nl.knaw.dans.easy.fedoratobag.FileFilterType._
-import nl.knaw.dans.easy.fedoratobag.OutputFormat.{ AIP, SIP }
 import nl.knaw.dans.easy.fedoratobag.filter.{ BagIndex, DatasetFilter, InvalidTransformationException, SimpleDatasetFilter }
 import nl.knaw.dans.easy.fedoratobag.fixture._
 import org.scalamock.scalatest.MockFactory
 import resource.managed
 
 import scala.util.{ Failure, Success, Try }
-import scala.xml.XML
+import scala.xml.{ Node, XML }
 
 class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupport with MockFactory with FileSystemSupport with AudienceSupport {
   implicit val logFile: File = testDir / "log.txt"
@@ -46,106 +43,19 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
   private class MockedLdapContext extends InitialLdapContext(new java.util.Hashtable[String, String](), null)
 
   private class MockedApp(configuration: Configuration = new Configuration("test-version", null, null, null, null, AbrMappings(File("src/main/assembly/dist/cfg/EMD_acdm.xsl"))),
-                          mockedBagIndex: BagIndex = mockBagIndexRespondsWith(body = "<result/>", code = 200),
                          ) extends EasyFedoraToBagApp(configuration) {
     override lazy val fedoraProvider: FedoraProvider = mock[FedoraProvider]
     override lazy val ldapContext: InitialLdapContext = mock[MockedLdapContext]
-    override lazy val bagIndex: BagIndex = mockedBagIndex
+    override lazy val bagIndex: BagIndex = mockBagIndexRespondsWith(body = "<result/>", code = 200)
     val filter: SimpleDatasetFilter = SimpleDatasetFilter(bagIndex)
 
-    // make almost private method available for tests
+    // make almost private methods available for tests
+
     override def createBag(datasetId: DatasetId, bagDir: File, strict: Boolean, europeana: Boolean, datasetFilter: DatasetFilter): Try[CsvRecord] =
       super.createBag(datasetId, bagDir, strict, europeana, datasetFilter)
-  }
 
-  private class OverriddenApp(configuration: Configuration = null) extends MockedApp(configuration) {
-    /** overrides the method called by the method under test */
-    override def createBag(datasetId: DatasetId, outputDir: File, strict: Boolean, europeana: Boolean, datasetFilter: DatasetFilter): Try[CsvRecord] = {
-      outputDir.parent.createDirectories()
-      datasetId match {
-        case _ if datasetId.startsWith("fatal") =>
-          Failure(new FedoraClientException(300, "mocked exception"))
-        case _ if datasetId.startsWith("notSimple") =>
-          outputDir.createFile().writeText(datasetId)
-          Failure(InvalidTransformationException("mocked"))
-        case _ if !datasetId.startsWith("success") =>
-          outputDir.createFile().writeText(datasetId)
-          Failure(new Exception(datasetId))
-        case _ =>
-          outputDir.createFile().writeText(datasetId)
-          Success(CsvRecord(datasetId, UUID.randomUUID(), doi = "testDOI", depositor = "testUser", transformationType = "simple", comment = "OK"))
-      }
-    }
-  }
-
-  "createSips" should "report success" in {
-    val ids = Iterator("success:1", "notSimple:1", "whoops:1", "success:1")
-    val outputDir = (testDir / "output").createDirectories()
-    val stagingDir = testDir / "staging"
-    val app = new OverriddenApp(Configuration(null, null, null, null, stagingDir, null))
-    val printer = CsvRecord.csvFormat.print(new StringWriter()) // content verified with simpleTransforms
-
-    // end of mocking
-
-    app.createExport(ids, outputDir, strict = true, europeana = false, SimpleDatasetFilter(), SIP)(printer) shouldBe
-      Success("no fedora/IO errors")
-
-    // two directories with one entry each
-    stagingDir.list.toList should have length 2
-    stagingDir.listRecursively.toList should have length 4
-
-    // two directories with two entries each
-    outputDir.list.toList should have length 2
-    outputDir.listRecursively.toList should have length 4
-  }
-
-  "createAips" should "report success" in {
-    val ids = Iterator("success:1", "success:2")
-    val outputDir = (testDir / "output").createDirectories()
-    val sw = new StringWriter()
-    val stagingDir = testDir / "staging"
-    val app = new OverriddenApp(Configuration(null, null, null, null, stagingDir, null))
-
-    // end of mocking
-
-    app.createExport(ids, outputDir, strict = true, europeana = false, app.filter, AIP)(CsvRecord.csvFormat.print(sw)) shouldBe Success("no fedora/IO errors")
-
-    // post conditions
-
-    sw.toString should (fullyMatch regex
-      """easyDatasetId,uuid,doi,depositor,transformationType,comment
-        |success:1,.*,testDOI,testUser,simple,OK
-        |success:2,.*,testDOI,testUser,simple,OK
-        |""".stripMargin
-      )
-    outputDir.listRecursively.toSeq should have length 2
-  }
-
-  it should "report failure" in {
-    val ids = Iterator("success:1", "failure:2", "notSimple:3", "success:4", "fatal:5", "success:6")
-    val outputDir = (testDir / "output").createDirectories()
-    val sw = new StringWriter()
-    val stagingDir = testDir / "staging"
-    val app = new OverriddenApp(Configuration(null, null, null, null, stagingDir, null))
-
-    // end of mocking
-
-    app.createExport(ids, outputDir, strict = true, europeana = false, app.filter, AIP)(CsvRecord.csvFormat.print(sw)) should matchPattern {
-      case Failure(t) if t.getMessage == "mocked exception" =>
-    }
-
-    // post conditions
-
-    sw.toString should (fullyMatch regex
-      """easyDatasetId,uuid,doi,depositor,transformationType,comment
-        |success:1,.*,testDOI,testUser,simple,OK
-        |failure:2,.*,,,simple,FAILED: java.lang.Exception: failure:2
-        |notSimple:3,.*,,,simple,FAILED: .*InvalidTransformationException: mocked
-        |success:4,.*,testDOI,testUser,simple,OK
-        |""".stripMargin
-      )
-    outputDir.list.toSeq should have length 2
-    stagingDir.list.toSeq should have length 2
+    override def addPayloads(bag: DansV0Bag, fileFilterType: FileFilterType, fileIds: Seq[String]): Try[List[Node]] =
+      super.addPayloads(bag, fileFilterType, fileIds)
   }
 
   "createBag" should "process DepositApi" in {
@@ -327,7 +237,8 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
     val bagDir = testDir / "bags" / UUID.randomUUID.toString
     app.addPayloads(emptyBag(bagDir), ALL_FILES, foXMLs.keys.toList) shouldBe a[Success[_]]
-    (bagDir / "data").listRecursively.toList.map(_.name) shouldBe List("original", "c.txt", "b.txt", "a.txt")
+    (bagDir / "data").listRecursively.toList.map(_.name) should
+      contain theSameElementsAs List("original", "c.txt", "b.txt", "a.txt")
   }
 
   it should "export largest image as payload" in {
@@ -349,7 +260,8 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
     val bagDir = testDir / "bags" / UUID.randomUUID.toString
     app.addPayloads(emptyBag(bagDir), LARGEST_IMAGE, foXMLs.keys.toList) shouldBe a[Success[_]]
-    (bagDir / "data").listRecursively.toList.map(_.name) shouldBe List("original", "c.png")
+    (bagDir / "data").listRecursively.toList.map(_.name) should
+      contain theSameElementsAs List("original", "c.png")
   }
 
   it should "fall back to pdf files" in {
@@ -371,7 +283,8 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
     val bagDir = testDir / "bags" / UUID.randomUUID.toString
     app.addPayloads(emptyBag(bagDir), LARGEST_IMAGE, foXMLs.keys.toList) shouldBe a[Success[_]]
-    (bagDir / "data").listRecursively.toList.map(_.name) shouldBe List("original", "c.pdf")
+    (bagDir / "data").listRecursively.toList.map(_.name) should
+      contain theSameElementsAs List("original", "c.pdf")
   }
 
   it should "export only original files" in {
@@ -394,7 +307,8 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
     val bagDir = testDir / "bags" / UUID.randomUUID.toString
     app.addPayloads(emptyBag(bagDir), ALL_BUT_ORIGINAL, foXMLs.keys.toList) shouldBe a[Success[_]]
-    (bagDir / "data").listRecursively.toList.map(_.name) shouldBe List("x", "a.txt", "e.png")
+    (bagDir / "data").listRecursively.toList.map(_.name) should
+      contain theSameElementsAs List("x", "a.txt", "e.png")
   }
 
   it should "cause NoPayloadFilesException" in {

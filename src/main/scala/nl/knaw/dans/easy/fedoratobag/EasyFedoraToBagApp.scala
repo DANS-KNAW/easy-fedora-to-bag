@@ -173,7 +173,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     bag.addTagFile(content.serialize.inputStream, Paths.get(s"metadata/depositor-info/agreements.xml"))
   }
 
-  def addPayloads(bag: DansV0Bag, fileFilterType: FileFilterType, fileIds: Seq[String]): Try[List[Node]] = {
+  protected[EasyFedoraToBagApp] def addPayloads(bag: DansV0Bag, fileFilterType: FileFilterType, fileIds: Seq[String]): Try[List[Node]] = {
     for {
       allFileInfos <- fileIds.toList.traverse(getFileInfo)
       filteredFileInfos <- selectFileInfos(fileFilterType, allFileInfos)

@@ -174,17 +174,15 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
   }
 
   def addPayloads(bag: DansV0Bag, fileFilterType: FileFilterType, fileIds: Seq[String]): Try[List[Node]] = {
-    fileIds.toList.traverse(getFileInfo)
-      .flatMap {
-        fileInfos =>
-          val selected = selectFileInfos(fileFilterType, fileInfos)
-          if (selected.nonEmpty) selected.traverse(addPayloadFileTo(bag))
-          else Failure(NoPayloadFilesException())
-      }
+    for {
+      allFileInfos <- fileIds.toList.traverse(getFileInfo)
+      filteredFileInfos <- selectFileInfos(fileFilterType, allFileInfos)
+      fileItems <- filteredFileInfos.traverse(addPayloadFileTo(bag))
+    } yield fileItems
   }
 
-  private def selectFileInfos(fileFilterType: FileFilterType, fileInfos: List[FileInfo]): List[FileInfo] = {
-    def largest(by: FileFilterType, orElseBy: FileFilterType): List[FileInfo] = {
+  private def selectFileInfos(fileFilterType: FileFilterType, fileInfos: List[FileInfo]): Try[List[FileInfo]] = {
+    def largest(by: FileFilterType, orElseBy: FileFilterType): Try[List[FileInfo]] = {
       val infosByType = fileInfos
         .filter(_.accessibleTo == "ANONYMOUS")
         .groupBy(fi => if (fi.mimeType.startsWith("image/")) LARGEST_IMAGE
@@ -192,14 +190,15 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
                             else ALL_FILES
         )
       val selected = infosByType.getOrElse(by, infosByType.getOrElse(orElseBy, List.empty))
-      if (selected.isEmpty) List.empty
-      else List(selected.maxBy(_.size))
+      if (selected.isEmpty) Failure(NoPayloadFilesException())
+      else Success(List(selected.maxBy(_.size)))
     }
 
     fileFilterType match {
       case LARGEST_PDF => largest(LARGEST_PDF, LARGEST_IMAGE)
       case LARGEST_IMAGE => largest(LARGEST_IMAGE, LARGEST_PDF)
-      case ALL_FILES => fileInfos
+      case ALL_FILES => if (fileInfos.isEmpty) Failure(NoPayloadFilesException())
+                        else Success(fileInfos)
     }
   }
 

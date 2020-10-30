@@ -24,7 +24,11 @@ trait AudienceSupport extends MockFactory {
   def expectedAudiences(map: Map[String, String])
                        (implicit fedoraProvider: FedoraProvider): Unit = {
     map.foreach { case (key, value) =>
-      (fedoraProvider.loadFoXml(_: String)) expects key once() returning Success(
+      (fedoraProvider.loadFoXml(_: String)) expects key once() returning Success(audienceFoXML(key, value))
+    }
+  }
+
+  def audienceFoXML(key: String, value: String) = {
       <foxml:digitalObject VERSION="1.1" PID={key}
                xmlns:foxml="info:fedora/fedora-system:def/foxml#"
                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -39,8 +43,6 @@ trait AudienceSupport extends MockFactory {
                   </foxml:xmlContent>
               </foxml:datastreamVersion>
           </foxml:datastream>
-      </foxml:digitalObject>,
-      )
-    }
+      </foxml:digitalObject>
   }
 }

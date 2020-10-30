@@ -374,6 +374,29 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     (bagDir / "data").listRecursively.toList.map(_.name) shouldBe List("original", "c.pdf")
   }
 
+  it should "export only original files" in {
+    val app = new MockedApp()
+    val foXMLs = Map(
+      "easy-file:1" -> fileFoXml(id = 1, name = "a.txt", location = "x"), // default: original
+      "easy-file:2" -> fileFoXml(id = 2, name = "b.pdf", mimeType = "application/pdf", size = 10, accessibleTo = "ANONYMOUS"),
+      "easy-file:3" -> fileFoXml(id = 3, name = "c.pdf", mimeType = "application/pdf", size = 20, accessibleTo = "ANONYMOUS"),
+      "easy-file:4" -> fileFoXml(id = 4, name = "d.pdf", mimeType = "application/pdf", size = 15, accessibleTo = "ANONYMOUS"),
+      "easy-file:5" -> fileFoXml(id = 5, name = "e.png", mimeType = "image/png", size = 15, location = "x"),
+    )
+    foXMLs.foreach { case (id, xml) =>
+      (app.fedoraProvider.loadFoXml(_: String)) expects id once() returning Success(xml)
+    }
+    Seq(1, 5).foreach(i =>
+      (app.fedoraProvider.disseminateDatastream(_: String, _: String)
+        ) expects(s"easy-file:$i", "EASY_FILE") once() returning managed("blablabla".inputStream)
+    )
+    // end of mocking
+
+    val bagDir = testDir / "bags" / UUID.randomUUID.toString
+    app.addPayloads(emptyBag(bagDir), ALL_BUT_ORIGINAL, foXMLs.keys.toList) shouldBe a[Success[_]]
+    (bagDir / "data").listRecursively.toList.map(_.name) shouldBe List("x", "a.txt", "e.png")
+  }
+
   it should "cause NoPayloadFilesException" in {
     val app = new MockedApp()
     val foXMLs = Map(

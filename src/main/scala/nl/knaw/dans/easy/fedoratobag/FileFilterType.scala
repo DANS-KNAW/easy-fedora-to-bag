@@ -26,6 +26,8 @@ object FileFilterType extends Enumeration {
   val LARGEST_PDF: FileFilterType = Value("LARGEST_PDF")
   val LARGEST_IMAGE: FileFilterType = Value("LARGEST_IMAGE")
   val ALL_FILES: FileFilterType = Value("ALL_FILES")
+  val ORIGINAL_FILES: FileFilterType = Value("ORIGINAL_FILES")
+  val ALL_BUT_ORIGINAL: FileFilterType = Value("ALL_BUT_ORIGINAL")
   // @formatter:on
 
   private def isDCMI(node: Node) = node

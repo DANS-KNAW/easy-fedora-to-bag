@@ -182,8 +182,6 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
   }
 
   private def selectFileInfos(fileFilterType: FileFilterType, fileInfos: List[FileInfo]): Try[List[FileInfo]] = {
-    lazy val noPayload = Failure(NoPayloadFilesException())
-
     def largest(by: FileFilterType, orElseBy: FileFilterType): Try[List[FileInfo]] = {
       val infosByType = fileInfos
         .filter(_.accessibleTo == "ANONYMOUS")
@@ -192,23 +190,27 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
                             else ALL_FILES
         )
       val selected = infosByType.getOrElse(by, infosByType.getOrElse(orElseBy, List.empty))
-      if (selected.isEmpty) noPayload
+      maxSizeUnlessEmpty(selected)
+    }
+
+    def maxSizeUnlessEmpty(selected: List[FileInfo]) = {
+      if (selected.isEmpty) Failure(NoPayloadFilesException())
       else Success(List(selected.maxBy(_.size)))
     }
 
-    def byOriginal(b: Boolean): Try[List[FileInfo]] = fileInfos
-      .groupBy(_.path.startsWith("original/"))
-      .get(b)
-      .map(Success(_))
-      .getOrElse(noPayload)
+    def successUnlessEmpty(fileInfos: List[FileInfo]) = {
+      if (fileInfos.isEmpty) Failure(NoPayloadFilesException())
+      else Success(fileInfos)
+    }
+
+    def inOriginal(info: FileInfo) = info.path.startsWith("original/")
 
     fileFilterType match {
       case LARGEST_PDF => largest(LARGEST_PDF, LARGEST_IMAGE)
       case LARGEST_IMAGE => largest(LARGEST_IMAGE, LARGEST_PDF)
-      case ORIGINAL_FILES => byOriginal(true)
-      case ALL_BUT_ORIGINAL => byOriginal(false)
-      case ALL_FILES => if (fileInfos.isEmpty) noPayload
-                        else Success(fileInfos)
+      case ORIGINAL_FILES => successUnlessEmpty(fileInfos.filter(inOriginal))
+      case ALL_BUT_ORIGINAL => successUnlessEmpty(fileInfos.filterNot(inOriginal))
+      case ALL_FILES => successUnlessEmpty(fileInfos)
     }
   }
 

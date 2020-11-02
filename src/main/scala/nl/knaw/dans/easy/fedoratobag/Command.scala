@@ -48,20 +48,21 @@ object Command extends App with DebugEnhancedLogging {
         .filterNot(_.startsWith("#"))
       )
     lazy val outputDir = commandLine.outputDir()
-    lazy val strict = commandLine.strictMode()
     lazy val europeana = commandLine.europeana()
     lazy val printer = CsvRecord.printer(commandLine.logFile())
 
     val outputFormat = commandLine.outputFormat()
     (commandLine.transformation(), outputFormat) match {
+      case (ORIGINAL_VERSIONED, _) if !europeana =>
+        printer.apply(app.createExport(ids, outputDir, Options(SimpleDatasetFilter(), commandLine), outputFormat))
       case (SIMPLE, SIP) =>
-        printer.apply(app.createExport(ids, outputDir, strict, europeana, SimpleDatasetFilter(), outputFormat))
+        printer.apply(app.createExport(ids, outputDir, Options(SimpleDatasetFilter(), commandLine), outputFormat))
       case (SIMPLE, AIP) =>
-        printer.apply(app.createExport(ids, outputDir, strict, europeana, SimpleDatasetFilter(app.bagIndex), outputFormat))
+        printer.apply(app.createExport(ids, outputDir, Options(SimpleDatasetFilter(app.bagIndex), commandLine), outputFormat))
       case (THEMA, AIP) =>
-        printer.apply(app.createExport(ids, outputDir, strict, europeana, ThemaDatasetFilter(app.bagIndex), outputFormat))
+        printer.apply(app.createExport(ids, outputDir, Options(ThemaDatasetFilter(app.bagIndex), commandLine), outputFormat))
       case tuple =>
-        Failure(new NotImplementedError(s"$tuple not implemented"))
+        Failure(new NotImplementedError(s"$tuple/europeana==$europeana not implemented"))
     }
   }.map(msg => s"$msg, for details see ${ commandLine.logFile().toJava.getAbsolutePath }")
 }

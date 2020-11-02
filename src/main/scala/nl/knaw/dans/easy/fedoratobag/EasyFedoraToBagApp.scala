@@ -53,7 +53,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
   private lazy val ldap = new Ldap(ldapContext)
   private val emdUnmarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
 
-  def createExport(input: Iterator[DatasetId], outputDir: File, strict: Boolean, europeana: Boolean, filter: DatasetFilter, outputFormat: OutputFormat)
+  def createExport(input: Iterator[DatasetId], outputDir: File, options: Options, outputFormat: OutputFormat)
                   (printer: CSVPrinter): Try[FeedBackMessage] = input.map { datasetId =>
     val bagUuid = UUID.randomUUID.toString
     val sipUuid = UUID.randomUUID.toString
@@ -63,7 +63,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       case OutputFormat.SIP => sipDir / bagUuid
     }
     val triedCsvRecord = for {
-      csvRecord <- createBag(datasetId, bagDir, strict, europeana, filter)
+      csvRecord <- createBag(datasetId, bagDir, options)
       _ = debug(s"Result from createBag: $csvRecord")
       _ <- Try {
         debug("Moving bag to output dir...")
@@ -91,7 +91,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       }.doIfSuccess(_.print(printer))
   }
 
-  protected[EasyFedoraToBagApp] def createBag(datasetId: DatasetId, bagDir: File, strict: Boolean, europeana: Boolean, datasetFilter: DatasetFilter): Try[CsvRecord] = {
+  protected[EasyFedoraToBagApp] def createBag(datasetId: DatasetId, bagDir: File, options: Options): Try[CsvRecord] = {
 
     def managedMetadataStream(foXml: Elem, streamId: String, bag: DansV0Bag, metadataFile: String) = {
       managedStreamLabel(foXml, streamId)
@@ -114,8 +114,8 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
         .map(id => getAudience(id.getValue)).collectResults
       ddm <- DDM(emd, audiences, configuration.abrMapping)
       fedoraIDs <- fedoraProvider.getSubordinates(datasetId)
-      maybeFilterViolations <- datasetFilter.violations(emd, ddm, amd, fedoraIDs)
-      _ = if (strict) maybeFilterViolations.foreach(msg => throw InvalidTransformationException(msg))
+      maybeFilterViolations <- options.datasetFilter.violations(emd, ddm, amd, fedoraIDs)
+      _ = if (options.strict) maybeFilterViolations.foreach(msg => throw InvalidTransformationException(msg))
       _ = logger.info(s"Creating $bagDir from $datasetId with owner $depositor")
       bag <- DansV0Bag.empty(bagDir)
         .map(_.withEasyUserAccount(depositor).withCreated(DateTime.now()))
@@ -139,7 +139,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
         .getOrElse(Success(()))
       _ <- managedMetadataStream(foXml, "DATASET_LICENSE", bag, "depositor-info/depositor-agreement")
         .getOrElse(Success(()))
-      fileFilterType = FileFilterType.from(europeana, emdXml)
+      fileFilterType = options.firstFileFilter(emdXml)
       fileItems <- addPayloads(bag, fileFilterType, fedoraIDs.filter(_.startsWith("easy-file:")))
       _ <- checkNotImplemented(fileItems, logger)
       _ <- addXmlMetadataTo(bag, "files.xml")(filesXml(fileItems))

@@ -139,11 +139,15 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
         .getOrElse(Success(()))
       _ <- managedMetadataStream(foXml, "DATASET_LICENSE", bag, "depositor-info/depositor-agreement")
         .getOrElse(Success(()))
-      fileFilterType = options.firstFileFilter(emdXml)
-      fileItems <- addPayloads(bag, fileFilterType, fedoraIDs.filter(_.startsWith("easy-file:")))
+      allFileInfos <- fedoraIDs.filter(_.startsWith("easy-file:")).toList.traverse(getFileInfo)
+      filteredFileInfos <- selectFileInfos(options.firstFileFilter(emdXml), allFileInfos)
+      fileItems <- filteredFileInfos.traverse(addPayloadFileTo(bag))
       _ <- checkNotImplemented(fileItems, logger)
       _ <- addXmlMetadataTo(bag, "files.xml")(filesXml(fileItems))
       _ <- bag.save()
+      _ = if (options.originalVersioning && allFileInfos.size != filteredFileInfos.size)
+            throw new Exception("2nd dataset not yet implemented")
+      // TODO for second dataset: allFileInfos - (NOT_ACCESSIBLE of filteredFileInfos)
       doi = emd.getEmdIdentifier.getDansManagedDoi
     } yield CsvRecord(
       datasetId,
@@ -171,14 +175,6 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
 
   private def addAgreementsTo(bag: DansV0Bag)(content: Node): Try[Any] = {
     bag.addTagFile(content.serialize.inputStream, Paths.get(s"metadata/depositor-info/agreements.xml"))
-  }
-
-  protected[EasyFedoraToBagApp] def addPayloads(bag: DansV0Bag, fileFilterType: FileFilterType, fileIds: Seq[String]): Try[List[Node]] = {
-    for {
-      allFileInfos <- fileIds.toList.traverse(getFileInfo)
-      filteredFileInfos <- selectFileInfos(fileFilterType, allFileInfos)
-      fileItems <- filteredFileInfos.traverse(addPayloadFileTo(bag))
-    } yield fileItems
   }
 
   private def selectFileInfos(fileFilterType: FileFilterType, fileInfos: List[FileInfo]): Try[List[FileInfo]] = {
@@ -209,7 +205,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       case LARGEST_PDF => largest(LARGEST_PDF, LARGEST_IMAGE)
       case LARGEST_IMAGE => largest(LARGEST_IMAGE, LARGEST_PDF)
       case ORIGINAL_FILES => successUnlessEmpty(fileInfos.filter(inOriginal))
-      case ALL_BUT_ORIGINAL => successUnlessEmpty(fileInfos.filterNot(inOriginal))
+      case NOT_ACCESSIBLE => ???
       case ALL_FILES => successUnlessEmpty(fileInfos)
     }
   }

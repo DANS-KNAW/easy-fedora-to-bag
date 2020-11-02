@@ -23,6 +23,6 @@ object FileFilterType extends Enumeration {
   val LARGEST_IMAGE: FileFilterType = Value("LARGEST_IMAGE")
   val ALL_FILES: FileFilterType = Value("ALL_FILES")
   val ORIGINAL_FILES: FileFilterType = Value("ORIGINAL_FILES")
-  val ALL_BUT_ORIGINAL: FileFilterType = Value("ALL_BUT_ORIGINAL")
+  val NOT_ACCESSIBLE: FileFilterType = Value("NOT_ACCESSIBLE")
   // @formatter:on
 }

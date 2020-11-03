@@ -69,11 +69,11 @@ class CreateExportSpec extends TestSupportFixture with FileFoXmlSupport with Bag
     val ids = Iterator("success:1", "notSimple:1", "whoops:1", "success:1")
     val outputDir = (testDir / "output").createDirectories()
     val app = new OverriddenApp()
-    val printer = CsvRecord.csvFormat.print(new StringWriter()) // content verified with simpleTransforms
+    val sw = new StringWriter()
 
     // end of mocking
 
-    app.createExport(ids, outputDir, Options(SimpleDatasetFilter()), SIP)(printer) shouldBe
+    app.createExport(ids, outputDir, Options(SimpleDatasetFilter()), SIP)(CsvRecord.csvFormat.print(sw)) shouldBe
       Success("no fedora/IO errors")
 
     // two directories with one entry each
@@ -83,6 +83,11 @@ class CreateExportSpec extends TestSupportFixture with FileFoXmlSupport with Bag
     // two directories with two entries each
     outputDir.list.toList should have length 2
     outputDir.listRecursively.toList should have length 4
+
+    val csvContent = sw.toString // rest of the content tested with createAips
+    outputDir.list.toSeq.map(_.name).foreach(packageId =>
+      csvContent should include(packageId)
+    )
   }
 
   "createAips" should "report success" in {
@@ -97,13 +102,17 @@ class CreateExportSpec extends TestSupportFixture with FileFoXmlSupport with Bag
 
     // post conditions
 
-    sw.toString should (fullyMatch regex
+    val csvContent = sw.toString
+    csvContent should (fullyMatch regex
       """easyDatasetId,uuid,doi,depositor,transformationType,comment
         |success:1,.*,testDOI,testUser,simple,OK
         |success:2,.*,testDOI,testUser,simple,OK
         |""".stripMargin
       )
     outputDir.listRecursively.toSeq should have length 2
+    outputDir.list.toSeq.map(_.name).foreach(packageId =>
+      csvContent should include(packageId)
+    )
   }
 
   it should "report failure" in {
@@ -120,7 +129,8 @@ class CreateExportSpec extends TestSupportFixture with FileFoXmlSupport with Bag
 
     // post conditions
 
-    sw.toString should (fullyMatch regex
+    val csvContent = sw.toString
+    csvContent should (fullyMatch regex
       """easyDatasetId,uuid,doi,depositor,transformationType,comment
         |success:1,.*,testDOI,testUser,simple,OK
         |failure:2,.*,,,simple,FAILED: java.lang.Exception: failure:2
@@ -130,5 +140,11 @@ class CreateExportSpec extends TestSupportFixture with FileFoXmlSupport with Bag
       )
     outputDir.list.toSeq should have length 2
     stagingDir.list.toSeq should have length 2
+    outputDir.list.toSeq.map(_.name).foreach(packageId =>
+      csvContent should include(packageId)
+    )
+    stagingDir.list.toSeq.map(_.name).foreach(packageId =>
+      csvContent should include(packageId)
+    )
   }
 }

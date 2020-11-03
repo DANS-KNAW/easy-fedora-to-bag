@@ -55,38 +55,33 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
 
   def createExport(input: Iterator[DatasetId], outputDir: File, options: Options, outputFormat: OutputFormat)
                   (printer: CSVPrinter): Try[FeedBackMessage] = input.map { datasetId =>
-    val bagUuid = UUID.randomUUID.toString
-    val sipUuid = UUID.randomUUID.toString
-    val sipDir = configuration.stagingDir / sipUuid
+    val packageUuid = UUID.randomUUID
+    val packageDir = configuration.stagingDir / packageUuid.toString
     val bagDir = outputFormat match {
-      case OutputFormat.AIP => configuration.stagingDir / bagUuid
-      case OutputFormat.SIP => sipDir / bagUuid
+      case OutputFormat.AIP => packageDir
+      case OutputFormat.SIP => packageDir / UUID.randomUUID.toString
     }
     val triedCsvRecord = for {
       csvRecord <- createBag(datasetId, bagDir, options)
       _ = debug(s"Result from createBag: $csvRecord")
-      _ <- Try {
-        debug("Moving bag to output dir...")
-        outputFormat match {
-          case OutputFormat.AIP => bagDir.moveTo(outputDir / bagUuid)(CopyOptions.atomically)
-          case OutputFormat.SIP => sipDir.moveTo(outputDir / sipUuid)(CopyOptions.atomically)
-        }
-      }
-    } yield csvRecord
-    errorHandling(triedCsvRecord, printer, datasetId, bagDir)
+      target = outputDir / packageUuid.toString
+      _ = debug(s"Moving $outputFormat to output dir: $target")
+      _ <- Try(packageDir.moveTo(target)(CopyOptions.atomically))
+    } yield csvRecord.copy(packageUUID = packageUuid)
+    errorHandling(triedCsvRecord, printer, datasetId, packageDir)
   }.failFastOr(Success("no fedora/IO errors"))
 
-  private def errorHandling(triedCsvRecord: Try[CsvRecord], printer: CSVPrinter, datasetId: DatasetId, ipDir: File) = {
+  private def errorHandling(triedCsvRecord: Try[CsvRecord], printer: CSVPrinter, datasetId: DatasetId, packageDir: File) = {
     triedCsvRecord
       .doIfFailure {
-        case t: InvalidTransformationException => logger.warn(s"$datasetId -> $ipDir failed: ${ t.getMessage }")
-        case t: Throwable => logger.error(s"$datasetId -> $ipDir had a not expected exception: ${ t.getMessage }", t)
+        case t: InvalidTransformationException => logger.warn(s"$datasetId -> $packageDir failed: ${ t.getMessage }")
+        case t: Throwable => logger.error(s"$datasetId -> $packageDir had a not expected exception: ${ t.getMessage }", t)
       }
       .recoverWith {
         case t: FedoraClientException if t.getStatus != 404 => Failure(t)
         case t: IOException => Failure(t)
         case t => Success(CsvRecord(
-          datasetId, UUID.fromString(ipDir.name), doi = "", depositor = "", SIMPLE.toString, s"FAILED: $t"
+          datasetId, UUID.fromString(packageDir.name), doi = "", depositor = "", SIMPLE.toString, s"FAILED: $t"
         ))
       }.doIfSuccess(_.print(printer))
   }
@@ -147,9 +142,9 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       _ <- bag.save()
       notAccessibleOriginals = selectFileInfos(NOT_ACCESSIBLE, allFileInfos).getOrElse(Seq.empty)
       nextFileInfos = allFileInfos.toSet &~ notAccessibleOriginals.toSet
-      _ = logger.debug(s"nextFileInfos = ${nextFileInfos.map(_.name)}")
-            _ = if (options.originalVersioning && allFileInfos.size != firstFileInfos.size)
-                  throw new Exception("2nd dataset not yet implemented")
+      _ = logger.debug(s"nextFileInfos = ${ nextFileInfos.map(_.path) }")
+      _ = if (options.originalVersioning && allFileInfos.size != firstFileInfos.size)
+            throw new Exception("2nd dataset not yet implemented")
       doi = emd.getEmdIdentifier.getDansManagedDoi
     } yield CsvRecord(
       datasetId,

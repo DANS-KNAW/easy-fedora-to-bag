@@ -60,7 +60,7 @@ For every dataset in the output there is a bag-dir created in the `<output-dir>`
 Furthermore, a `<log-file>` is generated in csv format with the following headers:
 
     easy-dataset-id  input easy-dataset-id
-    UUID             UUID created for the resulting AIP
+    UUID             UUID created for the resulting package of the specified output format
     doi              doi as it appears in the EMD
     depositor        EASY-User-Account of the depositor of the dataset
     transformation   transformation used

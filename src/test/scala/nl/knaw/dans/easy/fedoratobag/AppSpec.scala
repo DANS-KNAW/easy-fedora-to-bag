@@ -311,7 +311,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
       "easy-file:1" -> fileFoXml(id = 1, name = "a.txt", location = "x"), // default: original
       "easy-file:2" -> fileFoXml(id = 2, name = "b.pdf", mimeType = "application/pdf", size = 10, accessibleTo = "ANONYMOUS"),
       "easy-file:3" -> fileFoXml(id = 3, name = "c.pdf", mimeType = "application/pdf", size = 20, accessibleTo = "ANONYMOUS"),
-      "easy-file:4" -> fileFoXml(id = 4, name = "d.pdf", mimeType = "application/pdf", size = 15, accessibleTo = "ANONYMOUS"),
+      "easy-file:4" -> fileFoXml(id = 4, name = "d.pdf", mimeType = "application/pdf", size = 15, accessibleTo = "NONE"),
       "easy-file:5" -> fileFoXml(id = 5, name = "e.png", mimeType = "image/png", size = 15, location = "x"),
     )
     foXMLs.foreach { case (id, xml) =>

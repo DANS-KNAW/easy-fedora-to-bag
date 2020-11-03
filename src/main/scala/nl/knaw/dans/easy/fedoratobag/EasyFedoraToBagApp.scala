@@ -140,14 +140,16 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       _ <- managedMetadataStream(foXml, "DATASET_LICENSE", bag, "depositor-info/depositor-agreement")
         .getOrElse(Success(()))
       allFileInfos <- fedoraIDs.filter(_.startsWith("easy-file:")).toList.traverse(getFileInfo)
-      filteredFileInfos <- selectFileInfos(options.firstFileFilter(emdXml), allFileInfos)
-      fileItems <- filteredFileInfos.traverse(addPayloadFileTo(bag))
-      _ <- checkNotImplemented(fileItems, logger)
-      _ <- addXmlMetadataTo(bag, "files.xml")(filesXml(fileItems))
+      firstFileInfos <- selectFileInfos(options.firstFileFilter(emdXml), allFileInfos)
+      firstBagFileItems <- firstFileInfos.traverse(addPayloadFileTo(bag))
+      _ <- checkNotImplemented(firstBagFileItems, logger)
+      _ <- addXmlMetadataTo(bag, "files.xml")(filesXml(firstBagFileItems))
       _ <- bag.save()
-      _ = if (options.originalVersioning && allFileInfos.size != filteredFileInfos.size)
-            throw new Exception("2nd dataset not yet implemented")
-      // TODO for second dataset: allFileInfos - (NOT_ACCESSIBLE of filteredFileInfos)
+      notAccessibleOriginals = selectFileInfos(NOT_ACCESSIBLE, allFileInfos).getOrElse(Seq.empty)
+      nextFileInfos = allFileInfos.toSet &~ notAccessibleOriginals.toSet
+      _ = logger.debug(s"nextFileInfos = ${nextFileInfos.map(_.name)}")
+            _ = if (options.originalVersioning && allFileInfos.size != firstFileInfos.size)
+                  throw new Exception("2nd dataset not yet implemented")
       doi = emd.getEmdIdentifier.getDansManagedDoi
     } yield CsvRecord(
       datasetId,
@@ -178,6 +180,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
   }
 
   private def selectFileInfos(fileFilterType: FileFilterType, fileInfos: List[FileInfo]): Try[List[FileInfo]] = {
+
     def largest(by: FileFilterType, orElseBy: FileFilterType): Try[List[FileInfo]] = {
       val infosByType = fileInfos
         .filter(_.accessibleTo == "ANONYMOUS")
@@ -199,13 +202,11 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       else Success(fileInfos)
     }
 
-    def inOriginal(info: FileInfo) = info.path.startsWith("original/")
-
     fileFilterType match {
       case LARGEST_PDF => largest(LARGEST_PDF, LARGEST_IMAGE)
       case LARGEST_IMAGE => largest(LARGEST_IMAGE, LARGEST_PDF)
-      case ORIGINAL_FILES => successUnlessEmpty(fileInfos.filter(inOriginal))
-      case NOT_ACCESSIBLE => ???
+      case ORIGINAL_FILES => successUnlessEmpty(fileInfos.filter(_.path.startsWith("original/")))
+      case NOT_ACCESSIBLE => successUnlessEmpty(fileInfos.filter(_.accessibleTo == "NONE"))
       case ALL_FILES => successUnlessEmpty(fileInfos)
     }
   }

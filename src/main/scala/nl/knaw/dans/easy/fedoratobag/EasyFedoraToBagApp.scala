@@ -55,20 +55,29 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
 
   def createExport(input: Iterator[DatasetId], outputDir: File, options: Options, outputFormat: OutputFormat)
                   (printer: CSVPrinter): Try[FeedBackMessage] = input.map { datasetId =>
-    val packageUuid = UUID.randomUUID
-    val packageDir = configuration.stagingDir / packageUuid.toString
-    val bagDir = outputFormat match {
+
+    def movePackage(packageDir: File) = {
+      val target = outputDir / packageDir.name
+      debug(s"Moving $outputFormat to output dir: $target")
+      Try(packageDir.moveTo(target)(CopyOptions.atomically))
+    }
+
+    def bagDir(packageDir: File) = outputFormat match {
       case OutputFormat.AIP => packageDir
       case OutputFormat.SIP => packageDir / UUID.randomUUID.toString
     }
+
+    val firstPackageUuid = UUID.randomUUID
+    val firstPackageDir = configuration.stagingDir / firstPackageUuid.toString
+    val firstBagDir = bagDir(firstPackageDir)
+    val secondPackageUuid = UUID.randomUUID
+    val secondPackageDir = configuration.stagingDir / secondPackageUuid.toString
     val triedCsvRecord = for {
-      csvRecord <- createBag(datasetId, bagDir, options)
-      _ = debug(s"Result from createBag: $csvRecord")
-      target = outputDir / packageUuid.toString
-      _ = debug(s"Moving $outputFormat to output dir: $target")
-      _ <- Try(packageDir.moveTo(target)(CopyOptions.atomically))
-    } yield csvRecord.copy(packageUUID = packageUuid)
-    errorHandling(triedCsvRecord, printer, datasetId, packageDir)
+      (fileInfos, csvRecord) <- createFirstBag(datasetId, firstBagDir, options)
+      _ <- movePackage(firstPackageDir)
+      _ <- createSecondBag(fileInfos, firstBagDir, bagDir(secondPackageDir)) // TODO unless csvRecord.comment !- "OK"
+    } yield csvRecord.copy(packageUUID = firstPackageUuid)
+    errorHandling(triedCsvRecord, printer, datasetId, firstPackageDir)
   }.failFastOr(Success("no fedora/IO errors"))
 
   private def errorHandling(triedCsvRecord: Try[CsvRecord], printer: CSVPrinter, datasetId: DatasetId, packageDir: File) = {
@@ -86,7 +95,12 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       }.doIfSuccess(_.print(printer))
   }
 
-  protected[EasyFedoraToBagApp] def createBag(datasetId: DatasetId, bagDir: File, options: Options): Try[CsvRecord] = {
+  protected[EasyFedoraToBagApp] def createSecondBag(fileInfos: Seq[FileInfo], firstBagDir: File, secondBagDir: File): Try[Unit] = {
+    if (fileInfos.isEmpty) Success(())
+    else throw new Exception("2nd dataset not yet implemented")
+  }
+
+  protected[EasyFedoraToBagApp] def createFirstBag(datasetId: DatasetId, bagDir: File, options: Options): Try[(Seq[FileInfo], CsvRecord)] = {
 
     def managedMetadataStream(foXml: Elem, streamId: String, bag: DansV0Bag, metadataFile: String) = {
       managedStreamLabel(foXml, streamId)
@@ -140,20 +154,27 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       _ <- checkNotImplemented(firstBagFileItems, logger)
       _ <- addXmlMetadataTo(bag, "files.xml")(filesXml(firstBagFileItems))
       _ <- bag.save()
-      notAccessibleOriginals = selectFileInfos(NOT_ACCESSIBLE, allFileInfos).getOrElse(Seq.empty)
-      nextFileInfos = allFileInfos.toSet &~ notAccessibleOriginals.toSet
-      _ = logger.debug(s"nextFileInfos = ${ nextFileInfos.map(_.path) }")
-      _ = if (options.originalVersioning && allFileInfos.size != firstFileInfos.size)
-            throw new Exception("2nd dataset not yet implemented")
+      nextFileInfos = getNextFileInfos(allFileInfos, firstFileInfos, options.originalVersioning)
       doi = emd.getEmdIdentifier.getDansManagedDoi
-    } yield CsvRecord(
+    } yield (nextFileInfos, CsvRecord(
       datasetId,
       UUID.fromString(bagDir.name),
       doi,
       depositor,
       transformationType = maybeFilterViolations.map(_ => "not strict simple").getOrElse(SIMPLE.toString),
       maybeFilterViolations.getOrElse("OK"),
-    )
+    ))
+  }
+
+  private def getNextFileInfos(allFileInfos: List[FileInfo], firstFileInfos: List[FileInfo], originalVersioning: Boolean): Seq[FileInfo] = {
+    if (!originalVersioning || allFileInfos.size == firstFileInfos.size)
+      Seq[FileInfo]()
+    else {
+      val notAccessibleOriginals = selectFileInfos(NOT_ACCESSIBLE, firstFileInfos).getOrElse(Seq.empty)
+      val nextFileInfos = allFileInfos.toSet &~ notAccessibleOriginals.toSet
+      logger.debug(s"nextFileInfos = ${ nextFileInfos.map(_.path) }")
+      nextFileInfos.toSeq
+    }
   }
 
   private def getAudience(id: String) = {

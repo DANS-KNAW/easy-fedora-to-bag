@@ -47,7 +47,7 @@ class CreateExportSpec extends TestSupportFixture with FileFoXmlSupport with Bag
     val filter: SimpleDatasetFilter = SimpleDatasetFilter(bagIndex)
 
     /** mocks the method called by the method under test */
-    override def createBag(datasetId: DatasetId, outputDir: File, options: Options): Try[CsvRecord] = {
+    override def createFirstBag(datasetId: DatasetId, outputDir: File, options: Options): Try[(Seq[FileInfo],CsvRecord)] = {
       outputDir.parent.createDirectories()
       datasetId match {
         case _ if datasetId.startsWith("fatal") =>
@@ -60,7 +60,7 @@ class CreateExportSpec extends TestSupportFixture with FileFoXmlSupport with Bag
           Failure(new Exception(datasetId))
         case _ =>
           outputDir.createFile().writeText(datasetId)
-          Success(CsvRecord(datasetId, UUID.randomUUID(), doi = "testDOI", depositor = "testUser", transformationType = "simple", comment = "OK"))
+          Success((Seq.empty,CsvRecord(datasetId, UUID.randomUUID(), doi = "testDOI", depositor = "testUser", transformationType = "simple", comment = "OK")))
       }
     }
   }

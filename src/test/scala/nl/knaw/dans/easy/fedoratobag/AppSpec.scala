@@ -15,12 +15,14 @@
  */
 package nl.knaw.dans.easy.fedoratobag
 
+import java.io.StringWriter
 import java.util.UUID
 
 import better.files.{ File, _ }
 import javax.naming.NamingEnumeration
 import javax.naming.directory.{ BasicAttributes, SearchControls, SearchResult }
 import javax.naming.ldap.InitialLdapContext
+import nl.knaw.dans.easy.fedoratobag.OutputFormat.SIP
 import nl.knaw.dans.easy.fedoratobag.filter.{ BagIndex, InvalidTransformationException, SimpleDatasetFilter }
 import nl.knaw.dans.easy.fedoratobag.fixture._
 import org.scalamock.scalatest.MockFactory
@@ -53,12 +55,16 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
       super.createFirstBag(datasetId, bagDir, options)
   }
 
-  "createBag" should "process DepositApi" in {
-    val app = new MockedApp()
+  "createExport" should "process DepositApi" in {
+    val app = new MockedApp(new Configuration("test-version", null, null, null, testDir / "staging", AbrMappings(File("src/main/assembly/dist/cfg/EMD_acdm.xsl"))))
     Map(
       "easy-discipline:77" -> audienceFoXML("easy-discipline:77", "D13200"),
       "easy-dataset:17" -> XML.loadFile((sampleFoXML / "DepositApi.xml").toJava),
       "easy-file:35" -> fileFoXml(),
+      "easy-file:35" -> fileFoXml(),
+      "easy-file:36" -> fileFoXml(id = 36, location = "x", accessibleTo = "ANONYMOUS"),
+      "easy-file:37" -> fileFoXml(id = 37, accessibleTo = "ANONYMOUS", name="b.txt"),
+      "easy-file:37" -> fileFoXml(id = 37, accessibleTo = "ANONYMOUS", name="b.txt"),
     ).foreach { case (id, xml) =>
       (app.fedoraProvider.loadFoXml(_: String)) expects id once() returning Success(xml)
     }
@@ -66,31 +72,32 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
       ("easy-dataset:17", "ADDITIONAL_LICENSE", "lalala"),
       ("easy-dataset:17", "DATASET_LICENSE", "blablabla"),
       ("easy-file:35", "EASY_FILE", "acabadabra"),
+      ("easy-file:35", "EASY_FILE", "acabadabra"),
+      ("easy-file:36", "EASY_FILE", "rabarbera"),
+      ("easy-file:37", "EASY_FILE", "rabarbera"),
+      ("easy-file:37", "EASY_FILE", "rabarbera"),
     ).foreach { case (objectId, streamId, content) =>
       (app.fedoraProvider.disseminateDatastream(_: String, _: String)) expects(objectId, streamId
       ) once() returning managed(content.inputStream)
     }
     (app.fedoraProvider.getSubordinates(_: String)) expects "easy-dataset:17" once() returning
-      Success(Seq("easy-file:35"))
+      Success(Seq("easy-file:35", "easy-file:36", "easy-file:37"))
 
     // end of mocking
 
-    val uuid = UUID.randomUUID
-    app.createFirstBag("easy-dataset:17", testDir / "bags" / uuid.toString, Options(app.filter)) shouldBe
-      Success(DatasetInfo(None, "10.17026/test-Iiib-z9p-4ywa", "user001", Seq.empty))
-
-    // post conditions
-
-    val metadata = (testDir / "bags").children.next() / "metadata"
-    (metadata / "depositor-info/depositor-agreement.pdf").contentAsString shouldBe "blablabla"
-    (metadata / "license.pdf").contentAsString shouldBe "lalala"
-    metadata.list.toSeq.map(_.name).sortBy(identity) shouldBe
-      Seq("amd.xml", "dataset.xml", "depositor-info", "emd.xml", "files.xml", "license.pdf", "original")
-    (metadata / "depositor-info").list.toSeq.map(_.name).sortBy(identity) shouldBe
-      Seq("agreements.xml", "depositor-agreement.pdf", "message-from-depositor.txt")
+    val sw = new StringWriter()
+    app.createExport(
+      Iterator("easy-dataset:17"),
+      (testDir / "output").createDirectories,
+      Options(SimpleDatasetFilter(), originalVersioning = true),
+      SIP
+    )(CsvRecord.csvFormat.print(sw)) shouldBe Success("no fedora/IO errors")
+    sw.toString should fullyMatch regex
+      """easyDatasetId,uuid1,uuid2,doi,depositor,transformationType,comment
+        |easy-dataset:17,.*,10.17026/test-Iiib-z9p-4ywa,user001,simple,OK""".stripMargin
   }
 
-  it should "report not strict simple violation" in {
+  "createBag" should "report not strict simple violation" in {
     val app = new MockedApp()
     (app.fedoraProvider.getSubordinates(_: String)) expects "easy-dataset:17" once() returning
       Success(Seq("easy-jumpoff:1"))

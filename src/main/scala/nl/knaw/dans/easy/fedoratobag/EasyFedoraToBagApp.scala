@@ -122,9 +122,11 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       _ <- copy("amd.xml", bag2)
       _ <- copy("dataset.xml", bag2)
       _ <- (bagDir1 / "metadata").list.toList
-        .filter(_.name.contains("_LICENSE."))
+        .filter(_.name.toLowerCase.contains("license"))
         .traverse(file => copy(file.name, bag2))
-      _ <- fileInfos.toList.traverse(addPayloadFileTo(bag2))
+      fileItems <- fileInfos.toList.traverse(addPayloadFileTo(bag2))
+      _ <- checkNotImplemented(fileItems, logger)
+      _ <- addXmlMetadataTo(bag2, "files.xml")(filesXml(fileItems))
       _ <- bag2.save
     } yield ()
   }

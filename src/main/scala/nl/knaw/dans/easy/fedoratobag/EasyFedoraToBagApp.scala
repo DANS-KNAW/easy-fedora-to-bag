@@ -28,6 +28,7 @@ import com.yourmediashelf.fedora.client.{ FedoraClient, FedoraClientException }
 import javax.naming.ldap.InitialLdapContext
 import nl.knaw.dans.bag.ChecksumAlgorithm
 import nl.knaw.dans.bag.v0.DansV0Bag
+import nl.knaw.dans.bag.v0.DansV0Bag.IS_VERSION_OF_KEY
 import nl.knaw.dans.easy.fedoratobag.Command.FeedBackMessage
 import nl.knaw.dans.easy.fedoratobag.FileFilterType.{ LARGEST_IMAGE, _ }
 import nl.knaw.dans.easy.fedoratobag.FileItem.{ checkNotImplemented, filesXml }
@@ -68,22 +69,22 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     }
 
     val packageUuid1 = UUID.randomUUID
-    val packageDir1 = configuration.stagingDir / packageUuid1.toString
-    val bagDir1 = bagDir(packageDir1)
     val packageUuid2 = UUID.randomUUID
+    val packageDir1 = configuration.stagingDir / packageUuid1.toString
     val packageDir2 = configuration.stagingDir / packageUuid2.toString
+    val bagDir1 = bagDir(packageDir1)
     val triedCsvRecord = for {
       datasetInfo <- createFirstBag(datasetId, bagDir1, options)
-      bagDir2 = if (datasetInfo.nextFileInfos.isEmpty) None
-                else  Some(bagDir(packageDir2))
-      _ <- bagDir2.map(createSecondBag(datasetInfo.nextFileInfos, bagDir1)).getOrElse(Success(()))
-      // the 2nd bag is moved first, thus a next process can stumble over a missing first bag in case of interrupts
-      _ <- bagDir2.map(_ => movePackageAtomically(packageDir2)).getOrElse(Success(()))
+      maybeBagDir2 = if (datasetInfo.nextFileInfos.isEmpty) None
+                     else Some(bagDir(packageDir2))
+      _ <- maybeBagDir2.map(createSecondBag(datasetInfo.nextFileInfos, bagDir1, packageUuid1)).getOrElse(Success(()))
+      // the 2nd bag is moved first, thus a next process has a chance to stumble over a missing first bag in case of interrupts
+      _ <- maybeBagDir2.map(_ => movePackageAtomically(packageDir2)).getOrElse(Success(()))
       _ <- movePackageAtomically(packageDir1)
     } yield CsvRecord(
       datasetId,
       packageUuid1,
-      bagDir2.map(_ => packageUuid2),
+      maybeBagDir2.map(_ => packageUuid2),
       datasetInfo.doi,
       datasetInfo.depositor,
       transformationType = datasetInfo.maybeFilterViolations.map(_ => "not strict simple").getOrElse(SIMPLE.toString),
@@ -107,8 +108,25 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       }.doIfSuccess(_.print(printer))
   }
 
-  protected[EasyFedoraToBagApp] def createSecondBag(fileInfos: Seq[FileInfo], bagDir1: File)(bagDir2: File): Try[Unit] = {
-    throw new Exception("2nd dataset not yet implemented")
+  protected[EasyFedoraToBagApp] def createSecondBag(fileInfos: Seq[FileInfo], bagDir1: File, isVersionOf: UUID)(bagDir2: File): Try[Unit] = {
+    def copy(fileName: String, bag2: DansV0Bag) = {
+      (bagDir1 / "metadata" / fileName)
+        .inputStream
+        .map(addMetadataStreamTo(bag2, s"metadata/$fileName"))
+        .get
+    }
+    for {
+      bag2 <- DansV0Bag.empty(bagDir2)
+      _ = bag2.addBagInfo(IS_VERSION_OF_KEY, isVersionOf.toString)
+      _ <- copy("emd.xml", bag2)
+      _ <- copy("amd.xml", bag2)
+      _ <- copy("dataset.xml", bag2)
+      _ <- (bagDir1 / "metadata").list.toList
+        .filter(_.name.contains("_LICENSE."))
+        .traverse(file => copy(file.name, bag2))
+      _ <- fileInfos.toList.traverse(addPayloadFileTo(bag2))
+      _ <- bag2.save
+    } yield ()
   }
 
   protected[EasyFedoraToBagApp] def createFirstBag(datasetId: DatasetId, bagDir: File, options: Options): Try[DatasetInfo] = {
@@ -164,7 +182,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       firstBagFileItems <- firstFileInfos.traverse(addPayloadFileTo(bag))
       _ <- checkNotImplemented(firstBagFileItems, logger)
       _ <- addXmlMetadataTo(bag, "files.xml")(filesXml(firstBagFileItems))
-      _ <- bag.save()
+      _ <- bag.save
       doi = emd.getEmdIdentifier.getDansManagedDoi
       nextFileInfos = if (maybeFilterViolations.nonEmpty && options.strict) Seq.empty
                       else getNextFileInfos(allFileInfos, firstFileInfos, options.originalVersioning)

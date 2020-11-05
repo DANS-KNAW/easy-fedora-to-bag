@@ -56,7 +56,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
   def createExport(input: Iterator[DatasetId], outputDir: File, options: Options, outputFormat: OutputFormat)
                   (printer: CSVPrinter): Try[FeedBackMessage] = input.map { datasetId =>
 
-    def movePackage(packageDir: File) = {
+    def movePackageAtomically(packageDir: File) = {
       val target = outputDir / packageDir.name
       debug(s"Moving $outputFormat to output dir: $target")
       Try(packageDir.moveTo(target)(CopyOptions.atomically))
@@ -67,17 +67,29 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       case OutputFormat.SIP => packageDir / UUID.randomUUID.toString
     }
 
-    val firstPackageUuid = UUID.randomUUID
-    val firstPackageDir = configuration.stagingDir / firstPackageUuid.toString
-    val firstBagDir = bagDir(firstPackageDir)
-    val secondPackageUuid = UUID.randomUUID
-    val secondPackageDir = configuration.stagingDir / secondPackageUuid.toString
+    val packageUuid1 = UUID.randomUUID
+    val packageDir1 = configuration.stagingDir / packageUuid1.toString
+    val bagDir1 = bagDir(packageDir1)
+    val packageUuid2 = UUID.randomUUID
+    val packageDir2 = configuration.stagingDir / packageUuid2.toString
     val triedCsvRecord = for {
-      (fileInfos, csvRecord) <- createFirstBag(datasetId, firstBagDir, options)
-      _ <- movePackage(firstPackageDir)
-      _ <- createSecondBag(fileInfos, firstBagDir, bagDir(secondPackageDir)) // TODO unless csvRecord.comment !- "OK"
-    } yield csvRecord.copy(packageUUID = firstPackageUuid)
-    errorHandling(triedCsvRecord, printer, datasetId, firstPackageDir)
+      datasetInfo <- createFirstBag(datasetId, bagDir1, options)
+      bagDir2 = if (datasetInfo.nextFileInfos.isEmpty) None
+                else  Some(bagDir(packageDir2))
+      _ <- bagDir2.map(createSecondBag(datasetInfo.nextFileInfos, bagDir1)).getOrElse(Success(()))
+      // the 2nd bag is moved first, thus a next process can stumble over a missing first bag in case of interrupts
+      _ <- bagDir2.map(_ => movePackageAtomically(packageDir2)).getOrElse(Success(()))
+      _ <- movePackageAtomically(packageDir1)
+    } yield CsvRecord(
+      datasetId,
+      packageUuid1,
+      bagDir2.map(_ => packageUuid2),
+      datasetInfo.doi,
+      datasetInfo.depositor,
+      transformationType = datasetInfo.maybeFilterViolations.map(_ => "not strict simple").getOrElse(SIMPLE.toString),
+      datasetInfo.maybeFilterViolations.getOrElse("OK"),
+    )
+    errorHandling(triedCsvRecord, printer, datasetId, packageDir1)
   }.failFastOr(Success("no fedora/IO errors"))
 
   private def errorHandling(triedCsvRecord: Try[CsvRecord], printer: CSVPrinter, datasetId: DatasetId, packageDir: File) = {
@@ -90,17 +102,16 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
         case t: FedoraClientException if t.getStatus != 404 => Failure(t)
         case t: IOException => Failure(t)
         case t => Success(CsvRecord(
-          datasetId, UUID.fromString(packageDir.name), doi = "", depositor = "", SIMPLE.toString, s"FAILED: $t"
+          datasetId, UUID.fromString(packageDir.name), None, doi = "", depositor = "", SIMPLE.toString, s"FAILED: $t"
         ))
       }.doIfSuccess(_.print(printer))
   }
 
-  protected[EasyFedoraToBagApp] def createSecondBag(fileInfos: Seq[FileInfo], firstBagDir: File, secondBagDir: File): Try[Unit] = {
-    if (fileInfos.isEmpty) Success(())
-    else throw new Exception("2nd dataset not yet implemented")
+  protected[EasyFedoraToBagApp] def createSecondBag(fileInfos: Seq[FileInfo], bagDir1: File)(bagDir2: File): Try[Unit] = {
+    throw new Exception("2nd dataset not yet implemented")
   }
 
-  protected[EasyFedoraToBagApp] def createFirstBag(datasetId: DatasetId, bagDir: File, options: Options): Try[(Seq[FileInfo], CsvRecord)] = {
+  protected[EasyFedoraToBagApp] def createFirstBag(datasetId: DatasetId, bagDir: File, options: Options): Try[DatasetInfo] = {
 
     def managedMetadataStream(foXml: Elem, streamId: String, bag: DansV0Bag, metadataFile: String) = {
       managedStreamLabel(foXml, streamId)
@@ -154,16 +165,10 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       _ <- checkNotImplemented(firstBagFileItems, logger)
       _ <- addXmlMetadataTo(bag, "files.xml")(filesXml(firstBagFileItems))
       _ <- bag.save()
-      nextFileInfos = getNextFileInfos(allFileInfos, firstFileInfos, options.originalVersioning)
       doi = emd.getEmdIdentifier.getDansManagedDoi
-    } yield (nextFileInfos, CsvRecord(
-      datasetId,
-      UUID.fromString(bagDir.name),
-      doi,
-      depositor,
-      transformationType = maybeFilterViolations.map(_ => "not strict simple").getOrElse(SIMPLE.toString),
-      maybeFilterViolations.getOrElse("OK"),
-    ))
+      nextFileInfos = if (maybeFilterViolations.nonEmpty && options.strict) Seq.empty
+                      else getNextFileInfos(allFileInfos, firstFileInfos, options.originalVersioning)
+    } yield DatasetInfo(maybeFilterViolations, doi, depositor, nextFileInfos)
   }
 
   private def getNextFileInfos(allFileInfos: List[FileInfo], firstFileInfos: List[FileInfo], originalVersioning: Boolean): Seq[FileInfo] = {

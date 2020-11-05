@@ -49,7 +49,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
     // make almost private methods available for tests
 
-    override def createFirstBag(datasetId: DatasetId, bagDir: File, options: Options): Try[(Seq[FileInfo], CsvRecord)] =
+    override def createFirstBag(datasetId: DatasetId, bagDir: File, options: Options): Try[DatasetInfo] =
       super.createFirstBag(datasetId, bagDir, options)
   }
 
@@ -77,7 +77,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
     val uuid = UUID.randomUUID
     app.createFirstBag("easy-dataset:17", testDir / "bags" / uuid.toString, Options(app.filter)) shouldBe
-      Success((Seq.empty, CsvRecord("easy-dataset:17", uuid, "10.17026/test-Iiib-z9p-4ywa", "user001", "simple", "OK")))
+      Success(DatasetInfo(None, "10.17026/test-Iiib-z9p-4ywa", "user001", Seq.empty))
 
     // post conditions
 
@@ -169,7 +169,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     val uuid = UUID.randomUUID
     val bagDir = testDir / "bags" / uuid.toString
     app.createFirstBag("easy-dataset:13", bagDir, Options(app.filter)) shouldBe
-      Success((Seq.empty, CsvRecord("easy-dataset:13", uuid, "10.17026/mocked-Iiib-z9p-4ywa", "user001", "simple", "OK")))
+      Success(DatasetInfo(None, "10.17026/mocked-Iiib-z9p-4ywa", "user001", Seq.empty))
 
     // post conditions
 
@@ -325,7 +325,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
     val bagDir = testDir / "bags" / UUID.randomUUID.toString
     app.createFirstBag("easy-dataset:13", bagDir, Options(app.filter, originalVersioning = true))
-      .map(_._1.map(_.path.toString).sortBy(identity)) shouldBe
+      .map(_.nextFileInfos.map(_.path.toString).sortBy(identity)) shouldBe
       Success(Vector("original/b.pdf", "original/c.pdf", "x/a.txt", "x/e.png"))
 
     (bagDir / "data").listRecursively.toList.map(_.name) should

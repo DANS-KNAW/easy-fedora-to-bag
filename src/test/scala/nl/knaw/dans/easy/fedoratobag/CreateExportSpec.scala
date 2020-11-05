@@ -16,7 +16,6 @@
 package nl.knaw.dans.easy.fedoratobag
 
 import java.io.StringWriter
-import java.util.UUID
 
 import better.files.File
 import com.yourmediashelf.fedora.client.FedoraClientException
@@ -47,7 +46,7 @@ class CreateExportSpec extends TestSupportFixture with FileFoXmlSupport with Bag
     val filter: SimpleDatasetFilter = SimpleDatasetFilter(bagIndex)
 
     /** mocks the method called by the method under test */
-    override def createFirstBag(datasetId: DatasetId, outputDir: File, options: Options): Try[(Seq[FileInfo],CsvRecord)] = {
+    override def createFirstBag(datasetId: DatasetId, outputDir: File, options: Options): Try[DatasetInfo] = {
       outputDir.parent.createDirectories()
       datasetId match {
         case _ if datasetId.startsWith("fatal") =>
@@ -60,7 +59,7 @@ class CreateExportSpec extends TestSupportFixture with FileFoXmlSupport with Bag
           Failure(new Exception(datasetId))
         case _ =>
           outputDir.createFile().writeText(datasetId)
-          Success((Seq.empty,CsvRecord(datasetId, UUID.randomUUID(), doi = "testDOI", depositor = "testUser", transformationType = "simple", comment = "OK")))
+          Success(DatasetInfo(None, doi = "testDOI", depositor = "testUser", Seq.empty))
       }
     }
   }
@@ -104,7 +103,7 @@ class CreateExportSpec extends TestSupportFixture with FileFoXmlSupport with Bag
 
     val csvContent = sw.toString
     csvContent should (fullyMatch regex
-      """easyDatasetId,uuid,doi,depositor,transformationType,comment
+      """easyDatasetId,uuid1,uuid2,doi,depositor,transformationType,comment
         |success:1,.*,testDOI,testUser,simple,OK
         |success:2,.*,testDOI,testUser,simple,OK
         |""".stripMargin
@@ -131,7 +130,7 @@ class CreateExportSpec extends TestSupportFixture with FileFoXmlSupport with Bag
 
     val csvContent = sw.toString
     csvContent should (fullyMatch regex
-      """easyDatasetId,uuid,doi,depositor,transformationType,comment
+      """easyDatasetId,uuid1,uuid2,doi,depositor,transformationType,comment
         |success:1,.*,testDOI,testUser,simple,OK
         |failure:2,.*,,,simple,FAILED: java.lang.Exception: failure:2
         |notSimple:3,.*,,,simple,FAILED: .*InvalidTransformationException: mocked

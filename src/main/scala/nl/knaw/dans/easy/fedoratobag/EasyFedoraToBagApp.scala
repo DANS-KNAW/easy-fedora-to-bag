@@ -266,6 +266,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
   }
 
   private def addPayloadFileTo(bag: DansV0Bag)(fileInfo: FileInfo): Try[Node] = {
+    val file = bag.baseDir / s"data/${ fileInfo.path }"
     val streamId = "EASY_FILE"
     for {
       fileItem <- FileItem(fileInfo)
@@ -273,7 +274,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
         .disseminateDatastream(fileInfo.fedoraFileId, streamId)
         .map(bag.addPayloadFile(_, fileInfo.path))
         .tried.flatten
-      _ <- fileInfo.contentDigest.map(validateChecksum(bag.baseDir / s"data/${ fileInfo.path }", bag, fileInfo.fedoraFileId))
+      _ <- fileInfo.contentDigest.map(validateChecksum(file, bag, fileInfo.fedoraFileId))
         .getOrElse(Success(logger.warn(s"No digest found for ${ fileInfo.fedoraFileId } path = ${ fileInfo.path }")))
     } yield fileItem
   }

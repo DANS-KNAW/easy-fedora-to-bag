@@ -28,7 +28,6 @@ import com.yourmediashelf.fedora.client.{ FedoraClient, FedoraClientException }
 import javax.naming.ldap.InitialLdapContext
 import nl.knaw.dans.bag.ChecksumAlgorithm
 import nl.knaw.dans.bag.v0.DansV0Bag
-import nl.knaw.dans.bag.v0.DansV0Bag.IS_VERSION_OF_KEY
 import nl.knaw.dans.easy.fedoratobag.Command.FeedBackMessage
 import nl.knaw.dans.easy.fedoratobag.FileFilterType.{ LARGEST_IMAGE, _ }
 import nl.knaw.dans.easy.fedoratobag.FileItem.{ checkNotImplemented, filesXml }
@@ -77,7 +76,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       datasetInfo <- createFirstBag(datasetId, bagDir1, options)
       maybeBagDir2 = if (datasetInfo.nextFileInfos.isEmpty) None
                      else Some(bagDir(packageDir2))
-      _ <- maybeBagDir2.map(createSecondBag(datasetInfo.nextFileInfos, bagDir1, packageUuid1)).getOrElse(Success(()))
+      _ <- maybeBagDir2.map(createSecondBag(datasetInfo, bagDir1, packageUuid1)).getOrElse(Success(()))
       // the 2nd bag is moved first, thus a next process has a chance to stumble over a missing first bag in case of interrupts
       _ <- maybeBagDir2.map(_ => movePackageAtomically(packageDir2)).getOrElse(Success(()))
       _ <- movePackageAtomically(packageDir1)
@@ -108,23 +107,28 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       }.doIfSuccess(_.print(printer))
   }
 
-  protected[EasyFedoraToBagApp] def createSecondBag(fileInfos: Seq[FileInfo], bagDir1: File, isVersionOf: UUID)(bagDir2: File): Try[Unit] = {
+  protected[EasyFedoraToBagApp] def createSecondBag(datasetInfo: DatasetInfo, bagDir1: File, isVersionOf: UUID)(bagDir2: File): Try[Unit] = {
     def copy(fileName: String, bag2: DansV0Bag) = {
       (bagDir1 / "metadata" / fileName)
         .inputStream
         .map(addMetadataStreamTo(bag2, s"metadata/$fileName"))
         .get
     }
+
     for {
       bag2 <- DansV0Bag.empty(bagDir2)
-      _ = bag2.addBagInfo(IS_VERSION_OF_KEY, isVersionOf.toString)
+        .map(_
+          .withEasyUserAccount(datasetInfo.depositor)
+          .withCreated(DateTime.now())
+          .withIsVersionOf(isVersionOf)
+        )
       _ <- copy("emd.xml", bag2)
       _ <- copy("amd.xml", bag2)
       _ <- copy("dataset.xml", bag2)
       _ <- (bagDir1 / "metadata").list.toList
         .filter(_.name.toLowerCase.contains("license"))
         .traverse(file => copy(file.name, bag2))
-      fileItems <- fileInfos.toList.traverse(addPayloadFileTo(bag2))
+      fileItems <- datasetInfo.nextFileInfos.toList.traverse(addPayloadFileTo(bag2))
       _ <- checkNotImplemented(fileItems, logger)
       _ <- addXmlMetadataTo(bag2, "files.xml")(filesXml(fileItems))
       _ <- bag2.save

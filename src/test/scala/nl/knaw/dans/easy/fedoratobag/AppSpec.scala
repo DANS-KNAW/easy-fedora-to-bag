@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.easy.fedoratobag
 
-import java.io.StringWriter
+import java.io.{ IOException, StringWriter }
 import java.util.UUID
 
 import better.files.{ File, _ }

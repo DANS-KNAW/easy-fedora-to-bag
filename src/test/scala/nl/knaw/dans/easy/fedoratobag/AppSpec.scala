@@ -42,7 +42,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
   private class MockedLdapContext extends InitialLdapContext(new java.util.Hashtable[String, String](), null)
 
-  private class AppWithMockedServices(configuration: Configuration = new Configuration("test-version", null, null, null, null, AbrMappings(File("src/main/assembly/dist/cfg/EMD_acdm.xsl"))),
+  private class AppWithMockedServices(configuration: Configuration = new Configuration("test-version", null, null, null, testDir / "staging", AbrMappings(File("src/main/assembly/dist/cfg/EMD_acdm.xsl"))),
                                      ) extends EasyFedoraToBagApp(configuration) {
     override lazy val fedoraProvider: FedoraProvider = mock[FedoraProvider]
     override lazy val ldapContext: InitialLdapContext = mock[MockedLdapContext]
@@ -67,7 +67,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
   }
 
   "createExport" should "produce two bags" in {
-    val app = new AppWithMockedServices(new Configuration("test-version", null, null, null, testDir / "staging", null)) {
+    val app = new AppWithMockedServices() {
       Map(
         "easy-discipline:77" -> audienceFoXML("easy-discipline:77", "D13200"),
         "easy-dataset:17" -> XML.loadFile((sampleFoXML / "DepositApi.xml").toJava),
@@ -102,6 +102,41 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     sw.toString should fullyMatch regex
       """easyDatasetId,uuid1,uuid2,doi,depositor,transformationType,comment
         |easy-dataset:17,.*,10.17026/test-Iiib-z9p-4ywa,user001,simple,OK
+        |""".stripMargin
+  }
+
+  it should "report a checksum mismatch" in {
+    val app = new AppWithMockedServices() {
+      Map(
+        "easy-discipline:77" -> audienceFoXML("easy-discipline:77", "D13200"),
+        "easy-dataset:17" -> XML.loadFile((sampleFoXML / "DepositApi.xml").toJava),
+        "easy-file:35" -> fileFoXml(digest = digests("barbapappa")),
+      ).foreach { case (id, xml) =>
+        (fedoraProvider.loadFoXml(_: String)) expects id once() returning Success(xml)
+      }
+      Seq(
+        ("easy-dataset:17", "ADDITIONAL_LICENSE", "lalala"),
+        ("easy-dataset:17", "DATASET_LICENSE", "blablabla"),
+        ("easy-file:35", "EASY_FILE", "acabadabra"),
+      ).foreach { case (objectId, streamId, content) =>
+        (fedoraProvider.disseminateDatastream(_: String, _: String)) expects(objectId, streamId
+        ) returning managed(content.inputStream) once()
+      }
+      (fedoraProvider.getSubordinates(_: String)) expects "easy-dataset:17" once() returning
+        Success(Seq("easy-file:35"))
+    }
+    // end of mocking
+
+    val sw = new StringWriter()
+    app.createExport(
+      Iterator("easy-dataset:17"),
+      (testDir / "output").createDirectories,
+      Options(SimpleDatasetFilter()),
+      SIP
+    )(CsvRecord.csvFormat.print(sw)) shouldBe Success("no fedora/IO errors")
+    sw.toString should fullyMatch regex
+      """easyDatasetId,uuid1,uuid2,doi,depositor,transformationType,comment
+        |easy-dataset:17,.*,,,,simple,FAILED: java.lang.Exception: checksum error .* easy-file:35 .*/data/original/something.txt
         |""".stripMargin
   }
 

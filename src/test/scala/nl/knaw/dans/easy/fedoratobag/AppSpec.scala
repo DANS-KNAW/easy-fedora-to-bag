@@ -55,30 +55,26 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
       super.createFirstBag(datasetId, bagDir, options)
   }
 
-  "createExport" should "process DepositApi" in {
-    val app = new MockedApp(new Configuration("test-version", null, null, null, testDir / "staging", AbrMappings(File("src/main/assembly/dist/cfg/EMD_acdm.xsl"))))
+  "createExport" should "produce two bags" in {
+    val app = new MockedApp(new Configuration("test-version", null, null, null, testDir / "staging", null))
     Map(
       "easy-discipline:77" -> audienceFoXML("easy-discipline:77", "D13200"),
       "easy-dataset:17" -> XML.loadFile((sampleFoXML / "DepositApi.xml").toJava),
       "easy-file:35" -> fileFoXml(),
-      "easy-file:35" -> fileFoXml(),
       "easy-file:36" -> fileFoXml(id = 36, location = "x", accessibleTo = "ANONYMOUS"),
-      "easy-file:37" -> fileFoXml(id = 37, accessibleTo = "ANONYMOUS", name="b.txt"),
-      "easy-file:37" -> fileFoXml(id = 37, accessibleTo = "ANONYMOUS", name="b.txt"),
+      "easy-file:37" -> fileFoXml(id = 37, accessibleTo = "NONE", name="b.txt"),
     ).foreach { case (id, xml) =>
       (app.fedoraProvider.loadFoXml(_: String)) expects id once() returning Success(xml)
     }
     Seq(
-      ("easy-dataset:17", "ADDITIONAL_LICENSE", "lalala"),
-      ("easy-dataset:17", "DATASET_LICENSE", "blablabla"),
-      ("easy-file:35", "EASY_FILE", "acabadabra"),
-      ("easy-file:35", "EASY_FILE", "acabadabra"),
-      ("easy-file:36", "EASY_FILE", "rabarbera"),
-      ("easy-file:37", "EASY_FILE", "rabarbera"),
-      ("easy-file:37", "EASY_FILE", "rabarbera"),
-    ).foreach { case (objectId, streamId, content) =>
+      (1, "easy-dataset:17", "ADDITIONAL_LICENSE", "lalala"),
+      (1, "easy-dataset:17", "DATASET_LICENSE", "blablabla"),
+      (2, "easy-file:35", "EASY_FILE", "acabadabra"),
+      (1, "easy-file:36", "EASY_FILE", "rabarbera"),
+      (1, "easy-file:37", "EASY_FILE", "barbapappa"),
+    ).foreach { case (n, objectId, streamId, content) =>
       (app.fedoraProvider.disseminateDatastream(_: String, _: String)) expects(objectId, streamId
-      ) once() returning managed(content.inputStream)
+      ) returning managed(content.inputStream) repeat n
     }
     (app.fedoraProvider.getSubordinates(_: String)) expects "easy-dataset:17" once() returning
       Success(Seq("easy-file:35", "easy-file:36", "easy-file:37"))
@@ -94,7 +90,8 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     )(CsvRecord.csvFormat.print(sw)) shouldBe Success("no fedora/IO errors")
     sw.toString should fullyMatch regex
       """easyDatasetId,uuid1,uuid2,doi,depositor,transformationType,comment
-        |easy-dataset:17,.*,10.17026/test-Iiib-z9p-4ywa,user001,simple,OK""".stripMargin
+        |easy-dataset:17,.*,10.17026/test-Iiib-z9p-4ywa,user001,simple,OK
+        |""".stripMargin
   }
 
   "createBag" should "report not strict simple violation" in {
@@ -279,7 +276,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
       contain theSameElementsAs List("original", "c.png")
   }
 
-  it should "fall back to pdf files" in {
+  it should "fall back to largest pdf file" in {
     val app = new MockedApp()
     expectAUser(app.ldapContext)
     (app.fedoraProvider.getSubordinates(_: String)) expects "easy-dataset:13" once() returning

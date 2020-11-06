@@ -60,9 +60,9 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     Map(
       "easy-discipline:77" -> audienceFoXML("easy-discipline:77", "D13200"),
       "easy-dataset:17" -> XML.loadFile((sampleFoXML / "DepositApi.xml").toJava),
-      "easy-file:35" -> fileFoXml(),
-      "easy-file:36" -> fileFoXml(id = 36, location = "x", accessibleTo = "ANONYMOUS"),
-      "easy-file:37" -> fileFoXml(id = 37, accessibleTo = "NONE", name="b.txt"),
+      "easy-file:35" -> fileFoXml(digest = digests("acabadabra")),
+      "easy-file:36" -> fileFoXml(id = 36, location = "x", accessibleTo = "ANONYMOUS", digest = digests("rabarbera")),
+      "easy-file:37" -> fileFoXml(id = 37, accessibleTo = "NONE", name = "b.txt", digest = digests("barbapappa")),
     ).foreach { case (id, xml) =>
       (app.fedoraProvider.loadFoXml(_: String)) expects id once() returning Success(xml)
     }
@@ -157,14 +157,14 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     Map(
       "easy-discipline:6" -> audienceFoXML("easy-discipline:6", "D35400"),
       "easy-dataset:13" -> XML.loadFile((sampleFoXML / "streaming.xml").toJava),
-      "easy-file:35" -> fileFoXml(),
+      "easy-file:35" -> fileFoXml(digest = digests("barbapappa")),
     ).foreach { case (id, xml) =>
       (app.fedoraProvider.loadFoXml(_: String)) expects id once() returning Success(xml)
     }
     (app.fedoraProvider.disseminateDatastream(_: String, _: String)) expects(
       "easy-file:35",
       "EASY_FILE"
-    ) once() returning managed("barbapapa".inputStream)
+    ) once() returning managed("barbapappa".inputStream)
     (app.fedoraProvider.getSubordinates(_: String)) expects "easy-dataset:13" once() returning
       Success(Seq("easy-file:35"))
 
@@ -227,16 +227,16 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     val foXMLs = Map(
       "easy-dataset:13" -> XML.loadFile((sampleFoXML / "streaming.xml").toJava),
       "easy-discipline:6" -> audienceFoXML("easy-discipline:6", "D35400"),
-      "easy-file:1" -> fileFoXml(id = 1, name = "a.txt"),
-      "easy-file:2" -> fileFoXml(id = 2, name = "b.txt"),
-      "easy-file:3" -> fileFoXml(id = 3, name = "c.txt"),
+      "easy-file:1" -> fileFoXml(id = 1, name = "a.txt", digest = digests("lalala")),
+      "easy-file:2" -> fileFoXml(id = 2, name = "b.txt", digest = digests("lalala")),
+      "easy-file:3" -> fileFoXml(id = 3, name = "c.txt", digest = digests("lalala")),
     )
     foXMLs.foreach { case (id, xml) =>
       (app.fedoraProvider.loadFoXml(_: String)) expects id once() returning Success(xml)
     }
     Seq("easy-file:1", "easy-file:2", "easy-file:3").foreach { id =>
       (app.fedoraProvider.disseminateDatastream(_: String, _: String)
-        ) expects(id, "EASY_FILE") once() returning managed("blablabla".inputStream)
+        ) expects(id, "EASY_FILE") once() returning managed("lalala".inputStream)
     }
 
     // end of mocking
@@ -256,17 +256,17 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     val foXMLs = Map(
       "easy-dataset:13" -> XML.loadFile((sampleFoXML / "streaming.xml").toJava),
       "easy-discipline:6" -> audienceFoXML("easy-discipline:6", "D35400"),
-      "easy-file:1" -> fileFoXml(id = 1, name = "b.png", mimeType = "image/png", size = 10, accessibleTo = "ANONYMOUS"),
-      "easy-file:2" -> fileFoXml(id = 2, name = "c.png", mimeType = "image/png", size = 20, accessibleTo = "ANONYMOUS"),
-      "easy-file:3" -> fileFoXml(id = 3, name = "d.png", mimeType = "image/png", size = 15, accessibleTo = "ANONYMOUS"),
-      "easy-file:4" -> fileFoXml(id = 4, name = "e.pdf", mimeType = "application/pdf", size = 15),
-      "easy-file:5" -> fileFoXml(id = 5, name = "a.txt"),
+      "easy-file:1" -> fileFoXml(id = 1, name = "b.png", mimeType = "image/png", size = 10, accessibleTo = "ANONYMOUS", digest = digests("lalala")),
+      "easy-file:2" -> fileFoXml(id = 2, name = "c.png", mimeType = "image/png", size = 20, accessibleTo = "ANONYMOUS", digest = digests("lalala")),
+      "easy-file:3" -> fileFoXml(id = 3, name = "d.png", mimeType = "image/png", size = 15, accessibleTo = "ANONYMOUS", digest = digests("lalala")),
+      "easy-file:4" -> fileFoXml(id = 4, name = "e.pdf", mimeType = "application/pdf", size = 15, digest = digests("lalala")),
+      "easy-file:5" -> fileFoXml(id = 5, name = "a.txt", digest = digests("lalala")),
     )
     foXMLs.foreach { case (id, xml) =>
       (app.fedoraProvider.loadFoXml(_: String)) expects id once() returning Success(xml)
     }
     (app.fedoraProvider.disseminateDatastream(_: String, _: String)
-      ) expects("easy-file:2", "EASY_FILE") once() returning managed("blablabla".inputStream)
+      ) expects("easy-file:2", "EASY_FILE") once() returning managed("lalala".inputStream)
 
     // end of mocking
 
@@ -285,16 +285,16 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
       "easy-dataset:13" -> XML.loadFile((sampleFoXML / "streaming.xml").toJava),
       "easy-discipline:6" -> audienceFoXML("easy-discipline:6", "D35400"),
       "easy-file:1" -> fileFoXml(id = 1, name = "a.txt"),
-      "easy-file:2" -> fileFoXml(id = 2, name = "b.pdf", mimeType = "application/pdf", size = 10, accessibleTo = "ANONYMOUS"),
-      "easy-file:3" -> fileFoXml(id = 3, name = "c.pdf", mimeType = "application/pdf", size = 20, accessibleTo = "ANONYMOUS"),
-      "easy-file:4" -> fileFoXml(id = 4, name = "d.pdf", mimeType = "application/pdf", size = 15, accessibleTo = "ANONYMOUS"),
+      "easy-file:2" -> fileFoXml(id = 2, name = "b.pdf", mimeType = "application/pdf", size = 10, accessibleTo = "ANONYMOUS", digest = digests("lalala")),
+      "easy-file:3" -> fileFoXml(id = 3, name = "c.pdf", mimeType = "application/pdf", size = 20, accessibleTo = "ANONYMOUS", digest = digests("lalala")),
+      "easy-file:4" -> fileFoXml(id = 4, name = "d.pdf", mimeType = "application/pdf", size = 15, accessibleTo = "ANONYMOUS", digest = digests("lalala")),
       "easy-file:5" -> fileFoXml(id = 5, name = "e.png", mimeType = "image/png"),
     )
     foXMLs.foreach { case (id, xml) =>
       (app.fedoraProvider.loadFoXml(_: String)) expects id once() returning Success(xml)
     }
     (app.fedoraProvider.disseminateDatastream(_: String, _: String)
-      ) expects("easy-file:3", "EASY_FILE") once() returning managed("blablabla".inputStream)
+      ) expects("easy-file:3", "EASY_FILE") once() returning managed("lalala".inputStream)
 
     // end of mocking
 
@@ -312,18 +312,18 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     val foXMLs = Map(
       "easy-dataset:13" -> XML.loadFile((sampleFoXML / "streaming.xml").toJava),
       "easy-discipline:6" -> audienceFoXML("easy-discipline:6", "D35400"),
-      "easy-file:1" -> fileFoXml(id = 1, name = "a.txt", location = "x"), // default: original
-      "easy-file:2" -> fileFoXml(id = 2, name = "b.pdf", mimeType = "application/pdf", size = 10, accessibleTo = "ANONYMOUS"),
-      "easy-file:3" -> fileFoXml(id = 3, name = "c.pdf", mimeType = "application/pdf", size = 20, accessibleTo = "ANONYMOUS"),
-      "easy-file:4" -> fileFoXml(id = 4, name = "d.pdf", mimeType = "application/pdf", size = 15, accessibleTo = "NONE"),
-      "easy-file:5" -> fileFoXml(id = 5, name = "e.png", mimeType = "image/png", size = 15, location = "x"),
+      "easy-file:1" -> fileFoXml(id = 1, name = "a.txt", location = "x", digest = digests("lalala")), // default: original
+      "easy-file:2" -> fileFoXml(id = 2, name = "b.pdf", mimeType = "application/pdf", size = 10, accessibleTo = "ANONYMOUS", digest = digests("lalala")),
+      "easy-file:3" -> fileFoXml(id = 3, name = "c.pdf", mimeType = "application/pdf", size = 20, accessibleTo = "ANONYMOUS", digest = digests("lalala")),
+      "easy-file:4" -> fileFoXml(id = 4, name = "d.pdf", mimeType = "application/pdf", size = 15, accessibleTo = "NONE", digest = digests("lalala")),
+      "easy-file:5" -> fileFoXml(id = 5, name = "e.png", mimeType = "image/png", size = 15, location = "x", digest = digests("lalala")),
     )
     foXMLs.foreach { case (id, xml) =>
       (app.fedoraProvider.loadFoXml(_: String)) expects id once() returning Success(xml)
     }
     Seq(2, 3, 4).foreach(i =>
       (app.fedoraProvider.disseminateDatastream(_: String, _: String)
-        ) expects(s"easy-file:$i", "EASY_FILE") once() returning managed("blablabla".inputStream)
+        ) expects(s"easy-file:$i", "EASY_FILE") once() returning managed("lalala".inputStream)
     )
     // end of mocking
 

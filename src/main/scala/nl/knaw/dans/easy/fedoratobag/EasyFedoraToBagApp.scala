@@ -129,6 +129,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
         .filter(_.name.toLowerCase.contains("license"))
         .traverse(file => copy(file.name, bag2))
       fileItems <- datasetInfo.nextFileInfos.toList.traverse(addPayloadFileTo(bag2))
+      _ <- datasetInfo.nextFileInfos.toList.filterNot(_.path.toString.startsWith("orininal/")).traverse(verifyChecksum(bag2))
       _ <- checkNotImplemented(fileItems, logger)
       _ <- addXmlMetadataTo(bag2, "files.xml")(filesXml(fileItems))
       _ <- bag2.save
@@ -186,6 +187,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       allFileInfos <- fedoraIDs.filter(_.startsWith("easy-file:")).toList.traverse(getFileInfo)
       firstFileInfos <- selectFileInfos(options.firstFileFilter(emdXml), allFileInfos)
       firstBagFileItems <- firstFileInfos.traverse(addPayloadFileTo(bag))
+      _ <- firstFileInfos.traverse(verifyChecksum(bag))
       _ <- checkNotImplemented(firstBagFileItems, logger)
       _ <- addXmlMetadataTo(bag, "files.xml")(filesXml(firstBagFileItems))
       _ <- bag.save
@@ -273,11 +275,13 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
         .disseminateDatastream(fileInfo.fedoraFileId, streamId)
         .map(bag.addPayloadFile(_, fileInfo.path))
         .tried.flatten
-      _ <- bag.save()
-      _ = fileInfo.contentDigest.map(validateChecksum(bag.baseDir / s"data/${ fileInfo.path }", bag, fileInfo.fedoraFileId))
-        .getOrElse(Success(logger.warn(s"No digest found for ${ fileInfo.fedoraFileId } path = ${ fileInfo.path }")))
     } yield fileItem
   }.recoverWith { case e => Failure(new Exception(s"${ fileInfo.fedoraFileId } ${ e.getMessage }", e)) }
+
+  private def verifyChecksum(bag: DansV0Bag)( fileInfo: FileInfo) = {
+    fileInfo.contentDigest.map(validateChecksum(bag.baseDir / s"data/${ fileInfo.path }", bag, fileInfo.fedoraFileId))
+      .getOrElse(Success(logger.warn(s"No digest found for ${ fileInfo.fedoraFileId } path = ${ fileInfo.path }")))
+  }
 
   private def validateChecksum(file: File, bag: DansV0Bag, fedoraFileId: String)(maybeDigest: Node) = Try {
     val algorithms = Map(

@@ -19,12 +19,20 @@ import scala.xml.Elem
 
 trait FileFoXmlSupport {
 
+  val digests = Map(
+    "acabadabra" -> "4efe30290dd3d4498d66ef569c858cae1cfdb484",
+    "lalala" -> "df2efa060e335f97628ca39c9fef5469ab3cb837",
+    "rabarbera" -> "1f630a1c539661e70072ea791da18ec600062b93",
+    "barbapappa" -> "233e316356c2f4213eb0bf7ca26eec925a3cf214",
+  )
+
   def fileFoXml(id: Int = 35,
                 location: String = "original",
                 name: String = "something.txt",
                 mimeType: String = "text/plain",
                 size: Long = 30,
                 accessibleTo: String = "RESTRICTED_REQUEST",
+                digest: String = "dd466d19481a28ba8577e7b3f029e496027a3309"
                ): Elem = {
     <foxml:digitalObject VERSION="1.1" PID={s"easy-file:$id"}
                      xmlns:foxml="info:fedora/fedora-system:def/foxml#"
@@ -39,8 +47,8 @@ trait FileFoXmlSupport {
       </foxml:objectProperties>
       <foxml:datastream ID="EASY_FILE" STATE="A" CONTROL_GROUP="M" VERSIONABLE="false">
           <foxml:datastreamVersion ID="EASY_FILE.0" LABEL="" CREATED="2020-03-17T10:24:17.542Z" MIMETYPE={ mimeType } SIZE={ size.toString }>
-              <foxml:contentDigest TYPE="SHA-1" DIGEST="dd466d19481a28ba8577e7b3f029e496027a3309"/>
-              <foxml:contentLocation TYPE="INTERNAL_ID" REF={s"easy-file:$id+EASY_FILE+EASY_FILE.0"}/>
+              <foxml:contentDigest TYPE="SHA-1" DIGEST={ digest }/>
+              <foxml:contentLocation TYPE="INTERNAL_ID" REF={ s"easy-file:$id+EASY_FILE+EASY_FILE.0" }/>
           </foxml:datastreamVersion>
       </foxml:datastream>
       <foxml:datastream ID="EASY_FILE_METADATA" STATE="A" CONTROL_GROUP="X" VERSIONABLE="false">

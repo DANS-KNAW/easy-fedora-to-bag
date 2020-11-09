@@ -199,7 +199,9 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     if (!originalVersioning || allFileInfos.size == firstFileInfos.size)
       Seq[FileInfo]()
     else {
+      // firstFileInfos are files of the first dataset in other words all original files
       val notAccessibleOriginals = selectFileInfos(NOT_ACCESSIBLE, firstFileInfos).getOrElse(Seq.empty)
+      // all files minus not accessible originals -> accessible originals + the rest for the second dataset
       val nextFileInfos = allFileInfos.toSet &~ notAccessibleOriginals.toSet
       logger.debug(s"nextFileInfos = ${ nextFileInfos.map(_.path) }")
       nextFileInfos.toSeq

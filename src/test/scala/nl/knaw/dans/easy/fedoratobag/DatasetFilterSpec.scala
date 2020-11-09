@@ -73,7 +73,7 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
       "violated 1: DANS DOI not found",
       "violated 5: invalid state SUBMITTED",
     ), bagIndex = null).violations(emd, emd2ddm(emd), amd("SUBMITTED"), Seq.empty) shouldBe
-      Success(Some("Violates 1: DANS DOI; 5: invalid state"))
+      Success(Some("Violates 1: DANS DOI; 5: invalid state (SUBMITTED)"))
   }
 
   it should "report thematische collectie" in {
@@ -106,7 +106,7 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
       "violated 4: invalid rights not found",
       "violated 5: invalid state SUBMITTED",
     )).violations(emd, emd2ddm(emd), amd("SUBMITTED"), Seq.empty) shouldBe
-      Success(Some("Violates 4: invalid rights; 5: invalid state"))
+      Success(Some("Violates 4: invalid rights; 5: invalid state (SUBMITTED)"))
   }
 
   it should "report invalid relations" in {

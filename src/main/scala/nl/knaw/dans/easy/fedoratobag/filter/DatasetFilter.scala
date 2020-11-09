@@ -51,7 +51,10 @@ trait DatasetFilter extends DebugEnhancedLogging {
 
     triedMaybeVaultResponse.map(_ =>
       if (violations.isEmpty) None
-      else Some(violations.keys.mkString("Violates ", "; ", ""))
+      else Some(violations.map{
+        case (k @ "5: invalid state",v) => k + v.mkString(" (",", ",")")
+        case (k,_) => k
+      }.mkString("Violates ", "; ", ""))
     )
   }
 

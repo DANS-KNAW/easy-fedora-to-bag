@@ -111,7 +111,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     def copy(fileName: String, bag2: DansV0Bag) = {
       (bagDir1 / "metadata" / fileName)
         .inputStream
-        .map(addMetadataStreamTo(bag2, s"metadata/$fileName"))
+        .map(addMetadataStreamTo(bag2, fileName))
         .get
     }
 

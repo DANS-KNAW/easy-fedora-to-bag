@@ -146,7 +146,7 @@ object DDM extends DebugEnhancedLogging {
     "ISNI" -> "ISNI",
     "ISSN" -> "ISSN",
     "DOI_OTHER_ACCESS" -> "DOI",
-    "EDNA-PROJECT" -> "eDNA-project",
+    "eDNA-project" -> "eDNA-project",
     "Archis_onderzoek" -> "ARCHIS-ONDERZOEK",
     "Archis_vondstmelding" -> "ARCHIS-VONDSTMELDING",
     "Archis_art.41" -> "ARCHIS-ZAAK-IDENTIFICATIE",

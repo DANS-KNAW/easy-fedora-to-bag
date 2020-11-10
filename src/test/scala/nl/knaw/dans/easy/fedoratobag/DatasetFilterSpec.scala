@@ -84,7 +84,7 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
       "violated 3: invalid title thematische collectie",
       "violated 4: invalid rights not found",
     )).violations(emd, emd2ddm(emd), amd("PUBLISHED"), Seq()) shouldBe
-      Success(Some("Violates 3: invalid title; 4: invalid rights"))
+      Success(Some("Violates 3: invalid title; 4: invalid rights (not found)"))
   }
 
   it should "report jump off" in {
@@ -96,7 +96,7 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
       "violated 3: invalid title thematische collectie",
       "violated 4: invalid rights not found",
     )).violations(emd, emd2ddm(emd), amd("PUBLISHED"), Seq("easy-jumpoff:123")) shouldBe
-      Success(Some("Violates 2: has jump off; 3: invalid title; 4: invalid rights"))
+      Success(Some("Violates 2: has jump off; 3: invalid title; 4: invalid rights (not found)"))
   }
 
   it should "report invalid status" in {
@@ -106,7 +106,7 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
       "violated 4: invalid rights not found",
       "violated 5: invalid state SUBMITTED",
     )).violations(emd, emd2ddm(emd), amd("SUBMITTED"), Seq.empty) shouldBe
-      Success(Some("Violates 4: invalid rights; 5: invalid state (SUBMITTED)"))
+      Success(Some("Violates 4: invalid rights (not found); 5: invalid state (SUBMITTED)"))
   }
 
   it should "report invalid relations" in {

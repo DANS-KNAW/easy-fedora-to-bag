@@ -33,14 +33,17 @@ trait DatasetFilter extends DebugEnhancedLogging {
     val triedMaybeVaultResponse: Try[Option[String]] = maybeDoi
       .map(targetIndex.getByDoi)
       .getOrElse(Success(None)) // no DOI => no bag found by DOI
+    val invalidRightsKey = "4: invalid rights"
+    val invalidStateKey = "5: invalid state"
+    val keysWithValues = Seq(invalidRightsKey, invalidStateKey)
     val violations = Seq(
       "1: DANS DOI" -> (if (maybeDoi.isEmpty) Seq("not found")
                         else Seq[String]()),
       "2: has jump off" -> fedoraIDs.filter(_.startsWith("easy-jumpoff:")),
       "3: invalid title" -> Option(emd.getEmdTitle.getPreferredTitle)
         .filter(title => forbiddenTitle(title)).toSeq,
-      "4: invalid rights" -> findInvalidRights(emd),
-      "5: invalid state" -> findInvalidState(amd),
+      invalidRightsKey -> findInvalidRights(emd),
+      invalidStateKey -> findInvalidState(amd),
       "6: DANS relations" -> findDansRelations(ddm),
       "7: is in the vault" -> triedMaybeVaultResponse.getOrElse(None).toSeq,
     ).filter(_._2.nonEmpty).toMap
@@ -49,13 +52,13 @@ trait DatasetFilter extends DebugEnhancedLogging {
       violations.foreach(s => logger.warn(mockFriendly(s"violated $rule $s")))
     }
 
-    triedMaybeVaultResponse.map(_ =>
+    triedMaybeVaultResponse.map { _ =>
       if (violations.isEmpty) None
-      else Some(violations.map{
-        case (k @ "5: invalid state",v) => k + v.mkString(" (",", ",")")
-        case (k,_) => k
+      else Some(violations.map {
+        case (k, v) if keysWithValues.contains(k) => k + v.mkString(" (", ", ", ")")
+        case (k, _) => k
       }.mkString("Violates ", "; ", ""))
-    )
+    }
   }
 
   def forbiddenTitle(title: String): Boolean

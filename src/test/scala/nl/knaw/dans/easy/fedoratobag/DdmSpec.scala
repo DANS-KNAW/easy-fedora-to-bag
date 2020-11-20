@@ -1044,6 +1044,36 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     }
   }
 
+  it should "parse dates into reasonable dates" in {
+    val emd = parseEmdContent(Seq(
+      emdTitle, emdCreator, emdDescription,
+          <emd:date>
+            <eas:created eas:scheme="W3CDTF" eas:format="MILLISECOND">20180223-01-01T00:10:34.000+01:00</eas:created>
+            <eas:available eas:scheme="W3CDTF" eas:format="DAY">2017-09-30T17:47:36.978+02:00</eas:available>
+          </emd:date>,
+      emdRights,
+    ))
+    val triedDDM = DDM(emd, Seq("D35400"), abrMapping)
+    triedDDM.map(normalized) shouldBe Success(normalized(
+      <ddm:DDM xsi:schemaLocation={ schemaLocation }>
+        <ddm:profile>
+          <dc:title>XXX</dc:title>
+          <dct:description>YYY</dct:description>
+          { ddmCreator }
+          <ddm:created>2018-02-23</ddm:created>
+          <ddm:available>2017-09-30</ddm:available>
+          <ddm:audience>D35400</ddm:audience>
+          <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
+        </ddm:profile>
+        <ddm:dcmiMetadata>
+          <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
+        </ddm:dcmiMetadata>
+      </ddm:DDM>
+    ))
+    assume(schemaIsAvailable)
+    triedDDM.flatMap(validate) shouldBe Success(())
+  }
+
   it should "render an invalid number of dates created" in {
     val emd = parseEmdContent(Seq(
       emdTitle, emdCreator, emdDescription,

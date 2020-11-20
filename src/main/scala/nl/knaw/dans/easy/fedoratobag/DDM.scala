@@ -27,6 +27,8 @@ import nl.knaw.dans.pf.language.emd.{ EasyMetadataImpl, EmdRights }
 import scala.collection.JavaConverters._
 import scala.util.Try
 import scala.xml._
+import java.time.format.DateTimeFormatter
+import java.time.{ DateTimeException, LocalDate }
 
 object DDM extends DebugEnhancedLogging {
   val schemaNameSpace: String = "http://easy.dans.knaw.nl/schemas/md/ddm/"
@@ -62,8 +64,8 @@ object DDM extends DebugEnhancedLogging {
        { /* instructions for reuse not specified as such in EMD */ }
        { emd.getEmdCreator.getDcCreator.asScala.map(bs => <dc:creator>{ bs.getValue.trim }</dc:creator>) }
        { emd.getEmdCreator.getEasCreator.asScala.map(author => <dcx-dai:creatorDetails>{ toXml(author)} </dcx-dai:creatorDetails>) }
-       { dateCreated.map(node =>  <ddm:created>{ node.text }</ddm:created>) }
-       { dateAvailable.map(node =>  <ddm:available>{ node.text }</ddm:available>) }
+       { dateCreated.map(node =>  <ddm:created>{ parseDate(node.text) }</ddm:created>) }
+       { dateAvailable.map(node =>  <ddm:available>{ parseDate(node.text) }</ddm:available>) }
        { audiences.map(code => <ddm:audience>{ code }</ddm:audience>) }
        <ddm:accessRights>{ emd.getEmdRights.getAccessCategory }</ddm:accessRights>
      </ddm:profile>
@@ -94,6 +96,17 @@ object DDM extends DebugEnhancedLogging {
      </ddm:dcmiMetadata>
    </ddm:DDM>
  }
+
+  private def parseDate(d: String): String = {
+   if(d.length > 13)
+     try {
+      LocalDate.parse(d.substring(0,8), DateTimeFormatter.BASIC_ISO_DATE).toString
+     } catch {
+       case e: DateTimeException => d
+     }
+   else
+      d
+  }
 
   private def langType(bs: BasicString): String = bs.getSchemeId match {
     case "fra" | "fra/fre" | "deu" | "deu/ger" | "nld" | "nld/dut" | "dut/nld" | "eng" => "dct:ISO639-3"

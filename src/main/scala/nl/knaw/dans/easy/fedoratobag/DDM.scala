@@ -64,7 +64,7 @@ object DDM extends DebugEnhancedLogging {
        { /* instructions for reuse not specified as such in EMD */ }
        { emd.getEmdCreator.getDcCreator.asScala.map(bs => <dc:creator>{ bs.getValue.trim }</dc:creator>) }
        { emd.getEmdCreator.getEasCreator.asScala.map(author => <dcx-dai:creatorDetails>{ toXml(author)} </dcx-dai:creatorDetails>) }
-       { dateCreated.map(node =>  <ddm:created>{ parseDate(node.text) }</ddm:created>) }
+       { if (dateCreated.nonEmpty) dateCreated.toSeq.head.map(node =>  <ddm:created>{ parseDate(node.text) }</ddm:created>) }
        { dateAvailable.map(node =>  <ddm:available>{ parseDate(node.text) }</ddm:available>) }
        { audiences.map(code => <ddm:audience>{ code }</ddm:audience>) }
        <ddm:accessRights>{ emd.getEmdRights.getAccessCategory }</ddm:accessRights>
@@ -93,6 +93,7 @@ object DDM extends DebugEnhancedLogging {
        { emd.getEmdCoverage.getEasSpatial.asScala.map(toXml) }
        <dct:license xsi:type="dct:URI">{ toLicenseUrl(emd.getEmdRights) }</dct:license>
        { emd.getEmdLanguage.getDcLanguage.asScala.map(bs => <dct:language xsi:type={langType(bs)}>{ langValue(bs) }</dct:language>) }
+       { if (dateCreated.size > 1)  dateCreated.toSeq.tail.map(node => <dct:created>{ parseDate(node.text) }</dct:created>) }
      </ddm:dcmiMetadata>
    </ddm:DDM>
  }

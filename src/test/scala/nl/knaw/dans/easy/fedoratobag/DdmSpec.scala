@@ -1074,7 +1074,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     triedDDM.flatMap(validate) shouldBe Success(())
   }
 
-  it should "render an invalid number of dates created" in {
+  it should "render one ddm:created" in {
     val emd = parseEmdContent(Seq(
       emdTitle, emdCreator, emdDescription,
           <emd:date>
@@ -1093,23 +1093,19 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <dct:description>YYY</dct:description>
           { ddmCreator }
           <ddm:created>2013-03</ddm:created>
-          <ddm:created>2017-09-30</ddm:created>
-          <ddm:created>1901-04</ddm:created>
           <ddm:available>2013-04</ddm:available>
           <ddm:audience>D35400</ddm:audience>
           <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
         </ddm:profile>
         <ddm:dcmiMetadata>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
+          <dct:created>2017-09-30</dct:created>
+          <dct:created>1901-04</dct:created>
         </ddm:dcmiMetadata>
       </ddm:DDM>
     ))
     assume(schemaIsAvailable)
-    triedDDM.flatMap(validate) should matchPattern {
-      case Failure(e) if e.getMessage
-        .contains("Invalid content was found starting with element 'ddm:created'") && e.getMessage
-        .contains(":available}' is expected") =>
-    }
+    triedDDM.flatMap(validate) shouldBe Success(())
   }
 
   it should "render an invalid number of dates available" in {

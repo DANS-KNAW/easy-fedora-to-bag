@@ -27,7 +27,7 @@ import scala.xml.{ Elem, NodeSeq }
 
 trait EmdSupport {
   private val emdUnmarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
-  val abrMapping = AbrMappings(File("src/main/assembly/dist/cfg/EMD_acdm.xsl"))
+  val abrMapping: AbrMappings = AbrMappings(File("src/main/assembly/dist/cfg/EMD_acdm.xsl"))
 
   def parseEmdContent(xml: NodeSeq): EasyMetadataImpl = {
     val emd = <emd:easymetadata xmlns:emd="http://easy.dans.knaw.nl/easy/easymetadata/"

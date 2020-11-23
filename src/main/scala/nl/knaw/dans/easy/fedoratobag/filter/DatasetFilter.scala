@@ -27,15 +27,15 @@ case class InvalidTransformationException(msg: String) extends Exception(msg)
 
 trait DatasetFilter extends DebugEnhancedLogging {
   val targetIndex: TargetIndex
+  private val invalidRightsKey = "4: invalid rights"
+  private val invalidStateKey = "5: invalid state"
+  private val keysWithValues = Seq(invalidRightsKey, invalidStateKey)
 
   def violations(emd: EasyMetadataImpl, ddm: Node, amd: Node, fedoraIDs: Seq[String]): Try[Option[String]] = {
     val maybeDoi = Option(emd.getEmdIdentifier.getDansManagedDoi)
-    val triedMaybeVaultResponse: Try[Option[String]] = maybeDoi
+    val triedMaybeInTargetResponse: Try[Option[String]] = maybeDoi
       .map(targetIndex.getByDoi)
       .getOrElse(Success(None)) // no DOI => no bag found by DOI
-    val invalidRightsKey = "4: invalid rights"
-    val invalidStateKey = "5: invalid state"
-    val keysWithValues = Seq(invalidRightsKey, invalidStateKey)
     val violations = Seq(
       "1: DANS DOI" -> (if (maybeDoi.isEmpty) Seq("not found")
                         else Seq[String]()),
@@ -44,15 +44,15 @@ trait DatasetFilter extends DebugEnhancedLogging {
         .filter(title => forbiddenTitle(title)).toSeq,
       invalidRightsKey -> findInvalidRights(emd),
       invalidStateKey -> findInvalidState(amd),
-      "6: DANS relations" -> findDansRelations(ddm),
-      "7: is in the vault" -> triedMaybeVaultResponse.getOrElse(None).toSeq,
+      "6: DANS relations" -> findDansRelations(ddm).map(_.toOneLiner),
+      "7: is in the vault" -> triedMaybeInTargetResponse.getOrElse(None).toSeq,
     ).filter(_._2.nonEmpty).toMap
 
     violations.foreach { case (rule, violations) =>
       violations.foreach(s => logger.warn(mockFriendly(s"violated $rule $s")))
     }
 
-    triedMaybeVaultResponse.map { _ =>
+    triedMaybeInTargetResponse.map { _ =>
       if (violations.isEmpty) None
       else Some(violations.map {
         case (k, v) if keysWithValues.contains(k) => k + v.mkString(" (", ", ", ")")
@@ -79,13 +79,14 @@ trait DatasetFilter extends DebugEnhancedLogging {
       .map(_.text)
   }
 
-  private def findDansRelations(ddm: Node) = {
+  def findDansRelations(ddm: Node): Seq[Node] = {
     Seq(
       (ddm \\ "isVersionOf").theSeq,
+      (ddm \\ "hasVersion").theSeq,
       (ddm \\ "replaces").theSeq,
+      (ddm \\ "isReplacedBy").theSeq,
     ).flatten
-      .withFilter(hasDansId)
-      .map(_.toOneLiner)
+      .filter(hasDansId)
   }
 
   private def hasDansId(node: Node): Boolean = {

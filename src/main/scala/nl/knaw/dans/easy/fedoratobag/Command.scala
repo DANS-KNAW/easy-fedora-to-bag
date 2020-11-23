@@ -53,7 +53,7 @@ object Command extends App with DebugEnhancedLogging {
 
     val outputFormat = commandLine.outputFormat()
     (commandLine.transformation(), outputFormat) match {
-      case (ORIGINAL_VERSIONED, _) if !europeana =>
+      case (ORIGINAL_VERSIONED, SIP) if !europeana =>
         printer.apply(app.createExport(ids, outputDir, Options(SimpleDatasetFilter(), commandLine), outputFormat))
       case (SIMPLE, SIP) =>
         printer.apply(app.createExport(ids, outputDir, Options(SimpleDatasetFilter(), commandLine), outputFormat))

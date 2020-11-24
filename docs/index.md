@@ -39,7 +39,7 @@ ARGUMENTS
     
     trailing arguments:
      transformation (required)   The type of transformation used: simple, thematische-collectie,
-                                 original-versioned.
+                                 original-versioned, fedora-versioned.
 
 EXAMPLES
 --------

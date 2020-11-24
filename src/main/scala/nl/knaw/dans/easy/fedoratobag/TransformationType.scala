@@ -22,5 +22,6 @@ object TransformationType extends Enumeration {
   val SIMPLE: TransformationType = Value("simple")
   val THEMA: TransformationType = Value("thematische-collectie")
   val ORIGINAL_VERSIONED: TransformationType = Value("original-versioned")
+  val FEDORA_VERSIONED: TransformationType = Value("fedora-versioned")
   // @formatter:on
 }

@@ -53,6 +53,8 @@ object Command extends App with DebugEnhancedLogging {
 
     val outputFormat = commandLine.outputFormat()
     (commandLine.transformation(), outputFormat) match {
+      case (FEDORA_VERSIONED, SIP) if !europeana =>
+        ??? // TODO collect chains then call createExport in proper order DD-210
       case (ORIGINAL_VERSIONED, SIP) if !europeana =>
         printer.apply(app.createExport(ids, outputDir, Options(SimpleDatasetFilter(), commandLine), outputFormat))
       case (SIMPLE, SIP) =>

@@ -59,7 +59,7 @@ class CreateExportSpec extends TestSupportFixture with FileFoXmlSupport with Bag
           Failure(new Exception(datasetId))
         case _ =>
           outputDir.createFile().writeText(datasetId)
-          Success(DatasetInfo(None, doi = "testDOI", depositor = "testUser", Seq.empty))
+          Success(DatasetInfo(None, doi = "testDOI", urn = "testURN", depositor = "testUser", Seq.empty))
       }
     }
   }

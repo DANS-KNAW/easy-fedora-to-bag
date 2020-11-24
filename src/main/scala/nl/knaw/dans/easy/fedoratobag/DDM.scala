@@ -40,9 +40,9 @@ object DDM extends DebugEnhancedLogging {
     //    println(new EmdMarshaller(emd).getXmlString)
 
     val dateMap: Map[String, Iterable[Elem]] = getDateMap(emd)
-    val dateCreated = dateMap("created")
+    val dateCreated = dateMap("created").map(d => parseDate(d.text))
     val dateAvailable = {
-      val elems = dateMap("available")
+      val elems = dateMap("available").map(d => parseDate(d.text))
       if (elems.isEmpty) dateCreated
       else elems
     }
@@ -64,8 +64,8 @@ object DDM extends DebugEnhancedLogging {
        { /* instructions for reuse not specified as such in EMD */ }
        { emd.getEmdCreator.getDcCreator.asScala.map(bs => <dc:creator>{ bs.getValue.trim }</dc:creator>) }
        { emd.getEmdCreator.getEasCreator.asScala.map(author => <dcx-dai:creatorDetails>{ toXml(author)} </dcx-dai:creatorDetails>) }
-       { if (dateCreated.nonEmpty) dateCreated.toSeq.head.map(node =>  <ddm:created>{ parseDate(node.text) }</ddm:created>) }
-       { dateAvailable.map(node =>  <ddm:available>{ parseDate(node.text) }</ddm:available>) }
+       { if (dateCreated.nonEmpty)  <ddm:created>{ dateCreated.toSeq.head }</ddm:created> }
+       { dateAvailable.map(date =>  <ddm:available>{ date }</ddm:available>) }
        { audiences.map(code => <ddm:audience>{ code }</ddm:audience>) }
        <ddm:accessRights>{ emd.getEmdRights.getAccessCategory }</ddm:accessRights>
      </ddm:profile>
@@ -93,21 +93,12 @@ object DDM extends DebugEnhancedLogging {
        { emd.getEmdCoverage.getEasSpatial.asScala.map(toXml) }
        <dct:license xsi:type="dct:URI">{ toLicenseUrl(emd.getEmdRights) }</dct:license>
        { emd.getEmdLanguage.getDcLanguage.asScala.map(bs => <dct:language xsi:type={langType(bs)}>{ langValue(bs) }</dct:language>) }
-       { if (dateCreated.size > 1)  dateCreated.toSeq.tail.map(node => <dct:created>{ parseDate(node.text) }</dct:created>) }
+       { if (dateCreated.size > 1)  dateCreated.toSeq.tail.map(date => <dct:created>{ date }</dct:created>) }
      </ddm:dcmiMetadata>
    </ddm:DDM>
  }
 
-  private def parseDate(d: String): String = {
-   if(d.length > 13)
-     try {
-      LocalDate.parse(d.substring(0,8), DateTimeFormatter.BASIC_ISO_DATE).toString
-     } catch {
-       case e: DateTimeException => d
-     }
-   else
-      d
-  }
+
 
   private def langType(bs: BasicString): String = bs.getSchemeId match {
     case "fra" | "fra/fre" | "deu" | "deu/ger" | "nld" | "nld/dut" | "dut/nld" | "eng" => "dct:ISO639-3"
@@ -313,6 +304,17 @@ object DDM extends DebugEnhancedLogging {
     (basicDates.toSeq ++ isoDates.toSeq)
       .groupBy(_._1)
       .mapValues(_.flatMap(_._2))
+  }
+
+  private def parseDate(d: String): String = {
+    if(d.length > 13)
+      try {
+        LocalDate.parse(d.substring(0,8), DateTimeFormatter.BASIC_ISO_DATE).toString
+      } catch {
+        case e: DateTimeException => d
+      }
+    else
+      d
   }
 
   private def toRelationXml(key: String, rel: Relation): Elem = Try {

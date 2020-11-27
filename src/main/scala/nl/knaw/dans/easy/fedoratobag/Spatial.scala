@@ -64,12 +64,22 @@ case class SpatialPoint(scheme: Option[String],
   }
 
   lazy val dcxGml: Option[Elem] = value.map(value =>
-    <dcx-gml:spatial srsName={ srsName }>
+    <dcx-gml:spatial srsName={ guessSrsName }>
       <Point xmlns="http://www.opengis.net/gml">
         <pos>{ value }</pos>
       </Point>
     </dcx-gml:spatial>
   )
+
+  private lazy val guessSrsName: String = srsName match {
+    case null => {
+      if(Seq(sx, sy).map(p => p.toDouble).max > 289000)
+        SpatialNames.RD_SRS_NAME
+      else
+        SpatialNames.DEGREES_SRS_NAME
+    }
+    case s => s
+  }
 }
 
 case class SpatialBox(scheme: Option[String],
@@ -103,7 +113,7 @@ case class SpatialBox(scheme: Option[String],
    *   x -->
    *
    */
-  lazy val (lower: String, upper: String) = srsName match {
+  lazy val (lower: String, upper: String) = guessSrsName match {
     case SpatialNames.RD_SRS_NAME => xy
     case SpatialNames.DEGREES_SRS_NAME => yx
     case _ => yx
@@ -117,11 +127,21 @@ case class SpatialBox(scheme: Option[String],
   lazy val dcxGml: Option[Elem] = value.map(_ =>
     <dcx-gml:spatial>
       <boundedBy xmlns="http://www.opengis.net/gml">
-          <Envelope srsName={ srsName }>
+          <Envelope srsName={ guessSrsName }>
               <lowerCorner>{ lower }</lowerCorner>
               <upperCorner>{ upper }</upperCorner>
           </Envelope>
       </boundedBy>
     </dcx-gml:spatial>
   )
+
+  private lazy val guessSrsName: String = srsName match {
+    case null => {
+      if(Seq(sNorth, sSouth).map(p => p.toDouble).max > 289000)
+        SpatialNames.RD_SRS_NAME
+      else
+        SpatialNames.DEGREES_SRS_NAME
+    }
+    case s => s
+  }
 }

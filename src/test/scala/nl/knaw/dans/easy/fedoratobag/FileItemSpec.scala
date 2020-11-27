@@ -157,6 +157,53 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
     triedFileItem.flatMap(validateItem) shouldBe Success(())
   }
 
+  it should "skip empty key-value pairs" in {
+    val fileMetadata = {
+      <sid>easy-file:3165833</sid>
+      <name>R0011867.jpg</name>
+      <parentSid>easy-folder:169296</parentSid>
+      <datasetSid>easy-dataset:50012</datasetSid>
+      <path>Fotos/R0011867.jpg</path>
+      <mimeType>image/jpeg</mimeType>
+      <size>2927389</size>
+      <creatorRole>ARCHIVIST</creatorRole>
+      <visibleTo>ANONYMOUS</visibleTo>
+      <accessibleTo>RESTRICTED_REQUEST</accessibleTo>
+      <addmd:additional-metadata>
+          <properties></properties>
+          <addmd:additional id="addi" label="archaeology-filemetadata">
+              <content>
+                  <original_file>R0011867.JPG</original_file>
+                  <file_name>R0011867.jpg</file_name>
+                  <file_content>Veldfoto</file_content>
+                  <othmat_codebook>Fotolijst.csv</othmat_codebook>
+                  <DIA_KL_ZW></DIA_KL_ZW>
+              </content>
+          </addmd:additional>
+      </addmd:additional-metadata>
+    }
+
+    val triedFileItem = FileInfo(fileFoXml(fileMetadata))
+      .flatMap(FileItem(_))
+      .map(trim)
+    triedFileItem.map(trim) shouldBe Success(trim(
+      <file filepath="data/Fotos/R0011867.jpg">
+          <dct:identifier>easy-file:35</dct:identifier>
+          <dct:title>R0011867.jpg</dct:title>
+          <dct:format>image/jpeg</dct:format>
+          <dct:extent>2.8MB</dct:extent>
+          <dct:isFormatOf>R0011867.JPG</dct:isFormatOf>
+          <dct:title>R0011867.jpg</dct:title>
+          <dct:abstract>Veldfoto</dct:abstract>
+          <afm:othmat_codebook>Fotolijst.csv</afm:othmat_codebook>
+          <accessibleToRights>RESTRICTED_REQUEST</accessibleToRights>
+          <visibleToRights>ANONYMOUS</visibleToRights>
+      </file>
+    ))
+    assume(schemaIsAvailable)
+    triedFileItem.flatMap(validateItem) shouldBe Success(())
+  }
+  
   it should "use file name as second title (first title from mandatory name)" in {
     val fileMetadata = {
       <name>SKKJ6_spoor.mix</name>

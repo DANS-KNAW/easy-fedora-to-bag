@@ -959,6 +959,38 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     triedDDM.flatMap(validate) shouldBe Success(())
   }
 
+  it should "accept empty title" in {
+    val emd = parseEmdContent(Seq(
+      emdTitle, emdCreator, emdDescription, emdDates,
+      <emd:relation>
+          <eas:replaces>
+              <eas:subject-link>https://www.laaglandarcheologie.nl</eas:subject-link>
+          </eas:replaces>
+          <eas:isPartOf>
+              <eas:subject-title></eas:subject-title>
+              <eas:subject-link>https://www.laaglandarcheologie.nl</eas:subject-link>
+          </eas:isPartOf>
+          <eas:references>
+              <eas:subject-title/>
+              <eas:subject-link>https://www.laaglandarcheologie.nl</eas:subject-link>
+          </eas:references>
+      </emd:relation>,
+      emdRights,
+    ))
+    val triedDDM = DDM(emd, Seq("D13200"), abrMapping)
+    triedDDM.map(normalized) shouldBe Success(normalized(
+      <ddm:DDM xsi:schemaLocation={ schemaLocation }>
+        { ddmProfile("D13200") }
+        <ddm:dcmiMetadata>
+          <ddm:references href="https://www.laaglandarcheologie.nl">https://www.laaglandarcheologie.nl</ddm:references>
+          <ddm:replaces href="https://www.laaglandarcheologie.nl">https://www.laaglandarcheologie.nl</ddm:replaces>
+          <ddm:isPartOf href="https://www.laaglandarcheologie.nl">https://www.laaglandarcheologie.nl</ddm:isPartOf>
+          <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
+        </ddm:dcmiMetadata>
+      </ddm:DDM>
+    ))
+  }
+
   it should "report not implemented href" in {
     val emd = parseEmdContent(Seq(
       emdTitle, emdCreator, emdDescription, emdDates,

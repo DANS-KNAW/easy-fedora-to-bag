@@ -322,7 +322,7 @@ object DDM extends DebugEnhancedLogging {
       <label scheme={ relationType(rel) }
              href={ Option(rel.getSubjectLink).map(toHref).orNull }
              xml:lang={ Option(rel.getSubjectTitle).map(_.getLanguage).orNull }
-      >{ Option(rel.getSubjectTitle).map(_.getValue.trim).getOrElse("") }</label>
+      >{ Option(rel.getSubjectTitle).getOrElse(new BasicString()).getValue.toOption.map(_.trim).getOrElse(rel.getSubjectLink) }</label>
     }.withLabel(relationLabel("ddm:", key))
   }.getOrElse(notImplemented(s"relation ($key)")(rel))
 

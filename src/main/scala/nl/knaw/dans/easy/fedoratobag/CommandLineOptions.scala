@@ -32,7 +32,7 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   val description: String = s"""Tool for exporting datasets from Fedora and constructing Archival/Submission Information Packages."""
   val synopsis: String =
     s"""
-       |  easy-fedora-to-bag {-d <dataset-id> | -i <dataset-ids-file>} -o <staged-AIP-dir> [-s] [-l <log-file>] <transformation>
+       |  easy-fedora-to-bag {-d <dataset-id> | -i <dataset-ids-file>} -o <staged-AIP-dir> [-s] [-l <log-file>] [-e] -f { AIP | SIP } <transformation>
      """.stripMargin
 
   version(s"$printedName v${ configuration.version }")

@@ -92,8 +92,8 @@ trait DatasetFilter extends DebugEnhancedLogging {
   private def hasDansId(node: Node): Boolean = {
     // see both DDM.toRelationXml methods for what might occur
     (node \@ "href", node.text) match {
-      case (href, _) if Versions.isDansId(href) => true
-      case (_, text) if Versions.isDansId(text) => true
+      case (href, _) if VersionInfo.isDansId(href) => true
+      case (_, text) if VersionInfo.isDansId(text) => true
       case _ => false
     }
   }

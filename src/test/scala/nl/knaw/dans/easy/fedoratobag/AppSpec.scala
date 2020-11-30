@@ -362,19 +362,18 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
       val foXMLs = Map(
         "easy-dataset:13" -> XML.loadFile((sampleFoXML / "streaming.xml").toJava),
         "easy-discipline:6" -> audienceFoXML("easy-discipline:6", "D35400"),
-        "easy-file:1" -> fileFoXml(id = 1, name = "a.txt", location = "x", digest = digests("lalala")), // default: original
+        "easy-file:1" -> fileFoXml(id = 1, name = "a.txt", location = "x", digest = digests("acabadabra")), // default: original
         "easy-file:2" -> fileFoXml(id = 2, name = "b.pdf", mimeType = "application/pdf", size = 10, accessibleTo = "ANONYMOUS", digest = digests("lalala")),
-        "easy-file:3" -> fileFoXml(id = 3, name = "c.pdf", mimeType = "application/pdf", size = 20, accessibleTo = "ANONYMOUS", digest = digests("lalala")),
-        "easy-file:4" -> fileFoXml(id = 4, name = "d.pdf", mimeType = "application/pdf", size = 15, accessibleTo = "NONE", digest = digests("lalala")),
-        "easy-file:5" -> fileFoXml(id = 5, name = "e.png", mimeType = "image/png", size = 15, location = "x", digest = digests("lalala")),
+        "easy-file:3" -> fileFoXml(id = 3, name = "c.pdf", mimeType = "application/pdf", size = 20, accessibleTo = "ANONYMOUS", digest = digests("rabarbera")),
+        "easy-file:4" -> fileFoXml(id = 4, name = "d.pdf", mimeType = "application/pdf", size = 15, accessibleTo = "NONE", digest = digests("barbapappa")),
+        "easy-file:5" -> fileFoXml(id = 5, name = "e.png", mimeType = "image/png", size = 15, location = "x", digest = digests("otherDigest")),
       )
       foXMLs.foreach { case (id, xml) =>
         (fedoraProvider.loadFoXml(_: String)) expects id once() returning Success(xml)
       }
-      Seq(2, 3, 4).foreach(i =>
-        (fedoraProvider.disseminateDatastream(_: String, _: String)
-          ) expects(s"easy-file:$i", "EASY_FILE") once() returning managed("lalala".inputStream)
-      )
+      (fedoraProvider.disseminateDatastream(_: String, _: String)) expects(s"easy-file:2", "EASY_FILE") once() returning managed("lalala".inputStream)
+      (fedoraProvider.disseminateDatastream(_: String, _: String)) expects(s"easy-file:3", "EASY_FILE") once() returning managed("rabarbera".inputStream)
+      (fedoraProvider.disseminateDatastream(_: String, _: String)) expects(s"easy-file:4", "EASY_FILE") once() returning managed("barbapappa".inputStream)
     }
     // end of mocking
 

@@ -24,6 +24,7 @@ trait FileFoXmlSupport {
     "lalala" -> "df2efa060e335f97628ca39c9fef5469ab3cb837",
     "rabarbera" -> "1f630a1c539661e70072ea791da18ec600062b93",
     "barbapappa" -> "233e316356c2f4213eb0bf7ca26eec925a3cf214",
+    "otherDigest" -> "dd466d19481a28ba8577e7b3f029e496027a3309",
   )
 
   def fileFoXml(id: Int = 35,

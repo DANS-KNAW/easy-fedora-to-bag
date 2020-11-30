@@ -29,7 +29,20 @@ case class FileInfo(fedoraFileId: String,
                     visibleTo: String,
                     contentDigest: Option[Node],
                     additionalMetadata: Option[Node],
-                   )
+                   ){
+
+  override def equals(obj: scala.Any): Boolean = obj match {
+    case that: FileInfo => that.canEqual(this) &&
+      this.hashCode == that.hashCode
+    case _ => false
+    }
+
+  override def hashCode(): Int = {
+    if(contentDigest.nonEmpty) contentDigest.hashCode()
+    else path.hashCode()
+  }
+
+}
 
 object FileInfo {
   def apply(foXml: Node): Try[FileInfo] = {

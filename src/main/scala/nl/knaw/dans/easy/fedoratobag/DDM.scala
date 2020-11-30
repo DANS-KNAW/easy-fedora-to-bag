@@ -93,7 +93,7 @@ object DDM extends DebugEnhancedLogging {
        { emd.getEmdCoverage.getEasSpatial.asScala.map(toXml) }
        <dct:license xsi:type="dct:URI">{ toLicenseUrl(emd.getEmdRights) }</dct:license>
        { emd.getEmdLanguage.getDcLanguage.asScala.map(bs => <dct:language xsi:type={langType(bs)}>{ langValue(bs) }</dct:language>) }
-       { if (dateCreated.size > 1)  dateCreated.toSeq.tail.map(date => <dct:created>{ date }</dct:created>) }
+       { dateCreated.toSeq.tail.map(date => <dct:created>{ date }</dct:created>) }
      </ddm:dcmiMetadata>
    </ddm:DDM>
  }

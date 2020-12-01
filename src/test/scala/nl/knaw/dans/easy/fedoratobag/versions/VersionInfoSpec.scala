@@ -18,19 +18,20 @@ package nl.knaw.dans.easy.fedoratobag.versions
 import nl.knaw.dans.easy.fedoratobag.fixture.TestSupportFixture
 import org.joda.time.DateTime
 
-import scala.util.Success
+import scala.util.{ Failure, Success }
 
 class VersionInfoSpec extends TestSupportFixture {
-  "apply" should "" in {
+  "apply" should "return all types of identifiers" in {
     VersionInfo(
       <emd:easymetadata xmlns:eas={ VersionInfo.easNameSpace }>
         <emd:date>
-          <eas:dateSubmitted eas:scheme="W3CDTF" eas:format="MILLISECOND">20180223-01-01T00:10:34.000+01:00</eas:dateSubmitted>
+          <eas:dateSubmitted>20180223-01-01T00:10:34.000+01:00</eas:dateSubmitted>
         </emd:date>
         <emd:identifier>
-          <dc:identifier eas:scheme="PID" eas:identification-system="http://www.persistent-identifier.nl">urn:nbn:nl:ui:13-t3f-cz8</dc:identifier>
-          <dc:identifier eas:scheme="DOI" eas:identification-system="http://dx.doi.org">10.17026/dans-zjf-522e</dc:identifier>
+          <dc:identifier eas:scheme="PID">urn:nbn:nl:ui:13-t3f-cz8</dc:identifier>
+          <dc:identifier eas:scheme="DOI">10.17026/dans-zjf-522e</dc:identifier>
           <dc:identifier eas:scheme="eDNA-project">a12893</dc:identifier>
+          <dc:identifier>bcdef</dc:identifier>
           <dc:identifier eas:scheme="DMO_ID">easy-dataset:34340</dc:identifier>
         </emd:identifier>
         <emd:relation>
@@ -39,7 +40,7 @@ class VersionInfoSpec extends TestSupportFixture {
             <eas:subject-link/>
           </eas:replaces>
           <eas:hasVersion>
-            <eas:subject-title>ADC ArcheoProjecten; Huisman, N. (2009): Nunspeet Plangebied Elspeet Noord IVO3.</eas:subject-title>
+            <eas:subject-title>Plangebied Elspeet Noord IVO3.</eas:subject-title>
             <eas:subject-link>https://doi.org/10.17026/dans-zjf-522e</eas:subject-link>
           </eas:hasVersion>
           <dct:hasVersion>http://www.persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-2ajw-cq</dct:hasVersion>
@@ -52,6 +53,17 @@ class VersionInfoSpec extends TestSupportFixture {
       Seq("easy-dataset:123"),
       Seq("10.17026/dans-zjf-522e", "urn:nbn:nl:ui:13-2ajw-cq")
       )) if date == new DateTime("2018-02-23T00:00:00.000+01:00") =>
+    }
+  }
+  it should "report a missing dateSubmitted" in {
+    VersionInfo(
+      <emd:easymetadata>
+        <emd:identifier>
+          <dc:identifier>urn:nbn:nl:ui:13-t3f-cz8</dc:identifier>
+        </emd:identifier>
+      </emd:easymetadata>
+    ) should matchPattern {
+      case Failure(e) if e.getMessage == "Missing or invalid dateSubmitted []" =>
     }
   }
 }

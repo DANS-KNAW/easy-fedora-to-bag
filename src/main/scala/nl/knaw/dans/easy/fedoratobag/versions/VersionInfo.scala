@@ -34,27 +34,31 @@ object VersionInfo {
   def apply(emd: Elem): Try[VersionInfo] = Try {
     val relations = emd \ "relation"
     new VersionInfo(
-      new DateTime(fixIfTooLarge((emd \ "date" \ "dateSubmitted").text)),
+      fixDateIfTooLarge((emd \ "date" \ "dateSubmitted").text),
       (emd \ "identifier" \ "identifier").theSeq.filter(isSelf).map(_.text),
       getDansIDs((relations \ "replaces").theSeq ++ (relations \ "isVersionOf").theSeq),
       getDansIDs((relations \ "replacedBy").theSeq ++ (relations \ "hasVersion").theSeq),
     )
   }
 
-  private def fixIfTooLarge(date: String): String = {
+  private def fixDateIfTooLarge(date: String): DateTime = Try{new DateTime(
     if (date.length <= 13) date
     else try {
       LocalDate.parse(date.substring(0, 8), BASIC_ISO_DATE).toString
     } catch {
       case _: DateTimeException => date
     }
-  }
+  )}.getOrElse(
+    throw new IllegalArgumentException(s"Missing or invalid dateSubmitted [$date]")
+  )
 
   val easNameSpace = "http://easy.dans.knaw.nl/easy/easymetadata/eas/"
 
   private def isSelf(node: Node) = {
-    val scheme = node.attribute(easNameSpace, "scheme")
-      .map(_.text).getOrElse("")
+    val scheme = node
+      .attribute(easNameSpace, "scheme")
+      .map(_.text)
+      .getOrElse("")
     Seq("PID", "DMO_ID", "DOI").exists(scheme.contains)
   }
 

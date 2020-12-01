@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.easy.fedoratobag
 
-import nl.knaw.dans.easy.fedoratobag.FileFilterType._
+import nl.knaw.dans.easy.fedoratobag.filter.FileFilterType._
 import nl.knaw.dans.easy.fedoratobag.TransformationType.ORIGINAL_VERSIONED
 import nl.knaw.dans.easy.fedoratobag.filter.DatasetFilter
 

@@ -1,4 +1,4 @@
-package nl.knaw.dans.easy.fedoratobag
+package nl.knaw.dans.easy.fedoratobag.versions
 
 import scalaj.http.Http
 
@@ -19,7 +19,7 @@ object Resolver {
       case response if response.code == 302 =>
         response
           .header("Location")
-          .map(_.replaceAll(".*/","").replace("%3A",":"))
+          .map(_.replaceAll(".*/", "").replace("%3A", ":"))
           .getOrElse(throw new Exception(s"no location header returned by $url - ${ response.body }"))
       case response =>
         throw new Exception(s"Not expected response code from '$url' ${ response.code } - ${ response.body }", null)

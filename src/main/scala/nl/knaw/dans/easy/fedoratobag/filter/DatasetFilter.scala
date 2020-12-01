@@ -17,6 +17,7 @@ package nl.knaw.dans.easy.fedoratobag.filter
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory.{ OPEN_ACCESS, REQUEST_PERMISSION }
 import nl.knaw.dans.easy.fedoratobag._
+import nl.knaw.dans.easy.fedoratobag.versions.VersionInfo
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import nl.knaw.dans.pf.language.emd.EasyMetadataImpl
 

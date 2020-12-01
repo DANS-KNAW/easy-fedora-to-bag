@@ -184,14 +184,14 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       _ <- managedMetadataStream(foXml, "DATASET_LICENSE", bag, "depositor-info/depositor-agreement")
         .getOrElse(Success(()))
       allFileInfos <- fedoraIDs.filter(_.startsWith("easy-file:")).toList.traverse(getFileInfo)
-      firstFileInfos <- selectFileInfos(options.firstFileFilter(emdXml), allFileInfos)
+      firstFileInfos <- selectFileInfos(options.firstFileFilter(emdXml), allFileInfos.distinct)
       firstBagFileItems <- firstFileInfos.traverse(addPayloadFileTo(bag))
       _ <- checkNotImplemented(firstBagFileItems, logger)
       _ <- addXmlMetadataTo(bag, "files.xml")(filesXml(firstBagFileItems))
       _ <- bag.save
       doi = emd.getEmdIdentifier.getDansManagedDoi
       nextFileInfos = if (maybeFilterViolations.nonEmpty && options.strict) Seq.empty
-                      else getNextFileInfos(allFileInfos, firstFileInfos, options.originalVersioning)
+                      else getNextFileInfos(allFileInfos.distinct, firstFileInfos, options.originalVersioning)
     } yield DatasetInfo(maybeFilterViolations, doi, depositor, nextFileInfos)
   }
 

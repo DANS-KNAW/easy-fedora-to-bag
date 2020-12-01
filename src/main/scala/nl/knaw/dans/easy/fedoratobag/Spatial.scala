@@ -44,6 +44,16 @@ trait SchemedSpatial {
       case _ => null // will suppress the XML attribute
     }
   }
+
+  def determineSrsName(seq: Seq[String]) = srsName match {
+    case null => {
+      if (seq.map(p => p.toDouble).max > 289000)
+        SpatialNames.RD_SRS_NAME
+      else
+        SpatialNames.DEGREES_SRS_NAME
+  }
+    case s => s
+  }
 }
 
 case class SpatialPoint(scheme: Option[String],
@@ -64,7 +74,7 @@ case class SpatialPoint(scheme: Option[String],
   }
 
   lazy val dcxGml: Option[Elem] = value.map(value =>
-    <dcx-gml:spatial srsName={ guessSrsName }>
+    <dcx-gml:spatial srsName={ determineSrsName(Seq(sx, sy)) }>
       <Point xmlns="http://www.opengis.net/gml">
         <pos>{ value }</pos>
       </Point>
@@ -113,7 +123,7 @@ case class SpatialBox(scheme: Option[String],
    *   x -->
    *
    */
-  lazy val (lower: String, upper: String) = guessSrsName match {
+  lazy val (lower: String, upper: String) = determineSrsName(Seq(sSouth,sNorth,sWest,sEast))match {
     case SpatialNames.RD_SRS_NAME => xy
     case SpatialNames.DEGREES_SRS_NAME => yx
     case _ => yx
@@ -127,7 +137,7 @@ case class SpatialBox(scheme: Option[String],
   lazy val dcxGml: Option[Elem] = value.map(_ =>
     <dcx-gml:spatial>
       <boundedBy xmlns="http://www.opengis.net/gml">
-          <Envelope srsName={ guessSrsName }>
+          <Envelope srsName={ determineSrsName(Seq(sNorth, sSouth)) }>
               <lowerCorner>{ lower }</lowerCorner>
               <upperCorner>{ upper }</upperCorner>
           </Envelope>
@@ -135,13 +145,4 @@ case class SpatialBox(scheme: Option[String],
     </dcx-gml:spatial>
   )
 
-  private lazy val guessSrsName: String = srsName match {
-    case null => {
-      if(Seq(sNorth, sSouth).map(p => p.toDouble).max > 289000)
-        SpatialNames.RD_SRS_NAME
-      else
-        SpatialNames.DEGREES_SRS_NAME
-    }
-    case s => s
-  }
 }

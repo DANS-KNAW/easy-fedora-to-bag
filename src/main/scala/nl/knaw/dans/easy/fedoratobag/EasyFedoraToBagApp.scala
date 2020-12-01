@@ -108,6 +108,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
   }
 
   protected[EasyFedoraToBagApp] def createSecondBag(datasetInfo: DatasetInfo, bagDir1: File, isVersionOf: UUID)(bagDir2: File): Try[Unit] = {
+
     def copy(fileName: String, bag2: DansV0Bag) = {
       (bagDir1 / "metadata" / fileName)
         .inputStream
@@ -115,13 +116,16 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
         .get
     }
 
+    def bagInfoTxt(bag: DansV0Bag) = bag
+      .withEasyUserAccount(datasetInfo.depositor)
+      .withCreated(DateTime.now())
+      .withIsVersionOf(isVersionOf)
+      // the following keys should match easy-fedora-to-bag
+      .addBagInfo("Base-DOI", datasetInfo.doi)
+      .addBagInfo("Base-URN", datasetInfo.urn)
+
     for {
-      bag2 <- DansV0Bag.empty(bagDir2)
-        .map(_
-          .withEasyUserAccount(datasetInfo.depositor)
-          .withCreated(DateTime.now())
-          .withIsVersionOf(isVersionOf)
-        )
+      bag2 <- DansV0Bag.empty(bagDir2).map(bagInfoTxt)
       _ <- copy("emd.xml", bag2)
       _ <- copy("amd.xml", bag2)
       _ <- copy("dataset.xml", bag2)
@@ -190,9 +194,10 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       _ <- addXmlMetadataTo(bag, "files.xml")(filesXml(firstBagFileItems))
       _ <- bag.save
       doi = emd.getEmdIdentifier.getDansManagedDoi
+      urn = emd.getEmdIdentifier.getDcIdentifier.asScala.headOption.map(_.toString).getOrElse(throw new Exception(s"no URN in EMD of $datasetId "))
       nextFileInfos = if (maybeFilterViolations.nonEmpty && options.strict) Seq.empty
                       else getNextFileInfos(allFileInfos.distinct, firstFileInfos, options.originalVersioning)
-    } yield DatasetInfo(maybeFilterViolations, doi, depositor, nextFileInfos)
+    } yield DatasetInfo(maybeFilterViolations, doi, urn, depositor, nextFileInfos)
   }
 
   private def getNextFileInfos(allFileInfos: List[FileInfo], firstFileInfos: List[FileInfo], originalVersioning: Boolean): Seq[FileInfo] = {

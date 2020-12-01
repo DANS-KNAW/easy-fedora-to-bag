@@ -80,16 +80,6 @@ case class SpatialPoint(scheme: Option[String],
       </Point>
     </dcx-gml:spatial>
   )
-
-  private lazy val guessSrsName: String = srsName match {
-    case null => {
-      if(Seq(sx, sy).map(p => p.toDouble).max > 289000)
-        SpatialNames.RD_SRS_NAME
-      else
-        SpatialNames.DEGREES_SRS_NAME
-    }
-    case s => s
-  }
 }
 
 case class SpatialBox(scheme: Option[String],

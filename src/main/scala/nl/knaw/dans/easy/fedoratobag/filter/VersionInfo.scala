@@ -1,6 +1,12 @@
 package nl.knaw.dans.easy.fedoratobag.filter
 
+import java.time.DateTimeException
+
 import nl.knaw.dans.lib.string._
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeFormatter.BASIC_ISO_DATE
+import java.time.{ DateTimeException, LocalDate }
+
 import org.joda.time.DateTime
 
 import scala.util.Try
@@ -16,17 +22,20 @@ object VersionInfo {
   def apply(emd: Elem): Try[VersionInfo] = Try {
     val relations = emd \ "relation"
     new VersionInfo(
-      parse((emd \ "date" \ "dateSubmitted").text),
+      new DateTime(fixIfTooLarge((emd \ "date" \ "dateSubmitted").text)),
       (emd \ "identifier" \ "identifier").theSeq.filter(isSelf).map(_.text),
       getDansIDs((relations \ "replaces").theSeq ++ (relations \ "isVersionOf").theSeq),
       getDansIDs((relations \ "replacedBy").theSeq ++ (relations \ "hasVersion").theSeq),
     )
   }
 
-  private def parse(date: String): DateTime = {
-    val parsed = DateTime.parse(date)
-    if (parsed.getYear < 9999) parsed
-    else DateTime.parse(date.substring(0, 8))
+  private def fixIfTooLarge(date: String): String = {
+    if (date.length <= 13) date
+    else try {
+      LocalDate.parse(date.substring(0, 8), BASIC_ISO_DATE).toString
+    } catch {
+      case _: DateTimeException => date
+    }
   }
 
   val easNameSpace = "http://easy.dans.knaw.nl/easy/easymetadata/eas/"

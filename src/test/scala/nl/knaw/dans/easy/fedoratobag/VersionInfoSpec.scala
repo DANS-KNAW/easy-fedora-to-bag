@@ -2,6 +2,7 @@ package nl.knaw.dans.easy.fedoratobag
 
 import nl.knaw.dans.easy.fedoratobag.filter.VersionInfo
 import nl.knaw.dans.easy.fedoratobag.fixture.TestSupportFixture
+import org.joda.time.DateTime
 
 import scala.util.Success
 
@@ -10,7 +11,7 @@ class VersionInfoSpec extends TestSupportFixture {
     VersionInfo(
       <emd:easymetadata xmlns:eas={ VersionInfo.easNameSpace }>
         <emd:date>
-          <eas:dateSubmitted eas:scheme="W3CDTF" eas:format="DAY">2010-07-30T00:00:00.000+02:00</eas:dateSubmitted>
+          <eas:dateSubmitted eas:scheme="W3CDTF" eas:format="MILLISECOND">20180223-01-01T00:10:34.000+01:00</eas:dateSubmitted>
         </emd:date>
         <emd:identifier>
           <dc:identifier eas:scheme="PID" eas:identification-system="http://www.persistent-identifier.nl">urn:nbn:nl:ui:13-t3f-cz8</dc:identifier>
@@ -32,11 +33,11 @@ class VersionInfoSpec extends TestSupportFixture {
       </emd:easymetadata>
     ) should matchPattern {
       case Success(VersionInfo(
-      _,
+      date,
       Seq("urn:nbn:nl:ui:13-t3f-cz8", "10.17026/dans-zjf-522e", "easy-dataset:34340"),
       Seq("easy-dataset:123"),
       Seq("10.17026/dans-zjf-522e", "urn:nbn:nl:ui:13-2ajw-cq")
-      )) =>
+      )) if date == new DateTime("2018-02-23T00:00:00.000+01:00") =>
     }
   }
 }

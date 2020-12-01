@@ -80,11 +80,12 @@ trait DatasetFilter extends DebugEnhancedLogging {
   }
 
   def findDansRelations(ddm: Node): Seq[Node] = {
+    val dcmi = ddm \ "dcmiMetadata"
     Seq(
-      (ddm \\ "isVersionOf").theSeq,
-      (ddm \\ "hasVersion").theSeq,
-      (ddm \\ "replaces").theSeq,
-      (ddm \\ "isReplacedBy").theSeq,
+      (dcmi \ "isVersionOf").theSeq,
+      (dcmi \ "hasVersion").theSeq,
+      (dcmi \ "replaces").theSeq,
+      (dcmi \ "isReplacedBy").theSeq,
     ).flatten
       .filter(hasDansId)
   }

@@ -24,7 +24,6 @@ class VersionInfoSpec extends TestSupportFixture {
   "apply" should "return all types of identifiers" in {
     VersionInfo(
       <emd:easymetadata xmlns:eas={ VersionInfo.easNameSpace }>
-        <emd:date><eas:dateSubmitted>20180223-01-01T00:10:34.000+01:00</eas:dateSubmitted></emd:date>
         <emd:identifier>
           <dc:identifier eas:scheme="PID">urn:nbn:nl:ui:13-t3f-cz8</dc:identifier>
           <dc:identifier eas:scheme="DOI">10.17026/dans-zjf-522e</dc:identifier>
@@ -54,20 +53,15 @@ class VersionInfoSpec extends TestSupportFixture {
     }
   }
   it should "use a default Date" in {
-    VersionInfo(<emd:easymetadata/>) should matchPattern {
-      case Success(VersionInfo(d, _, _, _))
-        if new DateTime(d).toString.startsWith("1900-01-01") =>
-    }
+    VersionInfo(<emd:easymetadata/>)
+      .map(submitYear) shouldBe Success(1900)
   }
   it should "fall back to a default Date" in {
     VersionInfo(
       <emd:easymetadata>
         <emd:date><eas:dateSubmitted>blablabla</eas:dateSubmitted></emd:date>
       </emd:easymetadata>
-    ) should matchPattern {
-      case Success(VersionInfo(d, _, _, _))
-        if new DateTime(d).toString.startsWith("1970-01-01") =>
-    }
+    ).map(submitYear) shouldBe Success(1970)
   }
   it should "use dateSubmitted" in {
     VersionInfo(
@@ -75,19 +69,18 @@ class VersionInfoSpec extends TestSupportFixture {
         <emd:date><eas:dateCreated>1980</eas:dateCreated></emd:date>
         <emd:date><eas:dateSubmitted>1990</eas:dateSubmitted></emd:date>
       </emd:easymetadata>
-    ) should matchPattern {
-      case Success(VersionInfo(d, _, _, _))
-        if new DateTime(d).toString.startsWith("1990-01-01") =>
-    }
+    ).map(submitYear) shouldBe Success(1990)
   }
   it should "fall back to date created" in {
     VersionInfo(
       <emd:easymetadata>
+        <emd:date><eas:date>1980</eas:date></emd:date>
         <emd:date><dc:created>1980</dc:created></emd:date>
       </emd:easymetadata>
-    ) should matchPattern {
-      case Success(VersionInfo(d, _, _, _))
-        if new DateTime(d).toString.startsWith("1980-01-01") =>
-    }
+    ).map(submitYear) shouldBe Success(1980)
+  }
+
+  private def submitYear(l: VersionInfo) = {
+    new DateTime(l.submitted).getYear
   }
 }

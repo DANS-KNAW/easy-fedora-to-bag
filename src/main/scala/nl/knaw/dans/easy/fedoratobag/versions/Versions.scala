@@ -25,9 +25,10 @@ abstract class Versions() {
   val resolver: Resolver = Resolver()
   val fedoraProvider: FedoraProvider
 
-  def findVersions(startDatasetId: DatasetId): Try[Seq[DatasetId]] = {
+  private val collectedIds: mutable.ListBuffer[String] = mutable.ListBuffer[String]()
+
+  def findVersions(startDatasetId: DatasetId): Try[mutable.Map[DatasetId,Long]] = {
     val datasetMap = mutable.Map[DatasetId, Long]()
-    val collectedIds = mutable.ListBuffer[String]()
 
     def readVersionInfo(anyId: String): Try[VersionInfo] = for {
       datasetId <- resolver.getDatasetId(anyId)
@@ -41,21 +42,20 @@ abstract class Versions() {
     } yield versionInfo
 
     def follow(ids: Seq[String], f: VersionInfo => Seq[String]): Try[Unit] = {
-      if (ids.isEmpty) Success(())
-      else ids.withFilter(!collectedIds.contains(_)).map { id =>
+      val freshIds = ids.filter(!collectedIds.contains(_))
+      if (freshIds.isEmpty) Success(())
+      else freshIds.map { id =>
         for {
           versionInfo <- readVersionInfo(id)
           _ <- follow(f(versionInfo), f)
         } yield ()
-      }.find(_.isFailure).getOrElse(Success())
+      }.find(_.isFailure).getOrElse(Success(()))
     }
 
     for {
       versionInfo <- readVersionInfo(startDatasetId)
       _ <- follow(versionInfo.previous, _.previous)
       _ <- follow(versionInfo.next, _.next)
-    } yield datasetMap.toSeq
-      .sortBy { case (_, date) => date }
-      .map { case (id, _) => id }
+    } yield datasetMap
   }
 }

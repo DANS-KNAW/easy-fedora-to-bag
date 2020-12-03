@@ -4,7 +4,7 @@ import scalaj.http.Http
 
 import scala.util.{ Success, Try }
 
-object Resolver {
+case class Resolver() {
 
   def getDatasetId(id: String): Try[String] = {
     id.slice(0, 3) match {

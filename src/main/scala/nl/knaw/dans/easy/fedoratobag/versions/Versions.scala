@@ -22,13 +22,16 @@ import scala.collection.mutable
 import scala.util.{ Success, Try }
 import scala.xml.XML
 
-object Versions {
-  def findVersions(startDatasetId: DatasetId, fedoraProvider: FedoraProvider): Try[Seq[DatasetId]] = {
+abstract class Versions() {
+  val resolver: Resolver = Resolver()
+  val fedoraProvider: FedoraProvider
+
+  def findVersions(startDatasetId: DatasetId): Try[Seq[DatasetId]] = {
     val datasetMap = mutable.Map[DatasetId, DateTime]()
     val collectedIds = mutable.ListBuffer[String]()
 
     def readVersionInfo(anyId: String): Try[VersionInfo] = for {
-      datasetId <- Resolver.getDatasetId(anyId)
+      datasetId <- resolver.getDatasetId(anyId)
       emd <- fedoraProvider
         .datastream(datasetId, "EMD")
         .map(XML.load)

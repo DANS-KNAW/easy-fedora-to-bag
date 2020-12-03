@@ -16,7 +16,6 @@
 package nl.knaw.dans.easy.fedoratobag.versions
 
 import nl.knaw.dans.easy.fedoratobag.{ DatasetId, FedoraProvider }
-import org.joda.time.DateTime
 
 import scala.collection.mutable
 import scala.util.{ Success, Try }
@@ -27,7 +26,7 @@ abstract class Versions() {
   val fedoraProvider: FedoraProvider
 
   def findVersions(startDatasetId: DatasetId): Try[Seq[DatasetId]] = {
-    val datasetMap = mutable.Map[DatasetId, DateTime]()
+    val datasetMap = mutable.Map[DatasetId, Long]()
     val collectedIds = mutable.ListBuffer[String]()
 
     def readVersionInfo(anyId: String): Try[VersionInfo] = for {
@@ -56,7 +55,7 @@ abstract class Versions() {
       _ <- follow(versionInfo.previous, _.previous)
       _ <- follow(versionInfo.next, _.next)
     } yield datasetMap.toSeq
-      .sortBy { case (_, date) => date.getMillis }
+      .sortBy { case (_, date) => date }
       .map { case (id, _) => id }
   }
 }

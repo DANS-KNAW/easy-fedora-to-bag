@@ -52,7 +52,7 @@ class VersionInfoSpec extends TestSupportFixture {
       Seq("urn:nbn:nl:ui:13-t3f-cz8", "10.17026/dans-zjf-522e", "easy-dataset:34340"),
       Seq("easy-dataset:123"),
       Seq("10.17026/dans-zjf-522e", "urn:nbn:nl:ui:13-2ajw-cq")
-      )) if date == new DateTime("2018-02-23T00:00:00.000+01:00") =>
+      )) if new DateTime(date) == new DateTime("2018-02-23T00:00:00.000+01:00") =>
     }
   }
   it should "report a missing dateSubmitted" in {

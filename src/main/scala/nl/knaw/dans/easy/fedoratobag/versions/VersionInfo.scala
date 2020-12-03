@@ -15,16 +15,13 @@
  */
 package nl.knaw.dans.easy.fedoratobag.versions
 
-import java.time.format.DateTimeFormatter.BASIC_ISO_DATE
-import java.time.{ DateTimeException, LocalDate }
-
 import nl.knaw.dans.lib.string._
 import org.joda.time.DateTime
 
 import scala.util.Try
 import scala.xml.{ Elem, Node }
 
-case class VersionInfo(submitted: DateTime,
+case class VersionInfo(submitted: Long,
                        self: Seq[String],
                        previous: Seq[String],
                        next: Seq[String],
@@ -41,16 +38,12 @@ object VersionInfo {
     )
   }
 
-  private def fixDateIfTooLarge(date: String): DateTime = Try{new DateTime(
-    if (date.length <= 13) date
-    else try {
-      LocalDate.parse(date.substring(0, 8), BASIC_ISO_DATE).toString
-    } catch {
-      case _: DateTimeException => date
-    }
-  )}.getOrElse(
-    throw new IllegalArgumentException(s"Missing or invalid dateSubmitted [$date]")
-  )
+  private def fixDateIfTooLarge(date: String): Long = Try(new DateTime(date))
+    .map { dateTime =>
+      if (dateTime.getYear < 9999) dateTime
+      else new DateTime(dateTime.getYear.toString)
+    }.getOrElse(throw new IllegalArgumentException(s"Missing or invalid dateSubmitted [$date]"))
+    .getMillis
 
   val easNameSpace = "http://easy.dans.knaw.nl/easy/easymetadata/eas/"
 

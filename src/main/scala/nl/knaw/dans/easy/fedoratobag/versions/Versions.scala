@@ -25,19 +25,35 @@ abstract class Versions() {
   val resolver: Resolver = Resolver()
   val fedoraProvider: FedoraProvider
 
+  private type Chain = mutable.Map[DatasetId, Long]
+
   private val collectedIds: mutable.ListBuffer[String] = mutable.ListBuffer[String]()
+  private val collectedChains: mutable.ListBuffer[Chain] = mutable.ListBuffer[Chain]()
 
-  def findVersions(startDatasetId: DatasetId): Try[mutable.Map[DatasetId,Long]] = {
-    val datasetMap = mutable.Map[DatasetId, Long]()
+  def findChains(ids: Seq[DatasetId]): Try[Seq[Seq[String]]] = {
+    for {
+      _ <- ids
+        .withFilter(!collectedIds.contains(_))
+        .map(findVersions(_).map(collectedChains += _))
+        .find(_.isFailure)
+        .getOrElse(Success())
+      chains = collectedChains.map(_.toSeq
+        .sortBy { case (_, date) => date }
+        .map { case (id, _) => id }
+      )
+    } yield chains
+  }
 
-    def readVersionInfo(anyId: String): Try[VersionInfo] = for {
-      datasetId <- resolver.getDatasetId(anyId)
+  private def findVersions(startDatasetId: DatasetId): Try[Chain] = {
+    val chain: Chain = mutable.Map[DatasetId, Long]()
+
+    def readVersionInfo(datasetId: DatasetId): Try[VersionInfo] = for {
       emd <- fedoraProvider
         .datastream(datasetId, "EMD")
         .map(XML.load)
         .tried
       versionInfo <- VersionInfo(emd)
-      _ = datasetMap += datasetId -> versionInfo.submitted
+      _ = chain += datasetId -> versionInfo.submitted
       _ = collectedIds ++= (versionInfo.self :+ datasetId).distinct
     } yield versionInfo
 
@@ -46,16 +62,28 @@ abstract class Versions() {
       if (freshIds.isEmpty) Success(())
       else freshIds.map { id =>
         for {
-          versionInfo <- readVersionInfo(id)
+          datasetId <- resolver.getDatasetId(id)
+          _ = connectToPreviousChain(datasetId)
+          versionInfo <- readVersionInfo(datasetId)
           _ <- follow(f(versionInfo), f)
         } yield ()
       }.find(_.isFailure).getOrElse(Success(()))
     }
 
     for {
-      versionInfo <- readVersionInfo(startDatasetId)
+      datasetId <- resolver.getDatasetId(startDatasetId)
+      versionInfo <- readVersionInfo(datasetId)
       _ <- follow(versionInfo.previous, _.previous)
       _ <- follow(versionInfo.next, _.next)
-    } yield datasetMap
+    } yield chain
+  }
+
+  private def connectToPreviousChain(datasetId: String): Unit = {
+    if (collectedIds.contains(datasetId)) {
+      // TODO find existing chain
+      //  add to current chain
+      //  remove from collectedChains
+      //  NOTE: no need to read and follow
+    }
   }
 }

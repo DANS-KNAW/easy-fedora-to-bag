@@ -50,8 +50,8 @@ class VersionsSpec extends TestSupportFixture with MockFactory {
                     </emd:easymetadata>
       )
     }
-    versions.findVersions("easy-dataset:1").map(_.keys) shouldBe
-      Success(Set("easy-dataset:1"))
+    versions.findChains(Seq("easy-dataset:1")) shouldBe
+      Success(Seq(Seq("easy-dataset:1")))
   }
 
   "findVersions" should "follow in both directions" in {
@@ -86,9 +86,8 @@ class VersionsSpec extends TestSupportFixture with MockFactory {
       ).foreach { case (id, datasetId) => resolverExpects(id, Success(datasetId)) }
       emds.foreach { case (id, emd) => fedoraExpects(id, returning = emd) }
     }
-    versions.findVersions("easy-dataset:1").map(_.toSeq
-      .sortBy { case (_, date) => date }
-      .map { case (id, _) => id }
-    ) shouldBe Success(Seq("easy-dataset:4", "easy-dataset:3", "easy-dataset:1", "easy-dataset:2"))
+
+    versions.findChains(Seq("easy-dataset:1")) shouldBe
+      Success(Seq(Seq("easy-dataset:4", "easy-dataset:3", "easy-dataset:1", "easy-dataset:2")))
   }
 }

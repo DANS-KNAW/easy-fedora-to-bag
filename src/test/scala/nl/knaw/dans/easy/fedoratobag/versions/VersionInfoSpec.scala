@@ -18,15 +18,13 @@ package nl.knaw.dans.easy.fedoratobag.versions
 import nl.knaw.dans.easy.fedoratobag.fixture.TestSupportFixture
 import org.joda.time.DateTime
 
-import scala.util.{ Failure, Success }
+import scala.util.Success
 
 class VersionInfoSpec extends TestSupportFixture {
   "apply" should "return all types of identifiers" in {
     VersionInfo(
       <emd:easymetadata xmlns:eas={ VersionInfo.easNameSpace }>
-        <emd:date>
-          <eas:dateSubmitted>20180223-01-01T00:10:34.000+01:00</eas:dateSubmitted>
-        </emd:date>
+        <emd:date><eas:dateSubmitted>20180223-01-01T00:10:34.000+01:00</eas:dateSubmitted></emd:date>
         <emd:identifier>
           <dc:identifier eas:scheme="PID">urn:nbn:nl:ui:13-t3f-cz8</dc:identifier>
           <dc:identifier eas:scheme="DOI">10.17026/dans-zjf-522e</dc:identifier>
@@ -48,22 +46,48 @@ class VersionInfoSpec extends TestSupportFixture {
       </emd:easymetadata>
     ) should matchPattern {
       case Success(VersionInfo(
-      date,
+      _,
       Seq("urn:nbn:nl:ui:13-t3f-cz8", "10.17026/dans-zjf-522e", "easy-dataset:34340"),
       Seq("easy-dataset:123"),
       Seq("10.17026/dans-zjf-522e", "urn:nbn:nl:ui:13-2ajw-cq")
-      )) if new DateTime(date) == new DateTime("2018-02-23T00:00:00.000+01:00") =>
+      )) =>
     }
   }
-  it should "report a missing dateSubmitted" in {
+  it should "use a default Date" in {
+    VersionInfo(<emd:easymetadata/>) should matchPattern {
+      case Success(VersionInfo(d, _, _, _))
+        if new DateTime(d).toString.startsWith("1900-01-01") =>
+    }
+  }
+  it should "fall back to a default Date" in {
     VersionInfo(
       <emd:easymetadata>
-        <emd:identifier>
-          <dc:identifier>urn:nbn:nl:ui:13-t3f-cz8</dc:identifier>
-        </emd:identifier>
+        <emd:date><eas:dateSubmitted>blablabla</eas:dateSubmitted></emd:date>
       </emd:easymetadata>
     ) should matchPattern {
-      case Failure(e) if e.getMessage == "Missing or invalid dateSubmitted []" =>
+      case Success(VersionInfo(d, _, _, _))
+        if new DateTime(d).toString.startsWith("1970-01-01") =>
+    }
+  }
+  it should "use dateSubmitted" in {
+    VersionInfo(
+      <emd:easymetadata>
+        <emd:date><eas:dateCreated>1980</eas:dateCreated></emd:date>
+        <emd:date><eas:dateSubmitted>1990</eas:dateSubmitted></emd:date>
+      </emd:easymetadata>
+    ) should matchPattern {
+      case Success(VersionInfo(d, _, _, _))
+        if new DateTime(d).toString.startsWith("1990-01-01") =>
+    }
+  }
+  it should "fall back to date created" in {
+    VersionInfo(
+      <emd:easymetadata>
+        <emd:date><dc:created>1980</dc:created></emd:date>
+      </emd:easymetadata>
+    ) should matchPattern {
+      case Success(VersionInfo(d, _, _, _))
+        if new DateTime(d).toString.startsWith("1980-01-01") =>
     }
   }
 }

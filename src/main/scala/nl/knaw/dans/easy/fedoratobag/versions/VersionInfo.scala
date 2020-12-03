@@ -17,6 +17,7 @@ package nl.knaw.dans.easy.fedoratobag.versions
 
 import nl.knaw.dans.lib.string._
 import org.joda.time.DateTime
+import org.joda.time.format.DateTimeFormat.forPattern
 
 import scala.util.Try
 import scala.xml.{ Elem, Node }
@@ -30,20 +31,24 @@ case class VersionInfo(submitted: Long,
 object VersionInfo {
   def apply(emd: Elem): Try[VersionInfo] = Try {
     val relations = emd \ "relation"
+    val dateContainer = emd \ "date"
+    val date = (dateContainer \ "dateSubmitted").headOption
+      .getOrElse(dateContainer \ "created").headOption
+      .map(_.text)
+      .getOrElse("1900-01-01")
     new VersionInfo(
-      fixDateIfTooLarge((emd \ "date" \ "dateSubmitted").text),
+      fixDateIfTooLarge(date).getOrElse(0),
       (emd \ "identifier" \ "identifier").theSeq.filter(isSelf).map(_.text),
       getDansIDs((relations \ "replaces").theSeq ++ (relations \ "isVersionOf").theSeq),
       getDansIDs((relations \ "replacedBy").theSeq ++ (relations \ "hasVersion").theSeq),
     )
   }
 
-  private def fixDateIfTooLarge(date: String): Long = Try(new DateTime(date))
+  private def fixDateIfTooLarge(date: String): Try[Long] = Try(new DateTime(date))
     .map { dateTime =>
-      if (dateTime.getYear < 9999) dateTime
-      else new DateTime(dateTime.getYear.toString)
-    }.getOrElse(throw new IllegalArgumentException(s"Missing or invalid dateSubmitted [$date]"))
-    .getMillis
+      if (dateTime.getYear < 10000) dateTime
+      else DateTime.parse(dateTime.getYear.toString, forPattern("yMMdd"))
+    }.map(_.getMillis)
 
   val easNameSpace = "http://easy.dans.knaw.nl/easy/easymetadata/eas/"
 

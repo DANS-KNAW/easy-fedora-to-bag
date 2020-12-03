@@ -194,10 +194,17 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       _ <- addXmlMetadataTo(bag, "files.xml")(filesXml(firstBagFileItems))
       _ <- bag.save
       doi = emd.getEmdIdentifier.getDansManagedDoi
-      urn = emd.getEmdIdentifier.getDcIdentifier.asScala.headOption.map(_.toString).getOrElse(throw new Exception(s"no URN in EMD of $datasetId "))
+      urn = getUrn(datasetId, emd)
       nextFileInfos = if (maybeFilterViolations.nonEmpty && options.strict) Seq.empty
                       else getNextFileInfos(allFileInfos, firstFileInfos, options.originalVersioning)
     } yield DatasetInfo(maybeFilterViolations, doi, urn, depositor, nextFileInfos)
+  }
+
+  private def getUrn(datasetId: DatasetId, emd: EasyMetadataImpl) = {
+    emd.getEmdIdentifier.getDcIdentifier.asScala
+      .find(_.getScheme == "PID")
+      .map(_.getValue)
+      .getOrElse(throw new Exception(s"no URN in EMD of $datasetId "))
   }
 
   private def getNextFileInfos(allFileInfos: List[FileInfo], firstFileInfos: List[FileInfo], originalVersioning: Boolean): Seq[FileInfo] = {

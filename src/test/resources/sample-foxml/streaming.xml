@@ -75,7 +75,8 @@
                         <dc:format>video/mpeg</dc:format>
                     </emd:format>
                     <emd:identifier>
-                        <dc:identifier eas:scheme="DMO_ID"></dc:identifier>
+                        <dc:identifier eas:identification-system="http://www.persistent-identifier.nl" eas:scheme="PID">urn:nbn:nl:ui:13-blablabla</dc:identifier>
+                        <dc:identifier eas:scheme="DMO_ID">easy-dataset:13</dc:identifier>
                         <dc:identifier eas:identification-system="https://doi.org" eas:scheme="DOI">10.17026/mocked-Iiib-z9p-4ywa</dc:identifier>
                     </emd:identifier>
                     <emd:source></emd:source>

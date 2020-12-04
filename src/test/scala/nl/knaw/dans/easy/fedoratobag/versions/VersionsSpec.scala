@@ -24,7 +24,7 @@ import org.scalamock.handlers.{ CallHandler1, CallHandler2 }
 import org.scalamock.scalatest.MockFactory
 import resource.{ DefaultManagedResource, ManagedResource }
 
-import scala.util.{ Success, Try }
+import scala.util.{ Failure, Success, Try }
 import scala.xml.Elem
 
 class VersionsSpec extends TestSupportFixture with MockFactory {
@@ -40,21 +40,32 @@ class VersionsSpec extends TestSupportFixture with MockFactory {
     def resolverExpects(id: String, returning: Try[String]): CallHandler1[String, Try[String]] =
       (resolver.getDatasetId(_: String)) expects id once() returning returning
   }
-  "self reference" should "not loop forever" in {
+  "findChains" should "not loop forever" in {
     val versions = new VersionsWithMocks {
-      resolverExpects("easy-dataset:1", returning = Success("easy-dataset:1"))
+      resolverExpects("easy-dataset:1", returning = Success("easy-dataset:1")) // for readVersionIfo
+      resolverExpects("easy-dataset:1", returning = Success("easy-dataset:1")) // for follow
       fedoraExpects("easy-dataset:1",
-        returning = <emd:easymetadata xmlns:eas={ VersionInfo.easNameSpace }>
-                      <emd:date><eas:dateSubmitted>2018-02-23</eas:dateSubmitted></emd:date>
+        returning = <emd:easymetadata>
                       <emd:relation><dct:hasVersion>easy-dataset:1</dct:hasVersion></emd:relation>
                     </emd:easymetadata>
       )
     }
-    versions.findChains(Seq("easy-dataset:1")) shouldBe
+    versions.findChains(Iterator("easy-dataset:1")) shouldBe
       Success(Seq(Seq("easy-dataset:1")))
   }
-
-  "findVersions" should "follow in both directions" in {
+  it should "not swallow unsafeGetOrThrow in follow" in {
+    val versions = new VersionsWithMocks {
+      resolverExpects("easy-dataset:1", returning = Success("easy-dataset:1")) // for readVersionIfo
+      resolverExpects("easy-dataset:1", returning = Failure(new Exception)) // for follow
+      fedoraExpects("easy-dataset:1",
+        returning = <emd:easymetadata>
+                      <emd:relation><dct:hasVersion>easy-dataset:1</dct:hasVersion></emd:relation>
+                    </emd:easymetadata>
+      )
+    }
+    versions.findChains(Iterator("easy-dataset:1")) shouldBe a[Failure[_]]
+  }
+  it should "follow in both directions" in {
     val emds = Seq(
       "easy-dataset:1" ->
         <emd:easymetadata xmlns:eas={ VersionInfo.easNameSpace }>
@@ -76,18 +87,31 @@ class VersionsSpec extends TestSupportFixture with MockFactory {
         <emd:easymetadata xmlns:eas={ VersionInfo.easNameSpace }>
           <emd:date><eas:dateSubmitted>2018-02-12</eas:dateSubmitted></emd:date>
         </emd:easymetadata>,
+      "easy-dataset:5" ->
+        <emd:easymetadata/>,
+      "easy-dataset:6" ->
+        <emd:easymetadata xmlns:eas={ VersionInfo.easNameSpace }>
+          <emd:relation><dct:isVersionOf>easy-dataset:3</dct:isVersionOf></emd:relation>
+        </emd:easymetadata>,
     )
     val versions = new VersionsWithMocks {
       Seq(
         "easy-dataset:1" -> "easy-dataset:1",
         "easy-dataset:2" -> "easy-dataset:2",
+        "easy-dataset:3" -> "easy-dataset:3",
+        "easy-dataset:5" -> "easy-dataset:5",
+        "easy-dataset:6" -> "easy-dataset:6",
         "urn:nbn:nl:ui:13-2ajw-cq" -> "easy-dataset:3",
         "10.17026/dans-zjf-522e" -> "easy-dataset:4",
       ).foreach { case (id, datasetId) => resolverExpects(id, Success(datasetId)) }
       emds.foreach { case (id, emd) => fedoraExpects(id, returning = emd) }
     }
 
-    versions.findChains(Seq("easy-dataset:1")) shouldBe
-      Success(Seq(Seq("easy-dataset:4", "easy-dataset:3", "easy-dataset:1", "easy-dataset:2")))
+    versions.findChains(Iterator("easy-dataset:1","easy-dataset:5","easy-dataset:6")) shouldBe
+      Success(Seq(
+        Seq("easy-dataset:4", "easy-dataset:3", "easy-dataset:1", "easy-dataset:2"),
+        Seq("easy-dataset:5"),
+        Seq("easy-dataset:6"), // TODO connection to first family not yet implemented
+      ))
   }
 }

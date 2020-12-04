@@ -19,6 +19,7 @@ import better.files.File
 import nl.knaw.dans.easy.fedoratobag.OutputFormat._
 import nl.knaw.dans.easy.fedoratobag.TransformationType._
 import nl.knaw.dans.easy.fedoratobag.filter._
+import nl.knaw.dans.easy.fedoratobag.versions.Versions
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
@@ -54,6 +55,9 @@ object Command extends App with DebugEnhancedLogging {
     val outputFormat = commandLine.outputFormat()
     (commandLine.transformation(), outputFormat) match {
       case (FEDORA_VERSIONED, SIP) if !europeana =>
+        new Versions(){
+          override val fedoraProvider: FedoraProvider = app.fedoraProvider
+        }.findChains(ids).foreach(println)
         ??? // TODO collect chains then call createExport in proper order DD-210
       case (ORIGINAL_VERSIONED, SIP) if !europeana =>
         printer.apply(app.createExport(ids, outputDir, Options(SimpleDatasetFilter(), commandLine), outputFormat))

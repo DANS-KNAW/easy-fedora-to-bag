@@ -16,74 +16,89 @@
 package nl.knaw.dans.easy.fedoratobag.versions
 
 import nl.knaw.dans.easy.fedoratobag.{ DatasetId, FedoraProvider }
+import nl.knaw.dans.lib.error._
+import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.collection.mutable
 import scala.util.{ Success, Try }
 import scala.xml.XML
 
-abstract class Versions() {
+abstract class Versions() extends DebugEnhancedLogging {
   val resolver: Resolver = Resolver()
   val fedoraProvider: FedoraProvider
 
-  private type Chain = mutable.Map[DatasetId, Long]
+  /* a submission date for each ID */
+  private type Family = mutable.Map[DatasetId, Long]
 
-  private val collectedIds: mutable.ListBuffer[String] = mutable.ListBuffer[String]()
-  private val collectedChains: mutable.ListBuffer[Chain] = mutable.ListBuffer[Chain]()
+  private type Members = mutable.ListBuffer[String]
 
-  def findChains(ids: Seq[DatasetId]): Try[Seq[Seq[String]]] = {
+  private val families: mutable.ListBuffer[Family] = mutable.ListBuffer[Family]()
+
+  /* 3 entries for each member of any family: a URN, DOI and DatasetId */
+  private val collectedIds = new Members()
+
+  def findChains(ids: Iterator[DatasetId]): Try[Seq[Seq[String]]] = {
     for {
       _ <- ids
         .withFilter(!collectedIds.contains(_))
-        .map(findVersions(_).map(collectedChains += _))
+        .map(findVersions)
         .find(_.isFailure)
         .getOrElse(Success())
-      chains = collectedChains.map(_.toSeq
+      chains = families.map(_.toSeq
         .sortBy { case (_, date) => date }
         .map { case (id, _) => id }
       )
     } yield chains
   }
 
-  private def findVersions(startDatasetId: DatasetId): Try[Chain] = {
-    val chain: Chain = mutable.Map[DatasetId, Long]()
+  private def findVersions(startDatasetId: DatasetId): Try[Members] = {
+    val family: Family = mutable.Map[DatasetId, Long]()
 
-    def readVersionInfo(datasetId: DatasetId): Try[VersionInfo] = for {
+    /* dataset IDs (no URN/DOI) of members related to this family found in other families */
+    val connections = new Members()
+
+    def readVersionInfo(anyId: String): Try[VersionInfo] = for {
+      datasetId <- resolver.getDatasetId(anyId)
       emd <- fedoraProvider
         .datastream(datasetId, "EMD")
         .map(XML.load)
         .tried
       versionInfo <- VersionInfo(emd)
-      _ = chain += datasetId -> versionInfo.submitted
+      _ = family += datasetId -> versionInfo.submitted
       _ = collectedIds ++= (versionInfo.self :+ datasetId).distinct
     } yield versionInfo
 
     def follow(ids: Seq[String], f: VersionInfo => Seq[String]): Try[Unit] = {
-      val freshIds = ids.filter(!collectedIds.contains(_))
-      if (freshIds.isEmpty) Success(())
-      else freshIds.map { id =>
+      val grouped = ids.groupBy(collectedIds.contains(_))
+
+      connections ++= grouped.get(true).toSeq.flatten
+        .map(resolver.getDatasetId(_).unsafeGetOrThrow)
+        .filterNot(family.contains)
+
+      // recursion
+      grouped.get(false).toSeq.flatten.map { id =>
         for {
-          datasetId <- resolver.getDatasetId(id)
-          _ = connectToPreviousChain(datasetId)
-          versionInfo <- readVersionInfo(datasetId)
+          versionInfo <- readVersionInfo(id)
           _ <- follow(f(versionInfo), f)
         } yield ()
       }.find(_.isFailure).getOrElse(Success(()))
     }
 
+    def log(): Unit = {
+      logger.info(family.mkString(
+        "Family: ",
+        ", ",
+        if (connections.isEmpty) ""
+        else connections.mkString("  Connections: ", ", ", "")
+      ))
+    }
+
     for {
-      datasetId <- resolver.getDatasetId(startDatasetId)
-      versionInfo <- readVersionInfo(datasetId)
+      versionInfo <- readVersionInfo(startDatasetId)
       _ <- follow(versionInfo.previous, _.previous)
       _ <- follow(versionInfo.next, _.next)
-    } yield chain
-  }
-
-  private def connectToPreviousChain(datasetId: String): Unit = {
-    if (collectedIds.contains(datasetId)) {
-      // TODO find existing chain
-      //  add to current chain
-      //  remove from collectedChains
-      //  NOTE: no need to read and follow
-    }
+      _ = log()
+      _ = families += family // TODO or connect with existing family
+    } yield connections
   }
 }

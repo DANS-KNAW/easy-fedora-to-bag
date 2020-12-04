@@ -107,11 +107,19 @@ class VersionsSpec extends TestSupportFixture with MockFactory {
       emds.foreach { case (id, emd) => fedoraExpects(id, returning = emd) }
     }
 
-    versions.findChains(Iterator("easy-dataset:1","easy-dataset:5","easy-dataset:6")) shouldBe
+    /* logs:
+     *
+     * INFO  Family: easy-dataset:2 -> 1577055600000, easy-dataset:1 -> 1550876400000, easy-dataset:4 -> 1518390000000, easy-dataset:3 -> 1521759600000
+     * WARN  Family: easy-dataset:5 -> -2208989972000
+     * WARN  Family: easy-dataset:6 -> -2208989972000 [1]  Connections: easy-dataset:3
+     *
+     * warnings in case of default dates (< 1970), see date calculation in VersionInfo.apply
+     * nn in "[nn] Connections" implies the number of set operations in Versions.findVersions.connect
+     */
+    versions.findChains(Iterator("easy-dataset:1", "easy-dataset:5", "easy-dataset:6")) shouldBe
       Success(Seq(
-        Seq("easy-dataset:4", "easy-dataset:3", "easy-dataset:1", "easy-dataset:2"),
         Seq("easy-dataset:5"),
-        Seq("easy-dataset:6"), // TODO connection to first family not yet implemented
+        Seq("easy-dataset:6", "easy-dataset:4", "easy-dataset:3", "easy-dataset:1", "easy-dataset:2"),
       ))
   }
 }

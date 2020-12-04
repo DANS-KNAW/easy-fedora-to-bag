@@ -43,7 +43,7 @@ abstract class Versions() extends DebugEnhancedLogging {
         .withFilter(!collectedIds.contains(_))
         .map(findVersions)
         .find(_.isFailure)
-        .getOrElse(Success())
+        .getOrElse(Success(()))
       chains = families.map(_.toSeq
         .sortBy { case (_, date) => date }
         .map { case (id, _) => id }
@@ -56,6 +56,16 @@ abstract class Versions() extends DebugEnhancedLogging {
 
     /* dataset IDs (no URN/DOI) of members related to this family found in other families */
     val connections = new Members()
+
+    def connect(): Unit = {
+      val connectedWith = families.filter(family =>
+        family.keySet.intersect(connections.toSet).nonEmpty
+      ) // not inline: changing while searching might require a specific order
+      connectedWith.foreach { oldFamily =>
+        families -= oldFamily
+        family ++= oldFamily
+      }
+    }
 
     def readVersionInfo(anyId: String): Try[VersionInfo] = for {
       datasetId <- resolver.getDatasetId(anyId)
@@ -85,12 +95,19 @@ abstract class Versions() extends DebugEnhancedLogging {
     }
 
     def log(): Unit = {
-      logger.info(family.mkString(
+      val msg = family.mkString(
         "Family: ",
         ", ",
         if (connections.isEmpty) ""
-        else connections.mkString("  Connections: ", ", ", "")
-      ))
+        else connections.mkString(
+          s" [${ family.size }] Connections: ",
+          ", ",
+          ""
+        )
+      )
+      if (family.values.exists(_ <= 0))
+        logger.warn(msg)
+      else logger.info(msg) // default dates: before 1970
     }
 
     for {
@@ -98,7 +115,8 @@ abstract class Versions() extends DebugEnhancedLogging {
       _ <- follow(versionInfo.previous, _.previous)
       _ <- follow(versionInfo.next, _.next)
       _ = log()
-      _ = families += family // TODO or connect with existing family
+      _ = if (connections.nonEmpty) connect()
+      _ = families += family
     } yield connections
   }
 }

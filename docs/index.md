@@ -90,6 +90,17 @@ The first bag will contain the content of the original folder.
 The second bag will be a Is-Version-Of of the first bag, and will contain the accessible files from the original folder, and all remaining files.  
 Two additional properties are added to the bag-info.txt, Base-URN and Base-Doi, denoting the urn:nbn and doi of the first version
 
+### fedora-versioned
+A fedora-versioned transformation takes several dataset-ids that are meant to be versions of each other, and creates a bag-sequence in the given order.
+The `input-file` should contain a list of dataset-ids, in the correct order, first version first.
+Two additional properties are added to the bag-info.txt, Base-URN and Base-Doi, denoting the urn:nbn and doi of the first version.
+
+Omitting the option `output-dir` implies a dry run.
+In that case the CSV file will have one bag-sequence per line.
+Each line contains the dataset-ids of the sequence as far as found.
+A sequence may be incomplete if none of the datasets in the sequence
+references the dataset, and the dataset is also not in the input.
+
 INSTALLATION AND CONFIGURATION
 ------------------------------
 Currently this project is build only as an RPM package for RHEL7/CentOS7 and later. The RPM will install the binaries to

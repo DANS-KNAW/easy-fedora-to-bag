@@ -19,7 +19,7 @@ import java.nio.file.{ Path, Paths }
 
 import better.files.File
 import nl.knaw.dans.easy.fedoratobag.OutputFormat.OutputFormat
-import nl.knaw.dans.easy.fedoratobag.TransformationType.TransformationType
+import nl.knaw.dans.easy.fedoratobag.TransformationType.{ FEDORA_VERSIONED, TransformationType }
 import org.rogach.scallop.{ ScallopConf, ScallopOption, ValueConverter, singleArgConverter }
 
 import scala.xml.Properties
@@ -55,7 +55,7 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   private val inputPath: ScallopOption[Path] = opt(name = "input-file", short = 'i',
     descr = "File containing a newline-separated list of easy-dataset-ids to be transformed. Use either this or the dataset-id argument")
   val inputFile: ScallopOption[File] = inputPath.map(File(_))
-  private val outputDirPath: ScallopOption[Path] = opt(name = "output-dir", short = 'o', required = true,
+  private val outputDirPath: ScallopOption[Path] = opt(name = "output-dir", short = 'o',
     descr = "Empty directory in which to stage the created IPs. It will be created if it doesn't exist.")
   val outputDir: ScallopOption[File] = outputDirPath.map(File(_))
   val outputFormat: ScallopOption[OutputFormat] = opt(name = "output-format", short = 'f',
@@ -68,24 +68,31 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
     descr = "If provided, the transformation will check whether the datasets adhere to the requirements of the chosen transformation.")
   val europeana: ScallopOption[Boolean] = opt(name = "europeana", short = 'e',
     descr = "If provided, only the largest pdf/image will selected as payload.")
-  val transformation: ScallopOption[TransformationType] = trailArg(name = "transformation",
+  val transformation: ScallopOption[TransformationType] = trailArg(name = "transformation", required = true,
     descr = TransformationType.values.mkString("The type of transformation used: ", ", ", "."))
 
   validatePathExists(inputPath)
   validatePathIsFile(inputPath)
 
-  validate(outputDir)(dir => {
-    if (dir.exists) {
-      if (!dir.isDirectory) Left(s"outputDir $dir does not reference a directory")
-      else if (dir.nonEmpty) Left(s"outputDir $dir exists but is not an empty directory")
-           else if (!dir.isWriteable) Left(s"outputDir $dir exists and is empty but is not writeable by the current user")
-                else Right(())
-    }
-    else {
-      dir.createDirectories()
-      Right(())
-    }
-  })
+  // requireOne(datasetId, inputFile)
+  // codependent(outputFormat, outputDir)
+  validateOpt(transformation, outputDir) {
+    case (None, _) => Left(s"trailing argument 'transformation' is mandatory")
+    case (Some(FEDORA_VERSIONED), None) => Right(())
+    case (Some(FEDORA_VERSIONED), Some(dir)) => Left(s"argument output-dir [$dir] is not yet implemented for $FEDORA_VERSIONED")
+    case (Some(t), None) => Left(s"argument 'output-dir' is mandatory for $t")
+    case (_, Some(dir)) =>
+      if (dir.exists) {
+        if (!dir.isDirectory) Left(s"output-dir $dir does not reference a directory")
+        else if (dir.nonEmpty) Left(s"output-dir $dir exists but is not an empty directory")
+             else if (!dir.isWriteable) Left(s"output-dir $dir exists and is empty but is not writeable by the current user")
+                  else Right(())
+      }
+      else {
+        dir.createDirectories()
+        Right(())
+      }
+  }
 
   footer("")
 }

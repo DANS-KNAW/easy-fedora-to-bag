@@ -57,8 +57,14 @@ object Command extends App with DebugEnhancedLogging {
       case (FEDORA_VERSIONED, SIP) if !europeana =>
         new Versions(){
           override val fedoraProvider: FedoraProvider = app.fedoraProvider
-        }.findChains(ids).foreach(println)
-        ??? // TODO collect chains then call createExport in proper order DD-210
+        }.findChains(ids).map { families =>
+          commandLine.logFile().writeText(
+            families
+              .map(_.mkString(","))
+              .mkString("","\n","\n")
+          )
+          s"DRY RUN --- producing IDs of bag sequences per CSV line"
+        }
       case (ORIGINAL_VERSIONED, SIP) if !europeana =>
         printer.apply(app.createExport(ids, outputDir, Options(SimpleDatasetFilter(), commandLine), outputFormat))
       case (SIMPLE, SIP) =>

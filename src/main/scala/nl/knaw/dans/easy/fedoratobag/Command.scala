@@ -50,31 +50,28 @@ object Command extends App with DebugEnhancedLogging {
       )
     lazy val outputDir = commandLine.outputDir()
     lazy val europeana = commandLine.europeana()
+    lazy val outputFormat = commandLine.outputFormat()
     lazy val printer = CsvRecord.printer(commandLine.logFile())
-
-    val outputFormat = commandLine.outputFormat()
-    (commandLine.transformation(), outputFormat) match {
-      case (FEDORA_VERSIONED, SIP) if !europeana =>
-        new Versions(){
+    commandLine.transformation() match {
+      case FEDORA_VERSIONED if commandLine.outputDir.isSupplied =>
+        Failure(new NotImplementedError(s"only DRY RUN implemented for $FEDORA_VERSIONED"))
+      case FEDORA_VERSIONED if !europeana =>
+        new Versions() {
           override val fedoraProvider: FedoraProvider = app.fedoraProvider
         }.findChains(ids).map { families =>
-          commandLine.logFile().writeText(
-            families
-              .map(_.mkString(","))
-              .mkString("","\n","\n")
-          )
-          s"DRY RUN --- producing IDs of bag sequences per CSV line"
+          commandLine.logFile().printLines(families.map(_.mkString(",")))
+          s"DRY RUN --- produced IDs of bag sequences per CSV line"
         }
-      case (ORIGINAL_VERSIONED, SIP) if !europeana =>
+      case ORIGINAL_VERSIONED if outputFormat == SIP && !europeana =>
         printer.apply(app.createExport(ids, outputDir, Options(SimpleDatasetFilter(), commandLine), outputFormat))
-      case (SIMPLE, SIP) =>
+      case SIMPLE if outputFormat == SIP =>
         printer.apply(app.createExport(ids, outputDir, Options(SimpleDatasetFilter(), commandLine), outputFormat))
-      case (SIMPLE, AIP) =>
+      case SIMPLE if outputFormat == AIP =>
         printer.apply(app.createExport(ids, outputDir, Options(SimpleDatasetFilter(app.bagIndex), commandLine), outputFormat))
-      case (THEMA, AIP) =>
+      case THEMA if outputFormat == AIP =>
         printer.apply(app.createExport(ids, outputDir, Options(ThemaDatasetFilter(app.bagIndex), commandLine), outputFormat))
-      case tuple =>
-        Failure(new NotImplementedError(s"$tuple/europeana==$europeana not implemented"))
+      case transformation =>
+        Failure(new NotImplementedError(s"${commandLine.args} not implemented"))
     }
   }.map(msg => s"$msg, for details see ${ commandLine.logFile().toJava.getAbsolutePath }")
 }

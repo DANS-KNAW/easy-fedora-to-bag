@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.easy.fedoratobag
 
-import java.nio.file.{ Path, Paths }
+import java.nio.file.Paths
 
 import better.files.File
 import nl.knaw.dans.easy.fedoratobag.OutputFormat.OutputFormat
@@ -49,21 +49,19 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
 
   implicit val transformationTypeConverter: ValueConverter[TransformationType] = singleArgConverter(TransformationType.withName)
   implicit val outputFormatConverter: ValueConverter[OutputFormat] = singleArgConverter(OutputFormat.withName)
+  implicit val fileConverter: ValueConverter[File] = singleArgConverter(File(_))
 
   val datasetId: ScallopOption[DatasetId] = opt(name = "datasetId", short = 'd',
     descr = "A single easy-dataset-id to be transformed. Use either this or the input-file argument")
-  private val inputPath: ScallopOption[Path] = opt(name = "input-file", short = 'i',
+  val inputFile: ScallopOption[File] = opt(name = "input-file", short = 'i',
     descr = "File containing a newline-separated list of easy-dataset-ids to be transformed. Use either this or the dataset-id argument")
-  val inputFile: ScallopOption[File] = inputPath.map(File(_))
-  private val outputDirPath: ScallopOption[Path] = opt(name = "output-dir", short = 'o',
+  val outputDir: ScallopOption[File] = opt(name = "output-dir", short = 'o',
     descr = "Empty directory in which to stage the created IPs. It will be created if it doesn't exist.")
-  val outputDir: ScallopOption[File] = outputDirPath.map(File(_))
   val outputFormat: ScallopOption[OutputFormat] = opt(name = "output-format", short = 'f',
     descr = OutputFormat.values.mkString("Output format: ", ", ", ". 'SIP' is only implemented for simple, it creates the bags one directory level deeper. easy-bag-to-deposit completes these sips with deposit.properties"))
-  private val logFilePath: ScallopOption[Path] = opt(name = "log-file", short = 'l',
+  val logFile: ScallopOption[File] = opt(name = "log-file", short = 'l',
     descr = s"The name of the logfile in csv format. If not provided a file $printedName-<timestamp>.csv will be created in the home-dir of the user.",
     default = Some(Paths.get(Properties.userHome).resolve(s"$printedName-$now.csv")))
-  val logFile: ScallopOption[File] = logFilePath.map(File(_))
   val strictMode: ScallopOption[Boolean] = opt(name = "strict", short = 's',
     descr = "If provided, the transformation will check whether the datasets adhere to the requirements of the chosen transformation.")
   val europeana: ScallopOption[Boolean] = opt(name = "europeana", short = 'e',
@@ -71,15 +69,19 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   val transformation: ScallopOption[TransformationType] = trailArg(name = "transformation", required = true,
     descr = TransformationType.values.mkString("The type of transformation used: ", ", ", "."))
 
-  validatePathExists(inputPath)
-  validatePathIsFile(inputPath)
-
-  // requireOne(datasetId, inputFile)
-  // codependent(outputFormat, outputDir)
+  requireOne(datasetId, inputFile)
+  validateOpt(inputFile) {
+    case Some(f) if !f.toJava.isFile => Left(s"$f does not exist or is not a file")
+    case _ => Right(())
+  }
+  validateOpt(logFile) {
+    case Some(f) if f.exists => Left(s"$f should not exist")
+    case _ => Right(())
+  }
+  codependent(outputFormat, outputDir)
   validateOpt(transformation, outputDir) {
-    case (None, _) => Left(s"trailing argument 'transformation' is mandatory")
-    case (Some(FEDORA_VERSIONED), None) => Right(())
-    case (Some(FEDORA_VERSIONED), Some(dir)) => Left(s"argument output-dir [$dir] is not yet implemented for $FEDORA_VERSIONED")
+    case (None, _) => Left(s"trailing argument 'transformation' is mandatory") // required so won't happen
+    case (Some(FEDORA_VERSIONED), _) => Right(())
     case (Some(t), None) => Left(s"argument 'output-dir' is mandatory for $t")
     case (_, Some(dir)) =>
       if (dir.exists) {

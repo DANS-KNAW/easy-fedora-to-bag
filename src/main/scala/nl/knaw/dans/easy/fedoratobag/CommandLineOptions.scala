@@ -69,7 +69,7 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   val transformation: ScallopOption[TransformationType] = trailArg(name = "transformation", required = true,
     descr = TransformationType.values.mkString("The type of transformation used: ", ", ", "."))
 
-  requireOne(datasetId, inputFile)
+  conflicts(datasetId, List(inputFile))
   validateOpt(inputFile) {
     case Some(f) if !f.toJava.isFile => Left(s"$f does not exist or is not a file")
     case _ => Right(())
@@ -81,6 +81,7 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   codependent(outputFormat, outputDir)
   validateOpt(transformation, outputDir) {
     case (None, _) => Left(s"trailing argument 'transformation' is mandatory") // required so won't happen
+    case (Some(FEDORA_VERSIONED), _) if inputFile.isEmpty => Left(s"argument 'input-file' is mandatory for $FEDORA_VERSIONED")
     case (Some(FEDORA_VERSIONED), _) => Right(())
     case (Some(t), None) => Left(s"argument 'output-dir' is mandatory for $t")
     case (_, Some(dir)) =>

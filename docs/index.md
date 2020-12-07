@@ -109,9 +109,8 @@ Two additional properties are added to the bag-info.txt, Base-URN and Base-Doi, 
 
 Omitting the option `output-dir` implies a dry run.
 In that case the CSV file will have one bag-sequence per line.
-Each line contains the dataset-ids of the sequence as far as found.
-A sequence may be incomplete if none of the datasets in the sequence
-references the dataset, and the dataset is also not in the input.
+A sequence may contain datasets not in the input if referenced by datasets in the input.
+Datasets not in the input that reference a sequence but are not referenced by a sequence won't appear.
 
 INSTALLATION AND CONFIGURATION
 ------------------------------

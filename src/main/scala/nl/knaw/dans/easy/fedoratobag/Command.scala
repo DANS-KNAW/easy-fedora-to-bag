@@ -70,7 +70,7 @@ object Command extends App with DebugEnhancedLogging {
         printer.apply(app.createExport(ids, outputDir, Options(SimpleDatasetFilter(app.bagIndex), commandLine), outputFormat))
       case THEMA if outputFormat == AIP =>
         printer.apply(app.createExport(ids, outputDir, Options(ThemaDatasetFilter(app.bagIndex), commandLine), outputFormat))
-      case transformation =>
+      case _ =>
         Failure(new NotImplementedError(s"${commandLine.args} not implemented"))
     }
   }.map(msg => s"$msg, for details see ${ commandLine.logFile().toJava.getAbsolutePath }")

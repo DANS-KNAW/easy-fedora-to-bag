@@ -17,7 +17,7 @@ package nl.knaw.dans.easy.fedoratobag.versions
 
 import scalaj.http.Http
 
-import scala.util.{ Success, Try }
+import scala.util.{ Failure, Success, Try }
 
 case class Resolver() {
 
@@ -26,6 +26,7 @@ case class Resolver() {
       case "eas" => Success(id)
       case "urn" => resolve(s"http://www.persistent-identifier.nl/?identifier=$id")
       case "10." => resolve(s"https://doi.org/$id")
+      case id => Failure(new IllegalArgumentException(s"not expected type of ID for a dataset: $id"))
     }
   }
 

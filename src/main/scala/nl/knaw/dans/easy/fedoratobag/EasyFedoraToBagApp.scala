@@ -29,11 +29,11 @@ import javax.naming.ldap.InitialLdapContext
 import nl.knaw.dans.bag.ChecksumAlgorithm
 import nl.knaw.dans.bag.v0.DansV0Bag
 import nl.knaw.dans.easy.fedoratobag.Command.FeedBackMessage
-import nl.knaw.dans.easy.fedoratobag.filter.FileFilterType.{ LARGEST_IMAGE, _ }
 import nl.knaw.dans.easy.fedoratobag.FileItem.{ checkNotImplemented, filesXml }
 import nl.knaw.dans.easy.fedoratobag.FoXml.{ getEmd, _ }
 import nl.knaw.dans.easy.fedoratobag.OutputFormat.OutputFormat
 import nl.knaw.dans.easy.fedoratobag.TransformationType._
+import nl.knaw.dans.easy.fedoratobag.filter.FileFilterType.{ LARGEST_IMAGE, _ }
 import nl.knaw.dans.easy.fedoratobag.filter._
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging

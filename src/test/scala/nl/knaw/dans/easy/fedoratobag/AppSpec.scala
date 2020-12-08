@@ -63,8 +63,8 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
     // make almost private methods available for tests
 
-    override def createFirstBag(datasetId: DatasetId, bagDir: File, options: Options): Try[DatasetInfo] =
-      super.createFirstBag(datasetId, bagDir, options)
+    override def createBag(datasetId: DatasetId, bagDir: File, options: Options, firstVersionInfo: Option[VersionInfo] = None): Try[DatasetInfo] =
+      super.createBag(datasetId, bagDir, options)
   }
 
   "createExport" should "produce two bags" in {
@@ -164,7 +164,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
     val uuid = UUID.randomUUID
     val bagDir = testDir / "bags" / uuid.toString
-    app.createFirstBag("easy-dataset:17", bagDir, Options(app.filter, strict = false)) shouldBe
+    app.createBag("easy-dataset:17", bagDir, Options(app.filter, strict = false)) shouldBe
       Failure(NoPayloadFilesException())
 
     // post conditions
@@ -194,7 +194,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
     val uuid = UUID.randomUUID
     val bagDir = testDir / "bags" / uuid.toString
-    app.createFirstBag("easy-dataset:17", bagDir, Options(app.filter)) should matchPattern {
+    app.createBag("easy-dataset:17", bagDir, Options(app.filter)) should matchPattern {
       case Failure(_: InvalidTransformationException) =>
     }
     (testDir / "bags") shouldNot exist
@@ -221,8 +221,8 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
     val uuid = UUID.randomUUID
     val bagDir = testDir / "bags" / uuid.toString
-    app.createFirstBag("easy-dataset:13", bagDir, Options(app.filter)) shouldBe
-      Success(DatasetInfo(None, "10.17026/mocked-Iiib-z9p-4ywa","urn:nbn:nl:ui:13-blablabla", "user001", Seq.empty))
+    app.createBag("easy-dataset:13", bagDir, Options(app.filter)) shouldBe
+      Success(DatasetInfo(None, "10.17026/mocked-Iiib-z9p-4ywa", "urn:nbn:nl:ui:13-blablabla", "user001", Seq.empty))
 
     // post conditions
 
@@ -264,7 +264,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     // end of mocking
 
     val bagDir = testDir / "bags" / UUID.randomUUID.toString
-    app.createFirstBag("easy-dataset:13", bagDir, Options(app.filter)) should matchPattern {
+    app.createBag("easy-dataset:13", bagDir, Options(app.filter)) should matchPattern {
       case Failure(e) if e.getMessage == "easy-file:35 <visibleTo> not found" =>
     }
   }
@@ -293,7 +293,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     // end of mocking
 
     val bagDir = testDir / "bags" / UUID.randomUUID.toString
-    val triedRecord = app.createFirstBag("easy-dataset:13", bagDir, Options(app.filter))
+    val triedRecord = app.createBag("easy-dataset:13", bagDir, Options(app.filter))
     triedRecord shouldBe a[Success[_]]
     (bagDir / "data").listRecursively.toList.map(_.name) should
       contain theSameElementsAs List("original", "c.txt", "b.txt", "a.txt")
@@ -322,7 +322,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     // end of mocking
 
     val bagDir = testDir / "bags" / UUID.randomUUID.toString
-    app.createFirstBag("easy-dataset:13", bagDir, Options(app.filter, europeana = true)) shouldBe a[Success[_]]
+    app.createBag("easy-dataset:13", bagDir, Options(app.filter, europeana = true)) shouldBe a[Success[_]]
     (bagDir / "data").listRecursively.toList.map(_.name) should
       contain theSameElementsAs List("original", "c.png")
   }
@@ -350,7 +350,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     // end of mocking
 
     val bagDir = testDir / "bags" / UUID.randomUUID.toString
-    app.createFirstBag("easy-dataset:13", bagDir, Options(app.filter, europeana = true)) shouldBe a[Success[_]]
+    app.createBag("easy-dataset:13", bagDir, Options(app.filter, europeana = true)) shouldBe a[Success[_]]
     (bagDir / "data").listRecursively.toList.map(_.name) should
       contain theSameElementsAs List("original", "c.pdf")
   }
@@ -380,7 +380,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     // end of mocking
 
     val bagDir = testDir / "bags" / UUID.randomUUID.toString
-    app.createFirstBag("easy-dataset:13", bagDir, Options(app.filter, transformationType = ORIGINAL_VERSIONED))
+    app.createBag("easy-dataset:13", bagDir, Options(app.filter, transformationType = ORIGINAL_VERSIONED))
       .map(_.nextFileInfos.map(_.path.toString).sortBy(identity)) shouldBe
       Success(Vector("original/b.pdf", "original/c.pdf", "x/a.txt", "x/e.png"))
 
@@ -406,7 +406,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     // end of mocking
 
     val bagDir = testDir / "bags" / UUID.randomUUID.toString
-    app.createFirstBag("easy-dataset:13", bagDir, Options(app.filter, europeana = true)) shouldBe
+    app.createBag("easy-dataset:13", bagDir, Options(app.filter, europeana = true)) shouldBe
       Failure(NoPayloadFilesException())
   }
 }

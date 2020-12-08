@@ -53,14 +53,46 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
   private lazy val ldap = new Ldap(ldapContext)
   private val emdUnmarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
 
+  def createSequences(lines: Iterator[String], outputDir: File)(printer: CSVPrinter): Try[FeedBackMessage] = {
+
+    val options = new Options(SequenceFilter(), FEDORA_VERSIONED, strict = false)
+
+    def exportBag(firstVersion: Option[VersionInfo])(datasetId: DatasetId) = {
+      // TODO this duplicates half of createExport but we need to return firstVersionInfo
+      //  while createExport loops over multiple dataset-IDs and
+      //  mixes the result of create/move of the 2nd bag into CsvRecord
+      val packageUUID = UUID.randomUUID
+      val packageDir = configuration.stagingDir / packageUUID.toString
+      val tried = for {
+        datasetInfo <- createBag(datasetId, packageDir / UUID.randomUUID.toString, options, firstVersion)
+        _ <- movePackageAtomically(packageDir, outputDir)
+        thisVersionInfo = VersionInfo(datasetInfo, packageUUID)
+        csv = firstVersion
+          .map(f => CsvRecord(datasetId, datasetInfo, f.packageId, Some(packageUUID), options))
+          .getOrElse(CsvRecord(datasetId, datasetInfo, packageUUID, None, options))
+      } yield (thisVersionInfo, csv)
+      errorHandling(tried.map(_._2), printer, datasetId, packageDir)
+      tried.map(_._1)
+    }
+
+    def exportNextBags(ids: Array[Depositor])(firstVersionInfo: VersionInfo) = {
+      ids
+        .map(exportBag(Some(firstVersionInfo)))
+        .toSeq
+        .failFastOr(Success(()))
+    }
+
+    lines.map { line =>
+      val ids = line.split(",")
+      ids.headOption.map(
+        exportBag(None)(_)
+          .flatMap(exportNextBags(ids.tail))
+      ).getOrElse(Success(()))
+    }.failFastOr(Success("no fedora/IO errors"))
+  }
+
   def createExport(input: Iterator[DatasetId], outputDir: File, options: Options, outputFormat: OutputFormat)
                   (printer: CSVPrinter): Try[FeedBackMessage] = input.map { datasetId =>
-
-    def movePackageAtomically(packageDir: File) = {
-      val target = outputDir / packageDir.name
-      debug(s"Moving $outputFormat to output dir: $target")
-      Try(packageDir.moveTo(target)(CopyOptions.atomically))
-    }
 
     def bagDir(packageDir: File) = outputFormat match {
       case OutputFormat.AIP => packageDir
@@ -73,16 +105,22 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     val packageDir2 = configuration.stagingDir / packageUuid2.toString
     val bagDir1 = bagDir(packageDir1)
     val triedCsvRecord = for {
-      datasetInfo <- createFirstBag(datasetId, bagDir1, options)
+      datasetInfo <- createBag(datasetId, bagDir1, options)
       maybeBagDir2 = if (datasetInfo.nextFileInfos.isEmpty) None
                      else Some(bagDir(packageDir2))
       _ <- maybeBagDir2.map(createSecondBag(datasetInfo, bagDir1, packageUuid1)).getOrElse(Success(()))
       // the 2nd bag is moved first, thus a next process has a chance to stumble over a missing first bag in case of interrupts
-      _ <- maybeBagDir2.map(_ => movePackageAtomically(packageDir2)).getOrElse(Success(()))
-      _ <- movePackageAtomically(packageDir1)
+      _ <- maybeBagDir2.map(_ => movePackageAtomically(packageDir2, outputDir)).getOrElse(Success(()))
+      _ <- movePackageAtomically(packageDir1, outputDir)
     } yield CsvRecord(datasetId, datasetInfo, packageUuid1, maybeBagDir2.map(_ => packageUuid2), options)
     errorHandling(triedCsvRecord, printer, datasetId, packageDir1)
   }.failFastOr(Success("no fedora/IO errors"))
+
+  private def movePackageAtomically(packageDir: File, outputDir: File) = {
+    val target = outputDir / packageDir.name
+    debug(s"Moving $packageDir to output dir: $target")
+    Try(packageDir.moveTo(target)(CopyOptions.atomically))
+  }
 
   private def errorHandling(triedCsvRecord: Try[CsvRecord], printer: CSVPrinter, datasetId: DatasetId, packageDir: File) = {
     triedCsvRecord
@@ -131,7 +169,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     } yield ()
   }
 
-  protected[EasyFedoraToBagApp] def createFirstBag(datasetId: DatasetId, bagDir: File, options: Options): Try[DatasetInfo] = {
+  protected[EasyFedoraToBagApp] def createBag(datasetId: DatasetId, bagDir: File, options: Options, firstVersionInfo: Option[VersionInfo] = None): Try[DatasetInfo] = {
 
     def managedMetadataStream(foXml: Elem, streamId: String, bag: DansV0Bag, metadataFile: String) = {
       managedStreamLabel(foXml, streamId)
@@ -158,7 +196,8 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       _ = if (options.strict) maybeFilterViolations.foreach(msg => throw InvalidTransformationException(msg))
       _ = logger.info(s"Creating $bagDir from $datasetId with owner $depositor")
       bag <- DansV0Bag.empty(bagDir)
-        .map(_.withEasyUserAccount(depositor).withCreated(DateTime.now()))
+      _ = bag.withEasyUserAccount(depositor).withCreated(DateTime.now())
+      _ = firstVersionInfo.map(_.addVersionOf(bag))
       _ <- addXmlMetadataTo(bag, "emd.xml")(emdXml)
       _ <- addXmlMetadataTo(bag, "amd.xml")(amd)
       _ <- getDdm(foXml)

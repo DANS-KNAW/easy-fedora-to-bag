@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.fedoratobag
+package nl.knaw.dans.easy.fedoratobag.filter
 
-case class DatasetInfo(maybeFilterViolations: Option[String],
-                       doi: String,
-                       urn: String,
-                       depositor: Depositor,
-                       nextFileInfos: Seq[FileInfo],
-                      )
+import scala.xml.Node
+
+case class SequenceFilter() extends SimpleDatasetFilter {
+  override def findDansRelations(ddm: Node): Seq[Node] = Seq.empty
+}

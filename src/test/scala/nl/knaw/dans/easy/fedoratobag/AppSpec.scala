@@ -23,6 +23,7 @@ import javax.naming.NamingEnumeration
 import javax.naming.directory.{ BasicAttributes, SearchControls, SearchResult }
 import javax.naming.ldap.InitialLdapContext
 import nl.knaw.dans.easy.fedoratobag.OutputFormat.SIP
+import nl.knaw.dans.easy.fedoratobag.TransformationType.ORIGINAL_VERSIONED
 import nl.knaw.dans.easy.fedoratobag.filter.{ BagIndex, InvalidTransformationException, SimpleDatasetFilter }
 import nl.knaw.dans.easy.fedoratobag.fixture._
 import org.scalamock.scalatest.MockFactory
@@ -96,12 +97,12 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     app.createExport(
       Iterator("easy-dataset:17"),
       (testDir / "output").createDirectories,
-      Options(SimpleDatasetFilter(), originalVersioning = true),
+      new Options(SimpleDatasetFilter(), ORIGINAL_VERSIONED),
       SIP
     )(CsvRecord.csvFormat.print(sw)) shouldBe Success("no fedora/IO errors")
     sw.toString should fullyMatch regex
       """easyDatasetId,uuid1,uuid2,doi,depositor,transformationType,comment
-        |easy-dataset:17,.*,10.17026/test-Iiib-z9p-4ywa,user001,simple,OK
+        |easy-dataset:17,.*,10.17026/test-Iiib-z9p-4ywa,user001,original-versioned,OK
         |""".stripMargin
   }
 
@@ -379,7 +380,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     // end of mocking
 
     val bagDir = testDir / "bags" / UUID.randomUUID.toString
-    app.createFirstBag("easy-dataset:13", bagDir, Options(app.filter, originalVersioning = true))
+    app.createFirstBag("easy-dataset:13", bagDir, Options(app.filter, transformationType = ORIGINAL_VERSIONED))
       .map(_.nextFileInfos.map(_.path.toString).sortBy(identity)) shouldBe
       Success(Vector("original/b.pdf", "original/c.pdf", "x/a.txt", "x/e.png"))
 

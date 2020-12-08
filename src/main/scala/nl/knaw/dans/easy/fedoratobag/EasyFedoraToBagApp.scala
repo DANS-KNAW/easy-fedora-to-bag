@@ -80,15 +80,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       // the 2nd bag is moved first, thus a next process has a chance to stumble over a missing first bag in case of interrupts
       _ <- maybeBagDir2.map(_ => movePackageAtomically(packageDir2)).getOrElse(Success(()))
       _ <- movePackageAtomically(packageDir1)
-    } yield CsvRecord(
-      datasetId,
-      packageUuid1,
-      maybeBagDir2.map(_ => packageUuid2),
-      datasetInfo.doi,
-      datasetInfo.depositor,
-      transformationType = datasetInfo.maybeFilterViolations.map(_ => "not strict simple").getOrElse(SIMPLE.toString),
-      datasetInfo.maybeFilterViolations.getOrElse("OK"),
-    )
+    } yield CsvRecord(datasetId, datasetInfo, packageUuid1, maybeBagDir2.map(_ => packageUuid2), options)
     errorHandling(triedCsvRecord, printer, datasetId, packageDir1)
   }.failFastOr(Success("no fedora/IO errors"))
 
@@ -196,7 +188,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       doi = emd.getEmdIdentifier.getDansManagedDoi
       urn = getUrn(datasetId, emd)
       nextFileInfos = if (maybeFilterViolations.nonEmpty && options.strict) Seq.empty
-                      else getNextFileInfos(allFileInfos, firstFileInfos, options.originalVersioning)
+                      else getNextFileInfos(allFileInfos, firstFileInfos, options.transformationType == ORIGINAL_VERSIONED)
     } yield DatasetInfo(maybeFilterViolations, doi, urn, depositor, nextFileInfos)
   }
 

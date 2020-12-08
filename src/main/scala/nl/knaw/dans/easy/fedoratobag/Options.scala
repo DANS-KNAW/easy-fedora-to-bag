@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.easy.fedoratobag
 
-import nl.knaw.dans.easy.fedoratobag.TransformationType.ORIGINAL_VERSIONED
+import nl.knaw.dans.easy.fedoratobag.TransformationType.{ ORIGINAL_VERSIONED, SIMPLE, TransformationType }
 import nl.knaw.dans.easy.fedoratobag.filter.DatasetFilter
 import nl.knaw.dans.easy.fedoratobag.filter.FileFilterType._
 
@@ -23,23 +23,21 @@ import scala.xml.Node
 
 /**
  *
- * @param datasetFilter      which datasets are allowed for export
- * @param strict             if false: violation of the datasetFilter only cause a warning
- * @param europeana          if true: export only the largest PDF or image
- * @param originalVersioning if true: export two bags, the first with original files only;
- *                           not in combination with europeana
+ * @param datasetFilter which datasets are allowed for export
+ * @param strict        if false: violation of the datasetFilter only cause a warning
+ * @param europeana     if true: export only the largest PDF or image
  */
 case class Options(datasetFilter: DatasetFilter,
+                   transformationType: TransformationType = SIMPLE,
                    strict: Boolean = true,
                    europeana: Boolean = false,
-                   originalVersioning: Boolean = false,
                   ) {
   private def isDCMI(node: Node) = node
     .attribute("http://easy.dans.knaw.nl/easy/easymetadata/eas/", "scheme")
     .exists(_.text == "DCMI")
 
   def firstFileFilter(emd: Node): FileFilterType = {
-    if (originalVersioning) ORIGINAL_FILES
+    if (transformationType == ORIGINAL_VERSIONED) ORIGINAL_FILES
     else if (!europeana) ALL_FILES
          else {
            val dcmiType = (emd \ "type" \ "type").filter(isDCMI)
@@ -51,10 +49,10 @@ case class Options(datasetFilter: DatasetFilter,
 object Options {
   def apply(datasetFilter: DatasetFilter, commandLine: CommandLineOptions): Options = {
     Options(
-      datasetFilter: DatasetFilter,
+      datasetFilter,
+      commandLine.transformation(),
       commandLine.strictMode(),
       commandLine.europeana(),
-      originalVersioning = commandLine.transformation() == ORIGINAL_VERSIONED,
     )
   }
 }

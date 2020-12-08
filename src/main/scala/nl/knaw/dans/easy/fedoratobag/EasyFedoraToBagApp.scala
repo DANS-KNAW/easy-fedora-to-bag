@@ -67,9 +67,9 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
         datasetInfo <- createBag(datasetId, packageDir / UUID.randomUUID.toString, options, firstVersion)
         _ <- movePackageAtomically(packageDir, outputDir)
         thisVersionInfo = VersionInfo(datasetInfo, packageUUID)
-        csv = firstVersion
-          .map(f => CsvRecord(datasetId, datasetInfo, f.packageId, Some(packageUUID), options))
-          .getOrElse(CsvRecord(datasetId, datasetInfo, packageUUID, None, options))
+        uuid1 = firstVersion.map(_.packageId).getOrElse(packageUUID)
+        uuid2 = firstVersion.map(_ => packageUUID)
+        csv = CsvRecord(datasetId, datasetInfo, uuid1, uuid2, options)
       } yield (thisVersionInfo, csv)
       errorHandling(tried.map(_._2), printer, datasetId, packageDir)
       tried.map(_._1)
@@ -169,7 +169,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     } yield ()
   }
 
-  protected[EasyFedoraToBagApp] def createBag(datasetId: DatasetId, bagDir: File, options: Options, firstVersionInfo: Option[VersionInfo] = None): Try[DatasetInfo] = {
+  def createBag(datasetId: DatasetId, bagDir: File, options: Options, firstVersionInfo: Option[VersionInfo] = None): Try[DatasetInfo] = {
 
     def managedMetadataStream(foXml: Elem, streamId: String, bag: DansV0Bag, metadataFile: String) = {
       managedStreamLabel(foXml, streamId)

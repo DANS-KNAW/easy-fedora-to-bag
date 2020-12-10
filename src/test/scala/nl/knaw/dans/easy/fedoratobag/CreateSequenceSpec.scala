@@ -60,7 +60,7 @@ class CreateSequenceSpec extends TestSupportFixture with MockFactory with FileFo
   "createSequences" should " process 2 sequences" in {
     val sw = new StringWriter()
     val exportBagExpects = (1 to 5).map(i =>
-      s"easy-dataset:$i" -> Success(DatasetInfo(None, "mocked-doi", "mocked-urn", "user001", Seq.empty))
+      s"easy-dataset:$i" -> Success(DatasetInfo(None, "mocked-doi", "mocked-urn", "user001"))
     )
     // end of mocking
 
@@ -108,11 +108,14 @@ class CreateSequenceSpec extends TestSupportFixture with MockFactory with FileFo
   it should "not abort on a metadata rule violation" in {
     val sw = new StringWriter()
     val exportBagExpects = Seq(
-      "easy-dataset:1" -> Success(DatasetInfo(Some("Violates something"), "mocked-doi", "", "user001", Seq.empty)),
-      s"easy-dataset:2" -> Success(DatasetInfo(None, "mocked-doi", "", "user001", Seq.empty)),
-      s"easy-dataset:3" -> Success(DatasetInfo(None, "mocked-doi", "", "user001", Seq.empty)),
+      "easy-dataset:1" -> Success(DatasetInfo(Some("Violates something"), "mocked-doi", "", "user001")),
+      s"easy-dataset:2" -> Success(DatasetInfo(None, "mocked-doi", "", "user001")),
+      s"easy-dataset:3" -> Success(DatasetInfo(None, "mocked-doi", "", "user001")),
       s"easy-dataset:4" -> Failure(InvalidTransformationException("mocked error")),
-      s"easy-dataset:5" -> Success(DatasetInfo(None, "mocked-doi", "", "user001", Seq.empty)),
+      s"easy-dataset:5" -> Success(DatasetInfo(None, "mocked-doi", "", "user001")),
+      s"easy-dataset:6" -> Failure(new InvalidTransformationException("mocked error")),
+      s"easy-dataset:8" -> Success(DatasetInfo(None, "mocked-doi", "", "user001")),
+      s"easy-dataset:9" -> Success(DatasetInfo(None, "mocked-doi", "", "user001")),
     )
 
     // end of mocking
@@ -120,6 +123,8 @@ class CreateSequenceSpec extends TestSupportFixture with MockFactory with FileFo
     val input =
       """easy-dataset:1,easy-dataset:2
         |easy-dataset:3,easy-dataset:4,easy-dataset:5
+        |easy-dataset:6,easy-dataset:7
+        |easy-dataset:8,easy-dataset:9
         |""".stripMargin.split("\n").iterator
     delegatingApp(exportBagExpects)
       .createSequences(input, outDir)(csvFormat.print(sw)) shouldBe Success("no fedora/IO errors")
@@ -129,12 +134,16 @@ class CreateSequenceSpec extends TestSupportFixture with MockFactory with FileFo
     val csvContent = sw.toString
     // the value of uuid1 repeats during a sequence
     csvContent should (fullyMatch regex
+      // N.B: a mix of 'not strict' and InvalidTransformationException won't happen without mocking
       """easyDatasetId,uuid1,uuid2,doi,depositor,transformationType,comment
-        |easy-dataset:1,.*,,mocked-doi,user001,not strict fedora-versioned,Violates something
-        |easy-dataset:2,.*,OK
-        |easy-dataset:3,.*,OK
-        |easy-dataset:4,.*,FAILED.*
-        |easy-dataset:5,.*,OK
+        |easy-dataset:1,.*,not strict fedora-versioned,Violates something
+        |easy-dataset:2,.*,fedora-versioned,OK
+        |easy-dataset:3,.*,fedora-versioned,OK
+        |easy-dataset:4,.*,simple,FAILED.*InvalidTransformationException.*
+        |easy-dataset:5,.*,fedora-versioned,OK
+        |easy-dataset:6,.*,simple,FAILED.*InvalidTransformationException.*
+        |easy-dataset:8,.*,fedora-versioned,OK
+        |easy-dataset:9,.*,fedora-versioned,OK
         |""".stripMargin
       )
     // TODO skip a sequence on a failing first bag

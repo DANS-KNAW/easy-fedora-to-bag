@@ -21,10 +21,11 @@ import java.net.URI
 import better.files.File
 import nl.knaw.dans.bag.v0.DansV0Bag
 import nl.knaw.dans.easy.fedoratobag.CsvRecord.csvFormat
+import nl.knaw.dans.easy.fedoratobag.filter.InvalidTransformationException
 import nl.knaw.dans.easy.fedoratobag.fixture.{ FileFoXmlSupport, FileSystemSupport, TestSupportFixture }
 import org.scalamock.scalatest.MockFactory
 
-import scala.util.{ Success, Try }
+import scala.util.{ Failure, Success, Try }
 
 class CreateSequenceSpec extends TestSupportFixture with MockFactory with FileFoXmlSupport with FileSystemSupport {
 
@@ -74,7 +75,7 @@ class CreateSequenceSpec extends TestSupportFixture with MockFactory with FileFo
 
     val csvContent = sw.toString
     csvContent should (fullyMatch regex
-      // the value of uuid1 repeats during a sequence
+      // manual check (with break point): the value of uuid1 repeats during a sequence
       """easyDatasetId,uuid1,uuid2,doi,depositor,transformationType,comment
         |easy-dataset:1,.*,,mocked-doi,user001,fedora-versioned,OK
         |easy-dataset:2,.*,.*,mocked-doi,user001,fedora-versioned,OK
@@ -83,15 +84,36 @@ class CreateSequenceSpec extends TestSupportFixture with MockFactory with FileFo
         |easy-dataset:5,.*,.*,mocked-doi,user001,fedora-versioned,OK
         |""".stripMargin
       )
-    // TODO testDir/output/*/*/bag-info.txt should have 5 bags,
-    //  3 of them should have versionOf values pointing to the other 2
+
+    // three out of five bags should refer to the two others
+
+    def getVersionOfUUID(file: File) = file
+      .contentAsString.split("\n")
+      .filter(_.startsWith("Is-Version-Of"))
+      .map(_.replaceAll(".*:", ""))
+    val bagInfos = (testDir / "output").listRecursively
+      .filter(_.name == "bag-info.txt")
+      .toSeq
+    val versionOfUUIDs = bagInfos
+      .flatMap(getVersionOfUUID)
+      .distinct
+
+    bagInfos should have size 5
+    versionOfUUIDs should have size 2
+    versionOfUUIDs.map(uuid =>
+      (testDir / "output" / uuid).exists
+    ) shouldBe Seq(true, true)
   }
 
   it should "not abort on a metadata rule violation" in {
     val sw = new StringWriter()
-    val exportBagExpects = (2 to 5).map(i =>
-      s"easy-dataset:$i" -> Success(DatasetInfo(None, "mocked-doi", "", "user001", Seq.empty))
-    ) :+ ("easy-dataset:1" -> Success(DatasetInfo(Some("Violates something"), "mocked-doi", "", "user001", Seq.empty)))
+    val exportBagExpects = Seq(
+      "easy-dataset:1" -> Success(DatasetInfo(Some("Violates something"), "mocked-doi", "", "user001", Seq.empty)),
+      s"easy-dataset:2" -> Success(DatasetInfo(None, "mocked-doi", "", "user001", Seq.empty)),
+      s"easy-dataset:3" -> Success(DatasetInfo(None, "mocked-doi", "", "user001", Seq.empty)),
+      s"easy-dataset:4" -> Failure(InvalidTransformationException("mocked error")),
+      s"easy-dataset:5" -> Success(DatasetInfo(None, "mocked-doi", "", "user001", Seq.empty)),
+    )
 
     // end of mocking
 
@@ -111,7 +133,7 @@ class CreateSequenceSpec extends TestSupportFixture with MockFactory with FileFo
         |easy-dataset:1,.*,,mocked-doi,user001,not strict fedora-versioned,Violates something
         |easy-dataset:2,.*,OK
         |easy-dataset:3,.*,OK
-        |easy-dataset:4,.*,OK
+        |easy-dataset:4,.*,FAILED.*
         |easy-dataset:5,.*,OK
         |""".stripMargin
       )

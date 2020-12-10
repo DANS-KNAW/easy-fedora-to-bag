@@ -57,36 +57,41 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
 
     val options = new Options(SequenceFilter(), FEDORA_VERSIONED, strict = false)
 
-    def exportBag(firstVersion: Option[VersionInfo])(datasetId: DatasetId) = {
+    def exportBag(firstVersion: Option[VersionInfo], datasetId: DatasetId): Try[VersionInfo] = {
       // TODO this duplicates half of createExport but we need to return firstVersionInfo
       //  while createExport loops over multiple dataset-IDs and
       //  mixes the result of create/move of the 2nd bag into CsvRecord
       val packageUUID = UUID.randomUUID
       val packageDir = configuration.stagingDir / packageUUID.toString
+      val uuid1 = firstVersion.map(_.packageId).getOrElse(packageUUID)
+      val uuid2 = firstVersion.map(_ => packageUUID)
       val tried = for {
         datasetInfo <- createBag(datasetId, packageDir / UUID.randomUUID.toString, options, firstVersion)
         _ <- movePackageAtomically(packageDir, outputDir)
         thisVersionInfo = VersionInfo(datasetInfo, packageUUID)
-        uuid1 = firstVersion.map(_.packageId).getOrElse(packageUUID)
-        uuid2 = firstVersion.map(_ => packageUUID)
-        csv = CsvRecord(datasetId, datasetInfo, uuid1, uuid2, options)
-      } yield (thisVersionInfo, csv)
-      errorHandling(tried.map(_._2), printer, datasetId, packageDir)
-      tried.map(_._1)
+        _ <- CsvRecord(datasetId, datasetInfo, uuid1, uuid2, options).print(printer)
+      } yield thisVersionInfo
+      logIfFailure(tried, datasetId, packageDir)
+      tried
     }
 
-    def exportNextBags(ids: Array[Depositor])(firstVersionInfo: VersionInfo) = {
+    def exportWithRecover(firstVersion: VersionInfo)(datasetId: DatasetId): Try[Any] = {
+      val tried = exportBag(Some(firstVersion), datasetId)
+      recoverUnlessFatal(tried, printer, datasetId, firstVersion.packageId)
+    }
+
+    def exportNextBags(ids: Array[DatasetId])(firstVersionInfo: VersionInfo) = {
       ids
-        .map(exportBag(Some(firstVersionInfo)))
+        .map(exportWithRecover(firstVersionInfo))
         .toSeq
         .failFastOr(Success(()))
     }
 
     lines.map { line =>
-      val ids = line.split(",")
-      ids.headOption.map(
-        exportBag(None)(_)
-          .flatMap(exportNextBags(ids.tail))
+      val datasetIds = line.split(",")
+      datasetIds.headOption.map(
+        exportBag(None, _)
+          .flatMap(exportNextBags(datasetIds.tail))
       ).getOrElse(Success(()))
     }.failFastOr(Success("no fedora/IO errors"))
   }
@@ -112,8 +117,11 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       // the 2nd bag is moved first, thus a next process has a chance to stumble over a missing first bag in case of interrupts
       _ <- maybeBagDir2.map(_ => movePackageAtomically(packageDir2, outputDir)).getOrElse(Success(()))
       _ <- movePackageAtomically(packageDir1, outputDir)
-    } yield CsvRecord(datasetId, datasetInfo, packageUuid1, maybeBagDir2.map(_ => packageUuid2), options)
-    errorHandling(triedCsvRecord, printer, datasetId, packageDir1)
+      maybeUuid2 = maybeBagDir2.map(_ => packageUuid2)
+      _ <- CsvRecord(datasetId, datasetInfo, packageUuid1, maybeUuid2, options).print(printer)
+    } yield ()
+    logIfFailure(triedCsvRecord, datasetId, packageDir1)
+    recoverUnlessFatal(triedCsvRecord, printer, datasetId, packageUuid1)
   }.failFastOr(Success("no fedora/IO errors"))
 
   private def movePackageAtomically(packageDir: File, outputDir: File) = {
@@ -122,19 +130,21 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     Try(packageDir.moveTo(target)(CopyOptions.atomically))
   }
 
-  private def errorHandling(triedCsvRecord: Try[CsvRecord], printer: CSVPrinter, datasetId: DatasetId, packageDir: File) = {
-    triedCsvRecord
-      .doIfFailure {
-        case t: InvalidTransformationException => logger.warn(s"$datasetId -> $packageDir failed: ${ t.getMessage }")
-        case t: Throwable => logger.error(s"$datasetId -> $packageDir had a not expected exception: ${ t.getMessage }", t)
-      }
-      .recoverWith {
-        case t: FedoraClientException if t.getStatus != 404 => Failure(t)
-        case t: IOException => Failure(t)
-        case t => Success(CsvRecord(
-          datasetId, UUID.fromString(packageDir.name), None, doi = "", depositor = "", SIMPLE.toString, s"FAILED: $t"
-        ))
-      }.doIfSuccess(_.print(printer))
+  private def logIfFailure(triedCsvRecord: Try[_], datasetId: DatasetId, packageDir: File) = {
+    triedCsvRecord.doIfFailure {
+      case t: InvalidTransformationException => logger.warn(s"$datasetId -> $packageDir failed: ${ t.getMessage }")
+      case t: Throwable => logger.error(s"$datasetId -> $packageDir had a not expected exception: ${ t.getMessage }", t)
+    }
+  }
+
+  private def recoverUnlessFatal[T](tried: Try[T], printer: CSVPrinter, datasetId: DatasetId, packageUUID: UUID) = {
+    tried.recoverWith {
+      case t: FedoraClientException if t.getStatus != 404 => Failure(t)
+      case t: IOException => Failure(t)
+      case t => CsvRecord(datasetId, packageUUID, None, doi = "", depositor = "", SIMPLE.toString, s"FAILED: $t")
+        .print(printer)
+        Success(())
+    }
   }
 
   protected[EasyFedoraToBagApp] def createSecondBag(datasetInfo: DatasetInfo, bagDir1: File, isVersionOf: UUID)(bagDir2: File): Try[Unit] = {

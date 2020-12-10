@@ -15,13 +15,13 @@
  */
 package nl.knaw.dans.easy.fedoratobag
 
-import java.io.StringWriter
+import java.io.{ IOException, StringWriter }
 import java.net.URI
 
 import better.files.File
+import com.yourmediashelf.fedora.client.FedoraClientException
 import nl.knaw.dans.bag.v0.DansV0Bag
 import nl.knaw.dans.easy.fedoratobag.CsvRecord.csvFormat
-import nl.knaw.dans.easy.fedoratobag.filter.InvalidTransformationException
 import nl.knaw.dans.easy.fedoratobag.fixture.{ FileFoXmlSupport, FileSystemSupport, TestSupportFixture }
 import org.scalamock.scalatest.MockFactory
 
@@ -91,6 +91,7 @@ class CreateSequenceSpec extends TestSupportFixture with MockFactory with FileFo
       .contentAsString.split("\n")
       .filter(_.startsWith("Is-Version-Of"))
       .map(_.replaceAll(".*:", ""))
+
     val bagInfos = (testDir / "output").listRecursively
       .filter(_.name == "bag-info.txt")
       .toSeq
@@ -109,13 +110,13 @@ class CreateSequenceSpec extends TestSupportFixture with MockFactory with FileFo
     val sw = new StringWriter()
     val exportBagExpects = Seq(
       "easy-dataset:1" -> Success(DatasetInfo(Some("Violates something"), "mocked-doi", "", "user001")),
-      s"easy-dataset:2" -> Success(DatasetInfo(None, "mocked-doi", "", "user001")),
-      s"easy-dataset:3" -> Success(DatasetInfo(None, "mocked-doi", "", "user001")),
-      s"easy-dataset:4" -> Failure(InvalidTransformationException("mocked error")),
-      s"easy-dataset:5" -> Success(DatasetInfo(None, "mocked-doi", "", "user001")),
-      s"easy-dataset:6" -> Failure(new InvalidTransformationException("mocked error")),
-      s"easy-dataset:8" -> Success(DatasetInfo(None, "mocked-doi", "", "user001")),
-      s"easy-dataset:9" -> Success(DatasetInfo(None, "mocked-doi", "", "user001")),
+      "easy-dataset:2" -> Success(DatasetInfo(None, "mocked-doi", "", "user001")),
+      "easy-dataset:3" -> Success(DatasetInfo(None, "mocked-doi", "", "user001")),
+      "easy-dataset:4" -> Failure(new FedoraClientException(404,"mocked not found")),
+      "easy-dataset:5" -> Success(DatasetInfo(None, "mocked-doi", "", "user001")),
+      "easy-dataset:6" -> Failure(new IllegalArgumentException("mocked error")),
+      "easy-dataset:8" -> Success(DatasetInfo(None, "mocked-doi", "", "user001")),
+      "easy-dataset:9" -> Failure(new IOException("mocked error")),
     )
 
     // end of mocking
@@ -125,31 +126,35 @@ class CreateSequenceSpec extends TestSupportFixture with MockFactory with FileFo
         |easy-dataset:3,easy-dataset:4,easy-dataset:5
         |easy-dataset:6,easy-dataset:7
         |easy-dataset:8,easy-dataset:9
+        |easy-dataset:10,easy-dataset:11
+        |easy-dataset:12
         |""".stripMargin.split("\n").iterator
     delegatingApp(exportBagExpects)
-      .createSequences(input, outDir)(csvFormat.print(sw)) shouldBe Success("no fedora/IO errors")
+      .createSequences(input, outDir)(csvFormat.print(sw)) should matchPattern {
+      case Failure(_: IOException) =>
+    }
 
     // post conditions
 
     val csvContent = sw.toString
-    // the value of uuid1 repeats during a sequence
     csvContent should (fullyMatch regex
-      // N.B: a mix of 'not strict' and InvalidTransformationException won't happen without mocking
       """easyDatasetId,uuid1,uuid2,doi,depositor,transformationType,comment
         |easy-dataset:1,.*,not strict fedora-versioned,Violates something
         |easy-dataset:2,.*,fedora-versioned,OK
         |easy-dataset:3,.*,fedora-versioned,OK
-        |easy-dataset:4,.*,simple,FAILED.*InvalidTransformationException.*
+        |easy-dataset:4,.*,simple,FAILED: .*FedoraClientException: mocked not found
         |easy-dataset:5,.*,fedora-versioned,OK
-        |easy-dataset:6,.*,simple,FAILED.*InvalidTransformationException.*
+        |easy-dataset:6,.*,simple,FAILED: .*IllegalArgumentException.*
         |easy-dataset:8,.*,fedora-versioned,OK
-        |easy-dataset:9,.*,fedora-versioned,OK
         |""".stripMargin
       )
-    // TODO skip a sequence on a failing first bag
-    //  skip a single version on a failure
-  }
-  it should "abort the batch on a fedora/io/not-expected exception" in {
-    // TODO
+    (testDir / "output").listRecursively.filter(_.name == "bag-info.txt")
+      .toSeq should have size 5
+    (testDir / "staging").listRecursively.filter(_.name == "bag-info.txt")
+      .toSeq should have size 3
+    // These sizes add up to 8 while the input has more datasets:
+    // dataset 7 is ignored because the first dataset aborted the rest of the sequence
+    // dataset 9 only ends up in the staging directory
+    // further datasets are ignored because the batch aborted
   }
 }

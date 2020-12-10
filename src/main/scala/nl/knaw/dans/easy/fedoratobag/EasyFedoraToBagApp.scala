@@ -80,19 +80,19 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       recoverUnlessFatal(tried, printer, datasetId, firstVersion.packageId)
     }
 
-    def exportNextBags(ids: Array[DatasetId])(firstVersionInfo: VersionInfo) = {
-      ids
-        .map(exportWithRecover(firstVersionInfo))
-        .toSeq
-        .failFastOr(Success(()))
-    }
+    def exportSequence(datasetIds: Array[Depositor])(firstDatasetId: DatasetId) = for {
+      versionInfo <- exportBag(None, firstDatasetId)
+      _ <- datasetIds
+        .map(exportWithRecover(versionInfo))
+        .toSeq.failFastOr(Success(()))
+    } yield ()
 
     lines.map { line =>
       val datasetIds = line.split(",")
-      datasetIds.headOption.map(
-        exportBag(None, _)
-          .flatMap(exportNextBags(datasetIds.tail))
-      ).getOrElse(Success(()))
+      datasetIds
+        .headOption
+        .map(exportSequence(datasetIds.tail))
+        .getOrElse(Success(()))
     }.failFastOr(Success("no fedora/IO errors"))
   }
 

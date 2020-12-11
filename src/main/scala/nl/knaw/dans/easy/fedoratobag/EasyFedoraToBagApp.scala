@@ -70,7 +70,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
 
     def exportWithRecover(firstVersion: VersionInfo)(datasetId: DatasetId): Try[Any] = {
       val tried = exportBag(Some(firstVersion), datasetId)
-      recoverUnlessFatal(tried, printer, datasetId, firstVersion.packageId)
+      errorHandling(tried, printer, datasetId, firstVersion.packageId)
     }
 
     def exportSequence(datasetIds: Array[Depositor])(firstDatasetId: DatasetId) = for {
@@ -86,7 +86,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
         .headOption
         .map(exportSequence(datasetIds.tail))
         .getOrElse(Success(()))
-      recoverUnlessFatal(triedUnit, printer, datasetIds.head, null)
+      errorHandling(triedUnit, printer, datasetIds.head, null)
     }.failFastOr(Success("no fedora/IO errors"))
   }
 
@@ -114,7 +114,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       maybeUuid2 = maybeBagDir2.map(_ => packageUuid2)
       _ <- CsvRecord(datasetId, datasetInfo, packageUuid1, maybeUuid2, options).print(printer)
     } yield ()
-    recoverUnlessFatal(triedCsvRecord, printer, datasetId, packageUuid1)
+    errorHandling(triedCsvRecord, printer, datasetId, packageUuid1)
   }.failFastOr(Success("no fedora/IO errors"))
 
   private def movePackageAtomically(packageDir: File, outputDir: File) = {
@@ -123,7 +123,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     Try(packageDir.moveTo(target)(CopyOptions.atomically))
   }
 
-  private def recoverUnlessFatal[T](tried: Try[T], printer: CSVPrinter, datasetId: DatasetId, packageUUID: UUID) = {
+  private def errorHandling[T](tried: Try[T], printer: CSVPrinter, datasetId: DatasetId, packageUUID: UUID) = {
     tried.doIfFailure {
       case t: InvalidTransformationException => logger.warn(s"$datasetId -> $packageUUID failed: ${ t.getMessage }")
       case t: Throwable => logger.error(s"$datasetId -> $packageUUID had a not expected exception: ${ t.getMessage }", t)

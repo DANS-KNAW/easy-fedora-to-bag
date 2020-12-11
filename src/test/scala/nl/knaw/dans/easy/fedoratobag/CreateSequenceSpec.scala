@@ -16,42 +16,15 @@
 package nl.knaw.dans.easy.fedoratobag
 
 import java.io.{ IOException, StringWriter }
-import java.net.URI
 
 import better.files.File
 import com.yourmediashelf.fedora.client.FedoraClientException
-import nl.knaw.dans.bag.v0.DansV0Bag
 import nl.knaw.dans.easy.fedoratobag.CsvRecord.csvFormat
-import nl.knaw.dans.easy.fedoratobag.fixture.{ FileFoXmlSupport, FileSystemSupport, TestSupportFixture }
-import org.scalamock.scalatest.MockFactory
+import nl.knaw.dans.easy.fedoratobag.fixture.{ DelegatingApp, FileSystemSupport, TestSupportFixture }
 
-import scala.util.{ Failure, Success, Try }
+import scala.util.{ Failure, Success }
 
-class CreateSequenceSpec extends TestSupportFixture with MockFactory with FileFoXmlSupport with FileSystemSupport {
-
-  /* delegate most of createBag to a mock to test the rest of the class and/or application */
-  def delegatingApp(exportBagExpects: Seq[(String, Try[DatasetInfo])]): EasyFedoraToBagApp = new EasyFedoraToBagApp(
-    new Configuration("testVersion", null, null, new URI(""), testDir / "staging", null)
-  ) {
-    // mock requires a constructor without parameters
-    class MockEasyFedoraToBagApp() extends EasyFedoraToBagApp(null)
-
-    private val delegate = mock[MockEasyFedoraToBagApp]
-    exportBagExpects.foreach { case (id, result) =>
-      (delegate.createBag(_: DatasetId, _: File, _: Options, _: Option[VersionInfo])
-        ) expects(id, *, *, *) returning result
-    }
-
-    override def createBag(datasetId: DatasetId, bagDir: File, options: Options, firstVersionInfo: Option[VersionInfo] = None): Try[DatasetInfo] = {
-      // mimic a part of the real method, the tested caller wants to move the bag
-      DansV0Bag.empty(bagDir).map { bag =>
-        firstVersionInfo.foreach(_.addVersionOf(bag))
-        bag.save()
-      }.getOrElse(s"mock of createBag failed for $datasetId")
-      // mock the outcome of the method
-      delegate.createBag(datasetId, bagDir, options, firstVersionInfo)
-    }
-  }
+class CreateSequenceSpec extends TestSupportFixture with DelegatingApp with FileSystemSupport {
 
   private def outDir = {
     (testDir / "output").createDirectories()
@@ -59,8 +32,8 @@ class CreateSequenceSpec extends TestSupportFixture with MockFactory with FileFo
 
   "createSequences" should " process 2 sequences" in {
     val sw = new StringWriter()
-    val exportBagExpects = (1 to 5).map(i =>
-      s"easy-dataset:$i" -> Success(DatasetInfo(None, "mocked-doi", "mocked-urn", "user001"))
+    val createBagExpects = (1 to 5).map(i =>
+      s"easy-dataset:$i" -> Success(DatasetInfo(None, s"mocked-doi$i", "mocked-urn", "user001"))
     )
     // end of mocking
 
@@ -68,7 +41,7 @@ class CreateSequenceSpec extends TestSupportFixture with MockFactory with FileFo
       """easy-dataset:1,easy-dataset:2
         |easy-dataset:3,easy-dataset:4,easy-dataset:5
         |""".stripMargin.split("\n").iterator
-    delegatingApp(exportBagExpects)
+    delegatingApp(testDir / "staging", createBagExpects)
       .createSequences(input, outDir)(csvFormat.print(sw)) shouldBe Success("no fedora/IO errors")
 
     // post conditions
@@ -77,13 +50,19 @@ class CreateSequenceSpec extends TestSupportFixture with MockFactory with FileFo
     csvContent should (fullyMatch regex
       // manual check (with break point): the value of uuid1 repeats during a sequence
       """easyDatasetId,uuid1,uuid2,doi,depositor,transformationType,comment
-        |easy-dataset:1,.*,,mocked-doi,user001,fedora-versioned,OK
-        |easy-dataset:2,.*,.*,mocked-doi,user001,fedora-versioned,OK
-        |easy-dataset:3,.*,,mocked-doi,user001,fedora-versioned,OK
-        |easy-dataset:4,.*,.*,mocked-doi,user001,fedora-versioned,OK
-        |easy-dataset:5,.*,.*,mocked-doi,user001,fedora-versioned,OK
+        |easy-dataset:1,.*,,mocked-doi1,user001,fedora-versioned,OK
+        |easy-dataset:2,.*,.*,mocked-doi2,user001,fedora-versioned,OK
+        |easy-dataset:3,.*,,mocked-doi3,user001,fedora-versioned,OK
+        |easy-dataset:4,.*,.*,mocked-doi4,user001,fedora-versioned,OK
+        |easy-dataset:5,.*,.*,mocked-doi5,user001,fedora-versioned,OK
         |""".stripMargin
       )
+
+    // all bags should be mentioned in csv
+
+    (testDir / "output").list.toSeq.map(_.name).foreach(packageId =>
+      csvContent should include(packageId)
+    )
 
     // three out of five bags should refer to the two others
 
@@ -108,11 +87,11 @@ class CreateSequenceSpec extends TestSupportFixture with MockFactory with FileFo
 
   it should "not abort on a metadata rule violation" in {
     val sw = new StringWriter()
-    val exportBagExpects = Seq(
+    val createBagExpects = Seq(
       "easy-dataset:1" -> Success(DatasetInfo(Some("Violates something"), "mocked-doi", "", "user001")),
       "easy-dataset:2" -> Success(DatasetInfo(None, "mocked-doi", "", "user001")),
       "easy-dataset:3" -> Success(DatasetInfo(None, "mocked-doi", "", "user001")),
-      "easy-dataset:4" -> Failure(new FedoraClientException(404,"mocked not found")),
+      "easy-dataset:4" -> Failure(new FedoraClientException(404, "mocked not found")),
       "easy-dataset:5" -> Success(DatasetInfo(None, "mocked-doi", "", "user001")),
       "easy-dataset:6" -> Failure(new IllegalArgumentException("mocked error")),
       "easy-dataset:8" -> Success(DatasetInfo(None, "mocked-doi", "", "user001")),
@@ -129,7 +108,7 @@ class CreateSequenceSpec extends TestSupportFixture with MockFactory with FileFo
         |easy-dataset:10,easy-dataset:11
         |easy-dataset:12
         |""".stripMargin.split("\n").iterator
-    delegatingApp(exportBagExpects)
+    delegatingApp(testDir / "staging", createBagExpects)
       .createSequences(input, outDir)(csvFormat.print(sw)) should matchPattern {
       case Failure(_: IOException) =>
     }
@@ -148,13 +127,24 @@ class CreateSequenceSpec extends TestSupportFixture with MockFactory with FileFo
         |easy-dataset:8,.*,fedora-versioned,OK
         |""".stripMargin
       )
+
+    // The number of packages add up to 8 while the input has more datasets:
+    // dataset 7 is ignored because the first dataset aborted the rest of the sequence
+    // dataset 9 only ends up in the staging directory
+    // further datasets are ignored because the batch aborted
+
     (testDir / "output").listRecursively.filter(_.name == "bag-info.txt")
       .toSeq should have size 5
     (testDir / "staging").listRecursively.filter(_.name == "bag-info.txt")
       .toSeq should have size 3
-    // These sizes add up to 8 while the input has more datasets:
-    // dataset 7 is ignored because the first dataset aborted the rest of the sequence
-    // dataset 9 only ends up in the staging directory
-    // further datasets are ignored because the batch aborted
+
+    // only completed bags should be mentioned in csv
+
+    (testDir / "output").list.toSeq.map(_.name).foreach(packageId =>
+      csvContent should include(packageId)
+    )
+    (testDir / "staging").list.toSeq.map(_.name).foreach(packageId =>
+      csvContent shouldNot include(packageId)
+    )
   }
 }

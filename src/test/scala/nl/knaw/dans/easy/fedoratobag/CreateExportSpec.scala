@@ -17,112 +17,105 @@ package nl.knaw.dans.easy.fedoratobag
 
 import java.io.StringWriter
 
-import better.files.File
 import com.yourmediashelf.fedora.client.FedoraClientException
-import javax.naming.ldap.InitialLdapContext
 import nl.knaw.dans.easy.fedoratobag.OutputFormat.{ AIP, SIP }
-import nl.knaw.dans.easy.fedoratobag.filter.{ BagIndex, InvalidTransformationException, SimpleDatasetFilter }
+import nl.knaw.dans.easy.fedoratobag.filter.{ InvalidTransformationException, SimpleDatasetFilter }
 import nl.knaw.dans.easy.fedoratobag.fixture._
 import org.scalamock.scalatest.MockFactory
 
-import scala.util.{ Failure, Success, Try }
+import scala.util.{ Failure, Success }
 
-class CreateExportSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupport with MockFactory with FileSystemSupport with AudienceSupport {
-  implicit val logFile: File = testDir / "log.txt"
+class CreateExportSpec extends TestSupportFixture with DelegatingApp with FileFoXmlSupport with BagIndexSupport with MockFactory with FileSystemSupport with AudienceSupport {
   private val stagingDir = testDir / "staging"
 
-  override def beforeEach(): Unit = {
-    super.beforeEach()
-    if (testDir.exists) testDir.delete()
-    testDir.createDirectories()
-  }
-
-  private class MockedLdapContext extends InitialLdapContext(new java.util.Hashtable[String, String](), null)
-
-  private class OverriddenApp() extends EasyFedoraToBagApp(Configuration(null, null, null, null, stagingDir, null)) {
-    override lazy val fedoraProvider: FedoraProvider = null
-    override lazy val ldapContext: InitialLdapContext = null
-    override lazy val bagIndex: BagIndex = null
-    val filter: SimpleDatasetFilter = SimpleDatasetFilter(bagIndex)
-
-    /** mocks the method called by the method under test */
-    override def createBag(datasetId: DatasetId, outputDir: File, options: Options, firstVersionInfo: Option[VersionInfo] = None): Try[DatasetInfo] = {
-      outputDir.parent.createDirectories()
-      datasetId match {
-        case _ if datasetId.startsWith("fatal") =>
-          Failure(new FedoraClientException(300, "mocked exception"))
-        case _ if datasetId.startsWith("notSimple") =>
-          outputDir.createFile().writeText(datasetId)
-          Failure(InvalidTransformationException("mocked"))
-        case _ if !datasetId.startsWith("success") =>
-          outputDir.createFile().writeText(datasetId)
-          Failure(new Exception(datasetId))
-        case _ =>
-          outputDir.createFile().writeText(datasetId)
-          Success(DatasetInfo(None, doi = "testDOI", urn = "testURN", depositor = "testUser", Seq.empty))
-      }
-    }
-  }
-
   "createSips" should "report success" in {
-    val ids = Iterator("success:1", "notSimple:1", "whoops:1", "success:1")
     val outputDir = (testDir / "output").createDirectories()
-    val app = new OverriddenApp()
+    stagingDir.createDirectories()
     val sw = new StringWriter()
+
+    val createBagExpects = Seq(
+      "easy-dataset:1" -> Success(DatasetInfo(None, "mocked-doi1", "", "user001")),
+      "easy-dataset:2" -> Failure(InvalidTransformationException("mocked")),
+      "easy-dataset:3" -> Failure(new Exception("easy-dataset:3")),
+      "easy-dataset:4" -> Success(DatasetInfo(None, "mocked-doi4", "", "user001")),
+    )
 
     // end of mocking
 
-    app.createExport(ids, outputDir, Options(SimpleDatasetFilter()), SIP)(CsvRecord.csvFormat.print(sw)) shouldBe
+    delegatingApp(stagingDir, createBagExpects).createExport(
+      Iterator("easy-dataset:1", "easy-dataset:2", "easy-dataset:3", "easy-dataset:4"),
+      outputDir, Options(SimpleDatasetFilter()), SIP
+    )(CsvRecord.csvFormat.print(sw)) shouldBe
       Success("no fedora/IO errors")
 
-    // two directories with one entry each
+    // post conditions
+
     stagingDir.list.toList should have length 2
-    stagingDir.listRecursively.toList should have length 4
-
-    // two directories with two entries each
     outputDir.list.toList should have length 2
-    outputDir.listRecursively.toList should have length 4
 
-    val csvContent = sw.toString // rest of the content tested with createAips
+    val csvContent = sw.toString
     outputDir.list.toSeq.map(_.name).foreach(packageId =>
       csvContent should include(packageId)
     )
+    csvContent should (fullyMatch regex
+      """easyDatasetId,uuid1,uuid2,doi,depositor,transformationType,comment
+        |easy-dataset:1,.*,,mocked-doi1,user001,simple,OK
+        |easy-dataset:2,.*,,,,simple,FAILED: nl.knaw.dans.easy.fedoratobag.filter.InvalidTransformationException: mocked
+        |easy-dataset:3,.*,,,,simple,FAILED: java.lang.Exception: easy-dataset:3
+        |easy-dataset:4,.*,.*,mocked-doi4,user001,simple,OK
+        |""".stripMargin
+      )
   }
 
   "createAips" should "report success" in {
-    val ids = Iterator("success:1", "success:2")
     val outputDir = (testDir / "output").createDirectories()
     val sw = new StringWriter()
-    val app = new OverriddenApp()
+    val createBagExpects = Seq(
+      "easy-dataset:1" -> Success(DatasetInfo(None, "mocked-doi1", "", "testUser")),
+      "easy-dataset:2" -> Success(DatasetInfo(None, "mocked-doi2", "", "testUser")),
+    )
 
     // end of mocking
 
-    app.createExport(ids, outputDir, Options(app.filter), AIP)(CsvRecord.csvFormat.print(sw)) shouldBe Success("no fedora/IO errors")
+    val app = delegatingApp(stagingDir, createBagExpects)
+    app.createExport(
+      Iterator("easy-dataset:1", "easy-dataset:2"),
+      outputDir, Options(SimpleDatasetFilter(app.bagIndex)), AIP
+    )(CsvRecord.csvFormat.print(sw)) shouldBe Success("no fedora/IO errors")
 
     // post conditions
 
     val csvContent = sw.toString
     csvContent should (fullyMatch regex
       """easyDatasetId,uuid1,uuid2,doi,depositor,transformationType,comment
-        |success:1,.*,testDOI,testUser,simple,OK
-        |success:2,.*,testDOI,testUser,simple,OK
+        |easy-dataset:1,.*,mocked-doi1,testUser,simple,OK
+        |easy-dataset:2,.*,mocked-doi2,testUser,simple,OK
         |""".stripMargin
       )
-    outputDir.listRecursively.toSeq should have length 2
+    outputDir.list.toSeq should have length 2
     outputDir.list.toSeq.map(_.name).foreach(packageId =>
       csvContent should include(packageId)
     )
   }
 
   it should "report failure" in {
-    val ids = Iterator("success:1", "failure:2", "notSimple:3", "success:4", "fatal:5", "success:6")
     val outputDir = (testDir / "output").createDirectories()
     val sw = new StringWriter()
-    val app = new OverriddenApp()
+    val createBagExpects = Seq(
+      "easy-dataset:1" -> Success(DatasetInfo(None, "mocked-doi1", "", "testUser")),
+      "easy-dataset:2" -> Failure(new Exception("easy-dataset:2")),
+      "easy-dataset:3" -> Failure(InvalidTransformationException("mocked")),
+      "easy-dataset:4" -> Success(DatasetInfo(None, "mocked-doi4", "", "testUser")),
+      "easy-dataset:5" -> Failure(new FedoraClientException(300, "mocked exception")),
+    )
 
     // end of mocking
 
-    app.createExport(ids, outputDir, Options(app.filter), AIP)(CsvRecord.csvFormat.print(sw)) should matchPattern {
+    val app = delegatingApp(stagingDir, createBagExpects)
+    app.createExport(
+      Iterator("easy-dataset:1", "easy-dataset:2", "easy-dataset:3", "easy-dataset:4", "easy-dataset:5", "easy-dataset:6"),
+      outputDir, Options(SimpleDatasetFilter(app.bagIndex)), AIP
+    )(CsvRecord.csvFormat.print(sw)) should matchPattern {
       case Failure(t) if t.getMessage == "mocked exception" =>
     }
 
@@ -131,19 +124,19 @@ class CreateExportSpec extends TestSupportFixture with FileFoXmlSupport with Bag
     val csvContent = sw.toString
     csvContent should (fullyMatch regex
       """easyDatasetId,uuid1,uuid2,doi,depositor,transformationType,comment
-        |success:1,.*,testDOI,testUser,simple,OK
-        |failure:2,.*,,,simple,FAILED: java.lang.Exception: failure:2
-        |notSimple:3,.*,,,simple,FAILED: .*InvalidTransformationException: mocked
-        |success:4,.*,testDOI,testUser,simple,OK
+        |easy-dataset:1,.*,mocked-doi1,testUser,simple,OK
+        |easy-dataset:2,.*,,,simple,FAILED: java.lang.Exception: easy-dataset:2
+        |easy-dataset:3,.*,,,simple,FAILED: .*InvalidTransformationException: mocked
+        |easy-dataset:4,.*,mocked-doi4,testUser,simple,OK
         |""".stripMargin
       )
     outputDir.list.toSeq should have length 2
-    stagingDir.list.toSeq should have length 2
     outputDir.list.toSeq.map(_.name).foreach(packageId =>
-      csvContent should include(packageId)
+        csvContent should include(packageId)
     )
-    stagingDir.list.toSeq.map(_.name).foreach(packageId =>
-      csvContent should include(packageId)
-    )
+    // the fatal bag is staged but not in the csv
+    stagingDir.list.toSeq should have length 3
+    stagingDir.list.toSeq.map(_.name)
+      .count(csvContent.contains(_)) shouldBe 2
   }
 }

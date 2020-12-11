@@ -35,16 +35,10 @@ import scala.xml.XML
 class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupport with MockFactory with FileSystemSupport with AudienceSupport {
   implicit val logFile: File = testDir / "log.txt"
 
-  override def beforeEach(): Unit = {
-    super.beforeEach()
-    if (testDir.exists) testDir.delete()
-    testDir.createDirectories()
-  }
-
-  private class MockedLdapContext extends InitialLdapContext(new java.util.Hashtable[String, String](), null)
-
   private class AppWithMockedServices(configuration: Configuration = new Configuration("test-version", null, null, null, testDir / "staging", AbrMappings(File("src/main/assembly/dist/cfg/EMD_acdm.xsl"))),
                                      ) extends EasyFedoraToBagApp(configuration) {
+    private class MockedLdapContext extends InitialLdapContext(new java.util.Hashtable[String, String](), null)
+
     override lazy val fedoraProvider: FedoraProvider = mock[FedoraProvider]
     override lazy val ldapContext: InitialLdapContext = mock[MockedLdapContext]
     override lazy val bagIndex: BagIndex = mockBagIndexRespondsWith(body = "<result/>", code = 200)
@@ -61,8 +55,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
       (ldapContext.search(_: String, _: String, _: SearchControls)) expects(*, *, *) once() returning result
     }
 
-    // make almost private methods available for tests
-
+    // make almost private method available for tests
     override def createBag(datasetId: DatasetId, bagDir: File, options: Options, firstVersionInfo: Option[VersionInfo] = None): Try[DatasetInfo] =
       super.createBag(datasetId, bagDir, options)
   }

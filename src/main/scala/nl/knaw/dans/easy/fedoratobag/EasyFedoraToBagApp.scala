@@ -53,26 +53,19 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
   private lazy val ldap = new Ldap(ldapContext)
   private val emdUnmarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
 
-  def createSequences(lines: Iterator[String], outputDir: File)(printer: CSVPrinter): Try[FeedBackMessage] = {
-
-    val options = new Options(SequenceFilter(), FEDORA_VERSIONED, strict = false)
+  def createSequences(lines: Iterator[String], outputDir: File, options: Options)(printer: CSVPrinter): Try[FeedBackMessage] = {
 
     def exportBag(firstVersion: Option[VersionInfo], datasetId: DatasetId): Try[VersionInfo] = {
-      // TODO this duplicates half of createExport but we need to return firstVersionInfo
-      //  while createExport loops over multiple dataset-IDs and
-      //  mixes the result of create/move of the 2nd bag into CsvRecord
       val packageUUID = UUID.randomUUID
       val packageDir = configuration.stagingDir / packageUUID.toString
-      val uuid1 = firstVersion.map(_.packageId).getOrElse(packageUUID)
-      val uuid2 = firstVersion.map(_ => packageUUID)
-      val tried = for {
+      val csvUuid1 = firstVersion.map(_.packageId).getOrElse(packageUUID)
+      val csvUuid2 = firstVersion.map(_ => packageUUID)
+      for {
         datasetInfo <- createBag(datasetId, packageDir / UUID.randomUUID.toString, options, firstVersion)
         _ <- movePackageAtomically(packageDir, outputDir)
         thisVersionInfo = VersionInfo(datasetInfo, packageUUID)
-        _ <- CsvRecord(datasetId, datasetInfo, uuid1, uuid2, options).print(printer)
+        _ <- CsvRecord(datasetId, datasetInfo, csvUuid1, csvUuid2, options).print(printer)
       } yield thisVersionInfo
-      logIfFailure(tried, datasetId, packageDir)
-      tried
     }
 
     def exportWithRecover(firstVersion: VersionInfo)(datasetId: DatasetId): Try[Any] = {
@@ -93,7 +86,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
         .headOption
         .map(exportSequence(datasetIds.tail))
         .getOrElse(Success(()))
-      recoverUnlessFatal(triedUnit,printer,datasetIds.head,null)
+      recoverUnlessFatal(triedUnit, printer, datasetIds.head, null)
     }.failFastOr(Success("no fedora/IO errors"))
   }
 
@@ -121,7 +114,6 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       maybeUuid2 = maybeBagDir2.map(_ => packageUuid2)
       _ <- CsvRecord(datasetId, datasetInfo, packageUuid1, maybeUuid2, options).print(printer)
     } yield ()
-    logIfFailure(triedCsvRecord, datasetId, packageDir1)
     recoverUnlessFatal(triedCsvRecord, printer, datasetId, packageUuid1)
   }.failFastOr(Success("no fedora/IO errors"))
 
@@ -131,15 +123,11 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     Try(packageDir.moveTo(target)(CopyOptions.atomically))
   }
 
-  private def logIfFailure(triedCsvRecord: Try[_], datasetId: DatasetId, packageDir: File) = {
-    triedCsvRecord.doIfFailure {
-      case t: InvalidTransformationException => logger.warn(s"$datasetId -> $packageDir failed: ${ t.getMessage }")
-      case t: Throwable => logger.error(s"$datasetId -> $packageDir had a not expected exception: ${ t.getMessage }", t)
-    }
-  }
-
   private def recoverUnlessFatal[T](tried: Try[T], printer: CSVPrinter, datasetId: DatasetId, packageUUID: UUID) = {
-    tried.recoverWith {
+    tried.doIfFailure {
+      case t: InvalidTransformationException => logger.warn(s"$datasetId -> $packageUUID failed: ${ t.getMessage }")
+      case t: Throwable => logger.error(s"$datasetId -> $packageUUID had a not expected exception: ${ t.getMessage }", t)
+    }.recoverWith {
       case t: FedoraClientException if t.getStatus != 404 => Failure(t)
       case t: IOException => Failure(t)
       case t => CsvRecord(datasetId, packageUUID, None, doi = "", depositor = "", SIMPLE.toString, s"FAILED: $t")
@@ -148,7 +136,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     }
   }
 
-  protected[EasyFedoraToBagApp] def createSecondBag(datasetInfo: DatasetInfo, bagDir1: File, isVersionOf: UUID)(bagDir2: File): Try[Unit] = {
+  private def createSecondBag(datasetInfo: DatasetInfo, bagDir1: File, isVersionOf: UUID)(bagDir2: File): Try[Unit] = {
 
     def copy(fileName: String, bag2: DansV0Bag) = {
       (bagDir1 / "metadata" / fileName)

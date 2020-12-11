@@ -23,9 +23,8 @@ import scala.collection.mutable
 import scala.util.{ Success, Try }
 import scala.xml.XML
 
-abstract class Versions() extends DebugEnhancedLogging {
+case class FedoraVersions(fedoraProvider: FedoraProvider) extends DebugEnhancedLogging {
   val resolver: Resolver = Resolver()
-  val fedoraProvider: FedoraProvider
 
   /* a submission date for each ID */
   private type Family = mutable.Map[DatasetId, Long]

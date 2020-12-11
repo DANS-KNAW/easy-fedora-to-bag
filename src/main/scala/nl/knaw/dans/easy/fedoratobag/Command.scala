@@ -19,13 +19,13 @@ import better.files.File
 import nl.knaw.dans.easy.fedoratobag.OutputFormat._
 import nl.knaw.dans.easy.fedoratobag.TransformationType._
 import nl.knaw.dans.easy.fedoratobag.filter._
-import nl.knaw.dans.easy.fedoratobag.versions.Versions
+import nl.knaw.dans.easy.fedoratobag.versions.FedoraVersions
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.language.reflectiveCalls
+import scala.util.Try
 import scala.util.control.NonFatal
-import scala.util.{ Failure, Try }
 
 object Command extends App with DebugEnhancedLogging {
   type FeedBackMessage = String
@@ -42,36 +42,44 @@ object Command extends App with DebugEnhancedLogging {
     .doIfFailure { case NonFatal(e) => println(s"FAILED: ${ e.getMessage }") }
 
   private def runSubcommand(app: EasyFedoraToBagApp): Try[FeedBackMessage] = {
-    lazy val ids = commandLine
+    lazy val isAip = commandLine.outputFormat() == AIP
+    Try(commandLine.transformation() match {
+      case FEDORA_VERSIONED if !commandLine.europeana() && !isAip => FedoraVersionedFilter()
+      case ORIGINAL_VERSIONED if !isAip => SimpleDatasetFilter()
+      case THEMA if isAip => ThemaDatasetFilter(app.bagIndex)
+      case SIMPLE if isAip => SimpleDatasetFilter(app.bagIndex)
+      case SIMPLE => SimpleDatasetFilter()
+      case _ => throw new NotImplementedError(s"${ commandLine.args } not implemented")
+    }).flatMap { datasetFilter =>
+      if (!commandLine.outputDir.isSupplied)
+        dryRunFedoraVersioned(app)
+      else runExport(app, datasetFilter)
+    }
+  }.map(msg => s"$msg, for details see ${ commandLine.logFile().toJava.getAbsolutePath }")
+
+  private def dryRunFedoraVersioned(app: EasyFedoraToBagApp) = {
+    FedoraVersions(app.fedoraProvider)
+      .findChains(datasetIds).map { families =>
+      commandLine.logFile().printLines(families.map(_.mkString(",")))
+      s"DRY RUN --- produced IDs of bag sequences per CSV line"
+    }
+  }
+
+  private def runExport(app: EasyFedoraToBagApp, datasetFilter: SimpleDatasetFilter) = {
+    val options = Options(datasetFilter, commandLine.transformation(), commandLine.strictMode(), commandLine.europeana())
+    val printer = CsvRecord.printer(commandLine.logFile())
+    if (commandLine.transformation() == FEDORA_VERSIONED)
+      printer.apply(app.createSequences(datasetIds, commandLine.outputDir(), options))
+    else printer.apply(app.createExport(datasetIds, commandLine.outputDir(), options, commandLine.outputFormat()))
+  }
+
+  private def datasetIds = {
+    commandLine
       .datasetId.map(Iterator(_))
-      .getOrElse(commandLine.inputFile()
+      .getOrElse(commandLine
+        .inputFile()
         .lineIterator
         .filterNot(_.startsWith("#"))
       )
-    lazy val outputDir = commandLine.outputDir()
-    lazy val europeana = commandLine.europeana()
-    lazy val outputFormat = commandLine.outputFormat()
-    lazy val printer = CsvRecord.printer(commandLine.logFile())
-    commandLine.transformation() match {
-      case FEDORA_VERSIONED if commandLine.outputDir.isSupplied =>
-        Failure(new NotImplementedError(s"only DRY RUN implemented for $FEDORA_VERSIONED"))
-      case FEDORA_VERSIONED if !europeana =>
-        new Versions() {
-          override val fedoraProvider: FedoraProvider = app.fedoraProvider
-        }.findChains(ids).map { families =>
-          commandLine.logFile().printLines(families.map(_.mkString(",")))
-          s"DRY RUN --- produced IDs of bag sequences per CSV line"
-        }
-      case ORIGINAL_VERSIONED if outputFormat == SIP && !europeana =>
-        printer.apply(app.createExport(ids, outputDir, Options(SimpleDatasetFilter(), commandLine), outputFormat))
-      case SIMPLE if outputFormat == SIP =>
-        printer.apply(app.createExport(ids, outputDir, Options(SimpleDatasetFilter(), commandLine), outputFormat))
-      case SIMPLE if outputFormat == AIP =>
-        printer.apply(app.createExport(ids, outputDir, Options(SimpleDatasetFilter(app.bagIndex), commandLine), outputFormat))
-      case THEMA if outputFormat == AIP =>
-        printer.apply(app.createExport(ids, outputDir, Options(ThemaDatasetFilter(app.bagIndex), commandLine), outputFormat))
-      case _ =>
-        Failure(new NotImplementedError(s"${ commandLine.args } not implemented"))
-    }
-  }.map(msg => s"$msg, for details see ${ commandLine.logFile().toJava.getAbsolutePath }")
+  }
 }

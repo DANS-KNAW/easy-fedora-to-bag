@@ -46,13 +46,3 @@ case class Options(datasetFilter: DatasetFilter,
          }
   }
 }
-object Options {
-  def apply(datasetFilter: DatasetFilter, commandLine: CommandLineOptions): Options = {
-    Options(
-      datasetFilter,
-      commandLine.transformation(),
-      commandLine.strictMode(),
-      commandLine.europeana(),
-    )
-  }
-}

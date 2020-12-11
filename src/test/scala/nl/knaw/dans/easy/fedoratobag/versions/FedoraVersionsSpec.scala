@@ -27,10 +27,9 @@ import resource.{ DefaultManagedResource, ManagedResource }
 import scala.util.{ Failure, Success, Try }
 import scala.xml.Elem
 
-class VersionsSpec extends TestSupportFixture with MockFactory {
-  class VersionsWithMocks extends Versions {
+class FedoraVersionsSpec extends TestSupportFixture with MockFactory {
+  class FedoraVersionsWithMocks extends FedoraVersions(mock[FedoraProvider]) {
     override val resolver: Resolver = mock[Resolver]
-    override val fedoraProvider: FedoraProvider = mock[FedoraProvider]
 
     def fedoraExpects(datasetID: String, returning: Elem): CallHandler2[String, String, ManagedResource[InputStream]] = {
       (fedoraProvider.datastream(_: String, _: String)) expects(datasetID, "EMD") once() returning
@@ -41,7 +40,7 @@ class VersionsSpec extends TestSupportFixture with MockFactory {
       (resolver.getDatasetId(_: String)) expects id once() returning returning
   }
   "findChains" should "not loop forever" in {
-    val versions = new VersionsWithMocks {
+    val versions = new FedoraVersionsWithMocks {
       resolverExpects("easy-dataset:1", returning = Success("easy-dataset:1")) // for readVersionIfo
       resolverExpects("easy-dataset:1", returning = Success("easy-dataset:1")) // for follow
       fedoraExpects("easy-dataset:1",
@@ -54,7 +53,7 @@ class VersionsSpec extends TestSupportFixture with MockFactory {
       Success(Seq(Seq("easy-dataset:1")))
   }
   it should "not swallow unsafeGetOrThrow in follow" in {
-    val versions = new VersionsWithMocks {
+    val versions = new FedoraVersionsWithMocks {
       resolverExpects("easy-dataset:1", returning = Success("easy-dataset:1")) // for readVersionIfo
       resolverExpects("easy-dataset:1", returning = Failure(new Exception)) // for follow
       fedoraExpects("easy-dataset:1",
@@ -94,7 +93,7 @@ class VersionsSpec extends TestSupportFixture with MockFactory {
           <emd:relation><dct:isVersionOf>easy-dataset:3</dct:isVersionOf></emd:relation>
         </emd:easymetadata>,
     )
-    val versions = new VersionsWithMocks {
+    val versions = new FedoraVersionsWithMocks {
       Seq(
         "easy-dataset:1" -> "easy-dataset:1",
         "easy-dataset:2" -> "easy-dataset:2",

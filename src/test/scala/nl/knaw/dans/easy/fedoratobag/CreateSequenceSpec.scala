@@ -20,6 +20,8 @@ import java.io.{ IOException, StringWriter }
 import better.files.File
 import com.yourmediashelf.fedora.client.FedoraClientException
 import nl.knaw.dans.easy.fedoratobag.CsvRecord.csvFormat
+import nl.knaw.dans.easy.fedoratobag.TransformationType.FEDORA_VERSIONED
+import nl.knaw.dans.easy.fedoratobag.filter.FedoraVersionedFilter
 import nl.knaw.dans.easy.fedoratobag.fixture.{ DelegatingApp, FileSystemSupport, TestSupportFixture }
 
 import scala.util.{ Failure, Success }
@@ -29,6 +31,8 @@ class CreateSequenceSpec extends TestSupportFixture with DelegatingApp with File
   private def outDir = {
     (testDir / "output").createDirectories()
   }
+
+  private val options = new Options(FedoraVersionedFilter(), FEDORA_VERSIONED, strict = false)
 
   "createSequences" should " process 2 sequences" in {
     val sw = new StringWriter()
@@ -42,7 +46,7 @@ class CreateSequenceSpec extends TestSupportFixture with DelegatingApp with File
         |easy-dataset:3,easy-dataset:4,easy-dataset:5
         |""".stripMargin.split("\n").iterator
     delegatingApp(testDir / "staging", createBagExpects)
-      .createSequences(input, outDir)(csvFormat.print(sw)) shouldBe Success("no fedora/IO errors")
+      .createSequences(input, outDir, options)(csvFormat.print(sw)) shouldBe Success("no fedora/IO errors")
 
     // post conditions
 
@@ -109,7 +113,7 @@ class CreateSequenceSpec extends TestSupportFixture with DelegatingApp with File
         |easy-dataset:12
         |""".stripMargin.split("\n").iterator
     delegatingApp(testDir / "staging", createBagExpects)
-      .createSequences(input, outDir)(csvFormat.print(sw)) should matchPattern {
+      .createSequences(input, outDir, options)(csvFormat.print(sw)) should matchPattern {
       case Failure(_: IOException) =>
     }
 

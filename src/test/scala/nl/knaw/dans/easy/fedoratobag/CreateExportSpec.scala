@@ -132,7 +132,7 @@ class CreateExportSpec extends TestSupportFixture with DelegatingApp with FileFo
       )
     outputDir.list.toSeq should have length 2
     outputDir.list.toSeq.map(_.name).foreach(packageId =>
-        csvContent should include(packageId)
+      csvContent should include(packageId)
     )
     // the fatal bag is staged but not in the csv
     stagingDir.list.toSeq should have length 3

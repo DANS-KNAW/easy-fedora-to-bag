@@ -130,7 +130,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     }.recoverWith {
       case t: FedoraClientException if t.getStatus != 404 => Failure(t)
       case t: IOException => Failure(t)
-      case t => CsvRecord(datasetId, packageUUID, None, doi = "", depositor = "", SIMPLE.toString, s"FAILED: $t")
+      case t => CsvRecord(datasetId, packageUUID, None, doi = "", depositor = "", "-", s"FAILED: $t")
         .print(printer)
         Success(())
     }

@@ -130,7 +130,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     )(CsvRecord.csvFormat.print(sw)) shouldBe Success("no fedora/IO errors")
     sw.toString should fullyMatch regex
       """easyDatasetId,uuid1,uuid2,doi,depositor,transformationType,comment
-        |easy-dataset:17,.*,,,,simple,FAILED: java.lang.Exception: checksum error .* easy-file:35 .*/data/original/something.txt
+        |easy-dataset:17,.*,,,,-,FAILED: java.lang.Exception: checksum error .* easy-file:35 .*/data/original/something.txt
         |""".stripMargin
   }
 

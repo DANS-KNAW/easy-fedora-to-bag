@@ -32,7 +32,7 @@ class CreateSequenceSpec extends TestSupportFixture with DelegatingApp with File
     (testDir / "output").createDirectories()
   }
 
-  private val options = new Options(FedoraVersionedFilter(), FEDORA_VERSIONED, strict = false)
+  private val options = Options(FedoraVersionedFilter(), FEDORA_VERSIONED, strict = false)
 
   "createSequences" should " process 2 sequences" in {
     val sw = new StringWriter()
@@ -125,9 +125,9 @@ class CreateSequenceSpec extends TestSupportFixture with DelegatingApp with File
         |easy-dataset:1,.*,not strict fedora-versioned,Violates something
         |easy-dataset:2,.*,fedora-versioned,OK
         |easy-dataset:3,.*,fedora-versioned,OK
-        |easy-dataset:4,.*,simple,FAILED: .*FedoraClientException: mocked not found
+        |easy-dataset:4,.*,-,FAILED: .*FedoraClientException: mocked not found
         |easy-dataset:5,.*,fedora-versioned,OK
-        |easy-dataset:6,.*,simple,FAILED: .*IllegalArgumentException.*
+        |easy-dataset:6,.*,-,FAILED: .*IllegalArgumentException.*
         |easy-dataset:8,.*,fedora-versioned,OK
         |""".stripMargin
       )

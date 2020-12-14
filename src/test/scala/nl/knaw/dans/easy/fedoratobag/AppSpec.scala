@@ -90,12 +90,47 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     app.createExport(
       Iterator("easy-dataset:17"),
       (testDir / "output").createDirectories,
-      new Options(SimpleDatasetFilter(), ORIGINAL_VERSIONED),
+      Options(SimpleDatasetFilter(), ORIGINAL_VERSIONED),
       SIP
     )(CsvRecord.csvFormat.print(sw)) shouldBe Success("no fedora/IO errors")
     sw.toString should fullyMatch regex
       """easyDatasetId,uuid1,uuid2,doi,depositor,transformationType,comment
-        |easy-dataset:17,.*,10.17026/test-Iiib-z9p-4ywa,user001,original-versioned,OK
+        |easy-dataset:17,.+,.+,10.17026/test-Iiib-z9p-4ywa,user001,original-versioned,OK
+        |""".stripMargin
+  }
+
+  it should "produce a single bags" in {
+    val app = new AppWithMockedServices() {
+      Map(
+        "easy-discipline:77" -> audienceFoXML("easy-discipline:77", "D13200"),
+        "easy-dataset:17" -> XML.loadFile((sampleFoXML / "DepositApi.xml").toJava),
+        "easy-file:35" -> fileFoXml(digest = digests("acabadabra")),
+      ).foreach { case (id, xml) =>
+        (fedoraProvider.loadFoXml(_: String)) expects id once() returning Success(xml)
+      }
+      Seq(
+        (1, "easy-dataset:17", "ADDITIONAL_LICENSE", "lalala"),
+        (1, "easy-dataset:17", "DATASET_LICENSE", "blablabla"),
+        (1, "easy-file:35", "EASY_FILE", "acabadabra"),
+      ).foreach { case (n, objectId, streamId, content) =>
+        (fedoraProvider.disseminateDatastream(_: String, _: String)) expects(objectId, streamId
+        ) returning managed(content.inputStream) repeat n
+      }
+      (fedoraProvider.getSubordinates(_: String)) expects "easy-dataset:17" once() returning
+        Success(Seq("easy-file:35"))
+    }
+    // end of mocking
+
+    val sw = new StringWriter()
+    app.createExport(
+      Iterator("easy-dataset:17"),
+      (testDir / "output").createDirectories,
+      Options(SimpleDatasetFilter(), ORIGINAL_VERSIONED),
+      SIP
+    )(CsvRecord.csvFormat.print(sw)) shouldBe Success("no fedora/IO errors")
+    sw.toString should fullyMatch regex
+      """easyDatasetId,uuid1,uuid2,doi,depositor,transformationType,comment
+        |easy-dataset:17,.+,,10.17026/test-Iiib-z9p-4ywa,user001,original-versioned without second bag,OK
         |""".stripMargin
   }
 
@@ -130,7 +165,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     )(CsvRecord.csvFormat.print(sw)) shouldBe Success("no fedora/IO errors")
     sw.toString should fullyMatch regex
       """easyDatasetId,uuid1,uuid2,doi,depositor,transformationType,comment
-        |easy-dataset:17,.*,,,,-,FAILED: java.lang.Exception: checksum error .* easy-file:35 .*/data/original/something.txt
+        |easy-dataset:17,.+,,,,-,FAILED: java.lang.Exception: checksum error .* easy-file:35 .*/data/original/something.txt
         |""".stripMargin
   }
 

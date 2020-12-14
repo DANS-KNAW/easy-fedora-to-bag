@@ -59,10 +59,10 @@ class CreateExportSpec extends TestSupportFixture with DelegatingApp with FileFo
     )
     csvContent should (fullyMatch regex
       """easyDatasetId,uuid1,uuid2,doi,depositor,transformationType,comment
-        |easy-dataset:1,.*,,mocked-doi1,user001,simple,OK
-        |easy-dataset:2,.*,,,,-,FAILED: nl.knaw.dans.easy.fedoratobag.filter.InvalidTransformationException: mocked
-        |easy-dataset:3,.*,,,,-,FAILED: java.lang.Exception: easy-dataset:3
-        |easy-dataset:4,.*,.*,mocked-doi4,user001,simple,OK
+        |easy-dataset:1,.+,,mocked-doi1,user001,simple,OK
+        |easy-dataset:2,.+,,,,-,FAILED: .*InvalidTransformationException: mocked
+        |easy-dataset:3,.+,,,,-,FAILED: java.lang.Exception: easy-dataset:3
+        |easy-dataset:4,.+,,mocked-doi4,user001,simple,OK
         |""".stripMargin
       )
   }
@@ -88,8 +88,8 @@ class CreateExportSpec extends TestSupportFixture with DelegatingApp with FileFo
     val csvContent = sw.toString
     csvContent should (fullyMatch regex
       """easyDatasetId,uuid1,uuid2,doi,depositor,transformationType,comment
-        |easy-dataset:1,.*,mocked-doi1,testUser,simple,OK
-        |easy-dataset:2,.*,mocked-doi2,testUser,simple,OK
+        |easy-dataset:1,.+,,mocked-doi1,testUser,simple,OK
+        |easy-dataset:2,.+,,mocked-doi2,testUser,simple,OK
         |""".stripMargin
       )
     outputDir.list.toSeq should have length 2
@@ -124,10 +124,10 @@ class CreateExportSpec extends TestSupportFixture with DelegatingApp with FileFo
     val csvContent = sw.toString
     csvContent should (fullyMatch regex
       """easyDatasetId,uuid1,uuid2,doi,depositor,transformationType,comment
-        |easy-dataset:1,.*,mocked-doi1,testUser,simple,OK
-        |easy-dataset:2,.*,,,-,FAILED: java.lang.Exception: easy-dataset:2
-        |easy-dataset:3,.*,,,-,FAILED: .*InvalidTransformationException: mocked
-        |easy-dataset:4,.*,mocked-doi4,testUser,simple,OK
+        |easy-dataset:1,.+,,mocked-doi1,testUser,simple,OK
+        |easy-dataset:2,.+,,,,-,FAILED: java.lang.Exception: easy-dataset:2
+        |easy-dataset:3,.+,,,,-,FAILED: .*InvalidTransformationException: mocked
+        |easy-dataset:4,.+,,mocked-doi4,testUser,simple,OK
         |""".stripMargin
       )
     outputDir.list.toSeq should have length 2

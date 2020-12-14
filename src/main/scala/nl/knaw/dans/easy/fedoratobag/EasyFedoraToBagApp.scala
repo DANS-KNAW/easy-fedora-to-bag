@@ -28,7 +28,7 @@ import com.yourmediashelf.fedora.client.{ FedoraClient, FedoraClientException }
 import javax.naming.ldap.InitialLdapContext
 import nl.knaw.dans.bag.ChecksumAlgorithm
 import nl.knaw.dans.bag.v0.DansV0Bag
-import nl.knaw.dans.easy.fedoratobag.Command.FeedBackMessage
+import nl.knaw.dans.easy.fedoratobag.Command.{ FeedBackMessage, logger }
 import nl.knaw.dans.easy.fedoratobag.FileItem.{ checkNotImplemented, filesXml }
 import nl.knaw.dans.easy.fedoratobag.FoXml.{ getEmd, _ }
 import nl.knaw.dans.easy.fedoratobag.OutputFormat.OutputFormat
@@ -54,6 +54,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
   private val emdUnmarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
 
   def createSequences(lines: Iterator[String], outputDir: File, options: Options)(printer: CSVPrinter): Try[FeedBackMessage] = {
+    logger.info(options.toString)
 
     def exportBag(firstVersion: Option[VersionInfo], datasetId: DatasetId): Try[VersionInfo] = {
       val packageUUID = UUID.randomUUID
@@ -92,6 +93,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
 
   def createExport(input: Iterator[DatasetId], outputDir: File, options: Options, outputFormat: OutputFormat)
                   (printer: CSVPrinter): Try[FeedBackMessage] = input.map { datasetId =>
+    logger.info(options.toString)
 
     def bagDir(packageDir: File) = outputFormat match {
       case OutputFormat.AIP => packageDir

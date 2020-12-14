@@ -54,11 +54,11 @@ class CreateSequenceSpec extends TestSupportFixture with DelegatingApp with File
     csvContent should (fullyMatch regex
       // manual check (with break point): the value of uuid1 repeats during a sequence
       """easyDatasetId,uuid1,uuid2,doi,depositor,transformationType,comment
-        |easy-dataset:1,.*,,mocked-doi1,user001,fedora-versioned,OK
-        |easy-dataset:2,.*,.*,mocked-doi2,user001,fedora-versioned,OK
-        |easy-dataset:3,.*,,mocked-doi3,user001,fedora-versioned,OK
-        |easy-dataset:4,.*,.*,mocked-doi4,user001,fedora-versioned,OK
-        |easy-dataset:5,.*,.*,mocked-doi5,user001,fedora-versioned,OK
+        |easy-dataset:1,.+,,mocked-doi1,user001,fedora-versioned,OK
+        |easy-dataset:2,.+,.+,mocked-doi2,user001,fedora-versioned,OK
+        |easy-dataset:3,.+,,mocked-doi3,user001,fedora-versioned,OK
+        |easy-dataset:4,.+,.+,mocked-doi4,user001,fedora-versioned,OK
+        |easy-dataset:5,.+,.+,mocked-doi5,user001,fedora-versioned,OK
         |""".stripMargin
       )
 
@@ -126,14 +126,14 @@ class CreateSequenceSpec extends TestSupportFixture with DelegatingApp with File
     csvContent should (fullyMatch regex
       // mocking allows to demonstrate the difference between a strict and non-strict run in a single test
       """easyDatasetId,uuid1,uuid2,doi,depositor,transformationType,comment
-        |easy-dataset:10,.*,-,FAILED: .*InvalidTransformationException: Violates whatever
-        |easy-dataset:1,.*,not strict fedora-versioned,Violates something
-        |easy-dataset:2,.*,fedora-versioned,OK
-        |easy-dataset:3,.*,fedora-versioned,OK
-        |easy-dataset:4,.*,-,FAILED: .*FedoraClientException: mocked not found
-        |easy-dataset:5,.*,fedora-versioned,OK
-        |easy-dataset:6,.*,-,FAILED: .*IllegalArgumentException.*
-        |easy-dataset:8,.*,fedora-versioned,OK
+        |easy-dataset:10,,,,,-,FAILED: .*InvalidTransformationException: Violates whatever
+        |easy-dataset:1,.+,,mocked-doi,user001,not strict fedora-versioned,Violates something
+        |easy-dataset:2,.+,.+,mocked-doi,user001,fedora-versioned,OK
+        |easy-dataset:3,.+,,mocked-doi,user001,fedora-versioned,OK
+        |easy-dataset:4,.+,,,,-,FAILED: .*FedoraClientException: mocked not found
+        |easy-dataset:5,.+,.+,mocked-doi,user001,fedora-versioned,OK
+        |easy-dataset:6,,,,,-,FAILED: .*IllegalArgumentException.*
+        |easy-dataset:8,.+,,mocked-doi,user001,fedora-versioned,OK
         |""".stripMargin
       )
 

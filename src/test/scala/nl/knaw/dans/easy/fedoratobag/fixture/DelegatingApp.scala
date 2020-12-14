@@ -18,8 +18,10 @@ package nl.knaw.dans.easy.fedoratobag.fixture
 import java.net.URI
 
 import better.files.File
+import javax.naming.ldap.InitialLdapContext
 import nl.knaw.dans.bag.v0.DansV0Bag
-import nl.knaw.dans.easy.fedoratobag.{ Configuration, DatasetId, DatasetInfo, EasyFedoraToBagApp, Options, VersionInfo }
+import nl.knaw.dans.easy.fedoratobag.filter.BagIndex
+import nl.knaw.dans.easy.fedoratobag.{ Configuration, DatasetId, DatasetInfo, EasyFedoraToBagApp, FedoraProvider, Options, VersionInfo }
 import org.scalamock.scalatest.MockFactory
 
 import scala.util.Try
@@ -31,7 +33,11 @@ trait DelegatingApp extends MockFactory {
     new Configuration("testVersion", null, null, new URI(""), staging, null)
   ) {
     // mock requires a constructor without parameters
-    class MockEasyFedoraToBagApp() extends EasyFedoraToBagApp(null)
+    class MockEasyFedoraToBagApp() extends EasyFedoraToBagApp(null){
+      override lazy val fedoraProvider: FedoraProvider = mock[FedoraProvider]
+      override lazy val ldapContext: InitialLdapContext = mock[InitialLdapContext]
+      override lazy val bagIndex: BagIndex = mock[BagIndex]
+    }
 
     private val delegate = mock[MockEasyFedoraToBagApp]
     createBagExpects.foreach { case (id, result) =>

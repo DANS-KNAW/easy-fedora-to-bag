@@ -54,16 +54,22 @@ object CsvRecord {
 
   def apply(datasetId: DatasetId, datasetInfo: DatasetInfo, uuid1: UUID, uuid2: Option[UUID], options: Options): CsvRecord = {
     val violations = datasetInfo.maybeFilterViolations
-    val comment = if (uuid2.isEmpty && options.transformationType == ORIGINAL_VERSIONED)
-                    "No second bag. " + violations.mkString("")
-                  else violations.getOrElse("OK")
+    val comment = if (violations.isEmpty) "OK"
+                  else violations.mkString("")
+    val typePrefix = violations.map(_ => "not strict ").getOrElse("")
+    val typeSuffix = uuid2.map(_ => "")
+      .getOrElse(
+        if (options.transformationType == ORIGINAL_VERSIONED)
+          " without second bag"
+        else ""
+      )
     new CsvRecord(
       datasetId,
       uuid1,
       uuid2,
       datasetInfo.doi,
       datasetInfo.depositor,
-      violations.map(_ => "not strict ").getOrElse("") + options.transformationType,
+      typePrefix + options.transformationType + typeSuffix,
       comment,
     )
   }

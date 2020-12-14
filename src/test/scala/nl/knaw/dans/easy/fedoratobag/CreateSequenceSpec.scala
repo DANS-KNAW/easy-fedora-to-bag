@@ -21,7 +21,7 @@ import better.files.File
 import com.yourmediashelf.fedora.client.FedoraClientException
 import nl.knaw.dans.easy.fedoratobag.CsvRecord.csvFormat
 import nl.knaw.dans.easy.fedoratobag.TransformationType.FEDORA_VERSIONED
-import nl.knaw.dans.easy.fedoratobag.filter.FedoraVersionedFilter
+import nl.knaw.dans.easy.fedoratobag.filter.{ FedoraVersionedFilter, InvalidTransformationException }
 import nl.knaw.dans.easy.fedoratobag.fixture.{ DelegatingApp, FileSystemSupport, TestSupportFixture }
 
 import scala.util.{ Failure, Success }
@@ -93,6 +93,8 @@ class CreateSequenceSpec extends TestSupportFixture with DelegatingApp with File
     val sw = new StringWriter()
     val createBagExpects = Seq(
       "easy-dataset:1" -> Success(DatasetInfo(Some("Violates something"), "mocked-doi", "", "user001")),
+      "easy-dataset:10" -> Failure(InvalidTransformationException("Violates whatever")),
+      // the two mocked results above mix a strict and non-strict run in a single test
       "easy-dataset:2" -> Success(DatasetInfo(None, "mocked-doi", "", "user001")),
       "easy-dataset:3" -> Success(DatasetInfo(None, "mocked-doi", "", "user001")),
       "easy-dataset:4" -> Failure(new FedoraClientException(404, "mocked not found")),
@@ -105,12 +107,13 @@ class CreateSequenceSpec extends TestSupportFixture with DelegatingApp with File
     // end of mocking
 
     val input =
-      """easy-dataset:1,easy-dataset:2
+      """easy-dataset:10,easy-dataset:11,easy-dataset:12
+        |easy-dataset:1,easy-dataset:2
         |easy-dataset:3,easy-dataset:4,easy-dataset:5
         |easy-dataset:6,easy-dataset:7
         |easy-dataset:8,easy-dataset:9
-        |easy-dataset:10,easy-dataset:11
-        |easy-dataset:12
+        |easy-dataset:12,easy-dataset:13
+        |easy-dataset:14
         |""".stripMargin.split("\n").iterator
     delegatingApp(testDir / "staging", createBagExpects)
       .createSequences(input, outDir, options)(csvFormat.print(sw)) should matchPattern {
@@ -121,7 +124,9 @@ class CreateSequenceSpec extends TestSupportFixture with DelegatingApp with File
 
     val csvContent = sw.toString
     csvContent should (fullyMatch regex
+      // mocking allows to demonstrate the difference between a strict and non-strict run in a single test
       """easyDatasetId,uuid1,uuid2,doi,depositor,transformationType,comment
+        |easy-dataset:10,.*,-,FAILED: .*InvalidTransformationException: Violates whatever
         |easy-dataset:1,.*,not strict fedora-versioned,Violates something
         |easy-dataset:2,.*,fedora-versioned,OK
         |easy-dataset:3,.*,fedora-versioned,OK
@@ -140,7 +145,7 @@ class CreateSequenceSpec extends TestSupportFixture with DelegatingApp with File
     (testDir / "output").listRecursively.filter(_.name == "bag-info.txt")
       .toSeq should have size 5
     (testDir / "staging").listRecursively.filter(_.name == "bag-info.txt")
-      .toSeq should have size 3
+      .toSeq should have size 4
 
     // only completed bags should be mentioned in csv
 

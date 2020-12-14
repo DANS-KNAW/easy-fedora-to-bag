@@ -42,7 +42,7 @@ object Command extends App with DebugEnhancedLogging {
     .doIfFailure { case NonFatal(e) => println(s"FAILED: ${ e.getMessage }") }
 
   private def runSubcommand(app: EasyFedoraToBagApp): Try[FeedBackMessage] = {
-    lazy val isAip = commandLine.outputFormat() == AIP
+    lazy val isAip = commandLine.outputFormat.isSupplied && commandLine.outputFormat() == AIP
     Try(commandLine.transformation() match {
       case FEDORA_VERSIONED if !commandLine.europeana() && !isAip => FedoraVersionedFilter()
       case ORIGINAL_VERSIONED if !isAip => SimpleDatasetFilter()

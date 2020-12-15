@@ -283,7 +283,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     fileFilterType match {
       case LARGEST_PDF => largest(LARGEST_PDF, LARGEST_IMAGE)
       case LARGEST_IMAGE => largest(LARGEST_IMAGE, LARGEST_PDF)
-      case ORIGINAL_FILES => successUnlessEmpty(fileInfos.filter(_.isOriginal))// TODO is ALL_FILES if no second bag
+      case ORIGINAL_FILES => successUnlessEmpty(fileInfos.filter(_.isOriginal)) // TODO is ALL_FILES if no second bag
       case ALL_FILES => successUnlessEmpty(fileInfos)
     }
   }
@@ -323,13 +323,16 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
   }
 
   private def addPayloadFileTo(bag: DansV0Bag)(fileInfo: FileInfo): Try[Node] = {
-    val file = bag.baseDir / s"data/${ fileInfo.path }"
+    val target = fileInfo.withoutOriginal
+    val file = bag.baseDir / "data" / target.toString
     val streamId = "EASY_FILE"
     for {
+      _ <- if (!file.exists) Success(())
+           else Failure(new IOException(s"${ fileInfo.path } was added to the bag before"))
       fileItem <- FileItem(fileInfo)
       _ <- fedoraProvider
         .disseminateDatastream(fileInfo.fedoraFileId, streamId)
-        .map(bag.addPayloadFile(_, fileInfo.path))
+        .map(bag.addPayloadFile(_, target))
         .tried.flatten
       _ <- fileInfo.contentDigest.map(validateChecksum(file, bag, fileInfo.fedoraFileId))
         .getOrElse(Success(logger.warn(s"No digest found for ${ fileInfo.fedoraFileId } path = ${ fileInfo.path }")))

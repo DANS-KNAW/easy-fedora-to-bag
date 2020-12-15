@@ -33,6 +33,8 @@ case class FileInfo(fedoraFileId: String,
   val isOriginal: Boolean = path.startsWith("original/")
   val isAccessible: Boolean = accessibleTo.toUpperCase() != "NONE"
   val isAccessibleOriginal: Boolean = isOriginal && isAccessible
+  val withoutOriginal: Path = if (isOriginal) path.subpath(1, path.getNameCount)
+                              else path
 }
 
 object FileInfo {

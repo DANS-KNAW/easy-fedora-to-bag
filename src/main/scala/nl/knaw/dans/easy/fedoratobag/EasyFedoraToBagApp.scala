@@ -85,7 +85,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       val datasetIds = line.split(",")
       val triedUnit = datasetIds
         .headOption
-        .map(exportSequence(datasetIds.tail))
+        .map(exportSequence(datasetIds.drop(1)))
         .getOrElse(Success(()))
       errorHandling(triedUnit, printer, datasetIds.head, null)
     }.failFastOr(Success("no fedora/IO errors"))

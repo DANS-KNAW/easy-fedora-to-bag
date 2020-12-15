@@ -17,6 +17,10 @@ package nl.knaw.dans.easy.fedoratobag
 
 import java.nio.file.{ Path, Paths }
 
+import better.files.File
+import nl.knaw.dans.bag.ChecksumAlgorithm
+import nl.knaw.dans.bag.v0.DansV0Bag
+
 import scala.util.Try
 import scala.xml.Node
 
@@ -31,10 +35,12 @@ case class FileInfo(fedoraFileId: String,
                     additionalMetadata: Option[Node],
                    ) {
   val isOriginal: Boolean = path.startsWith("original/")
-  val isAccessible: Boolean = accessibleTo.toUpperCase() != "NONE"
+  private val isAccessible: Boolean = accessibleTo.toUpperCase() != "NONE"
   val isAccessibleOriginal: Boolean = isOriginal && isAccessible
-  val withoutOriginal: Path = if (isOriginal) path.subpath(1, path.getNameCount)
-                              else path
+
+  def bagPath(isOriginalVersioned: Boolean): Path =
+    if (isOriginalVersioned && isOriginal) path.subpath(1, path.getNameCount)
+    else path
 }
 
 object FileInfo {

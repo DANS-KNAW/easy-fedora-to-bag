@@ -163,7 +163,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       _ <- (bagDir1 / "metadata").list.toList
         .filter(_.name.toLowerCase.contains("license"))
         .traverse(file => copy(file.name, bag2))
-      fileItems <- datasetInfo.nextFileInfos.toList.traverse(addPayloadFileTo(bag2))
+      fileItems <- datasetInfo.nextFileInfos.toList.traverse(addPayloadFileTo(bag2, isOriginalVersioned = true))
       _ <- checkNotImplementedFileMetadata(fileItems, logger)
       _ <- addXmlMetadataTo(bag2, "files.xml")(filesXml(fileItems))
       _ <- bag2.save
@@ -225,7 +225,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       filterType = firstFileFilter(emdXml, nextFileInfos.nonEmpty, options.europeana)
       firstFileInfos <- selectFileInfos(filterType, allFileInfos)
       _ = logger.debug(s"nextFileInfos = ${ nextFileInfos.map(_.path) }")
-      firstBagFileItems <- firstFileInfos.traverse(addPayloadFileTo(bag))
+      firstBagFileItems <- firstFileInfos.traverse(addPayloadFileTo(bag, isOriginalVersioned))
       _ <- checkNotImplementedFileMetadata(firstBagFileItems, logger)
       _ <- addXmlMetadataTo(bag, "files.xml")(filesXml(firstBagFileItems))
       _ <- bag.save
@@ -243,18 +243,21 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     }
   }
 
-  def firstFileFilter(emd: Node, hasSecondBag: Boolean, europeana: Boolean): FileFilterType = {
-    def isDCMI(node: Node) = node
+  private def dcmiType(emd: Node): String = {
+    def hasDcmiScheme(node: Node) = node
       .attribute("http://easy.dans.knaw.nl/easy/easymetadata/eas/", "scheme")
       .exists(_.text == "DCMI")
 
+    (emd \ "type" \ "type")
+      .filter(hasDcmiScheme)
+      .text.toLowerCase.trim
+  }
+
+  private def firstFileFilter(emd: Node, hasSecondBag: Boolean, europeana: Boolean): FileFilterType = {
     if (hasSecondBag) ORIGINAL_FILES
     else if (!europeana) ALL_FILES
-         else {
-           val dcmiType = (emd \ "type" \ "type").filter(isDCMI)
-           if (dcmiType.text.toLowerCase.trim == "text") LARGEST_PDF
-           else LARGEST_IMAGE
-         }
+         else if (dcmiType(emd) == "text") LARGEST_PDF
+              else LARGEST_IMAGE
   }
 
   private def selectFileInfos(fileFilterType: FileFilterType, fileInfos: List[FileInfo]): Try[List[FileInfo]] = {
@@ -322,8 +325,8 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       }
   }
 
-  private def addPayloadFileTo(bag: DansV0Bag)(fileInfo: FileInfo): Try[Node] = {
-    val target = fileInfo.withoutOriginal
+  private def addPayloadFileTo(bag: DansV0Bag, isOriginalVersioned: Boolean)(fileInfo: FileInfo): Try[Node] = {
+    val target = fileInfo.bagPath(isOriginalVersioned)
     val file = bag.baseDir / "data" / target.toString
     val streamId = "EASY_FILE"
     for {

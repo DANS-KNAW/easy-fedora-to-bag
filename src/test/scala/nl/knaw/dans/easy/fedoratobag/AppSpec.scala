@@ -165,7 +165,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     )(CsvRecord.csvFormat.print(sw)) shouldBe Success("no fedora/IO errors")
     sw.toString should fullyMatch regex
       """easyDatasetId,uuid1,uuid2,doi,depositor,transformationType,comment
-        |easy-dataset:17,.+,,,,-,FAILED: java.lang.Exception: checksum error .* easy-file:35 .*/data/something.txt
+        |easy-dataset:17,.+,,,,-,FAILED: java.lang.Exception: checksum error .* easy-file:35 .*/data/original/something.txt
         |""".stripMargin
   }
 
@@ -324,7 +324,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     val triedRecord = app.createBag("easy-dataset:13", bagDir, Options(app.filter))
     triedRecord shouldBe a[Success[_]]
     (bagDir / "data").listRecursively.toList.map(_.name) should
-      contain theSameElementsAs List("c.txt", "b.txt", "a.txt")
+      contain theSameElementsAs List("original","c.txt", "b.txt", "a.txt")
   }
 
   it should "export largest image as payload" in {
@@ -352,7 +352,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     val bagDir = testDir / "bags" / UUID.randomUUID.toString
     app.createBag("easy-dataset:13", bagDir, Options(app.filter, europeana = true)) shouldBe a[Success[_]]
     (bagDir / "data").listRecursively.toList.map(_.name) should
-      contain theSameElementsAs List("c.png")
+      contain theSameElementsAs List("original","c.png")
   }
 
   it should "fall back to largest pdf file" in {
@@ -380,7 +380,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     val bagDir = testDir / "bags" / UUID.randomUUID.toString
     app.createBag("easy-dataset:13", bagDir, Options(app.filter, europeana = true)) shouldBe a[Success[_]]
     (bagDir / "data").listRecursively.toList.map(_.name) should
-      contain theSameElementsAs List("c.pdf")
+      contain theSameElementsAs List("original", "c.pdf")
   }
 
   it should "export only original files" in {

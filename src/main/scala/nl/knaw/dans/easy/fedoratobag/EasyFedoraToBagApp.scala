@@ -227,8 +227,10 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       _ <- bag.save
       doi = emd.getEmdIdentifier.getDansManagedDoi
       urn = getUrn(datasetId, emd)
-      nextFileInfos = if (maybeFilterViolations.nonEmpty && options.strict) Seq.empty
-                      else getNextFileInfos(allFileInfos, firstFileInfos, options.transformationType == ORIGINAL_VERSIONED)
+      isOriginalVersioned = options.transformationType == ORIGINAL_VERSIONED
+      nextFileInfos = if (!isOriginalVersioned || allFileInfos.size == firstFileInfos.size) Seq.empty
+                      else allFileInfos.filter(_.inSecondBag)
+      _ = logger.debug(s"nextFileInfos = ${ nextFileInfos.map(_.path) }")
     } yield DatasetInfo(maybeFilterViolations, doi, urn, depositor, nextFileInfos)
   }
 
@@ -237,19 +239,6 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       .find(_.getScheme == "PID")
       .map(_.getValue)
       .getOrElse(throw new Exception(s"no URN in EMD of $datasetId "))
-  }
-
-  private def getNextFileInfos(allFileInfos: List[FileInfo], firstFileInfos: List[FileInfo], originalVersioning: Boolean): Seq[FileInfo] = {
-    if (!originalVersioning || allFileInfos.size == firstFileInfos.size)
-      Seq[FileInfo]()
-    else {
-      // firstFileInfos are files of the first dataset in other words all original files
-      val notAccessibleOriginals = selectFileInfos(NOT_ACCESSIBLE, firstFileInfos).getOrElse(Seq.empty)
-      // all files minus not accessible originals -> accessible originals + the rest for the second dataset
-      val nextFileInfos = allFileInfos.toSet &~ notAccessibleOriginals.toSet
-      logger.debug(s"nextFileInfos = ${ nextFileInfos.map(_.path) }")
-      nextFileInfos.toSeq
-    }
   }
 
   private def getAudience(id: String) = {
@@ -297,7 +286,6 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       case LARGEST_PDF => largest(LARGEST_PDF, LARGEST_IMAGE)
       case LARGEST_IMAGE => largest(LARGEST_IMAGE, LARGEST_PDF)
       case ORIGINAL_FILES => successUnlessEmpty(fileInfos.filter(_.path.startsWith("original/")))
-      case NOT_ACCESSIBLE => successUnlessEmpty(fileInfos.filter(_.accessibleTo == "NONE"))
       case ALL_FILES => successUnlessEmpty(fileInfos)
     }
   }

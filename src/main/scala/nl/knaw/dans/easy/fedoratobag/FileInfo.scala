@@ -29,7 +29,10 @@ case class FileInfo(fedoraFileId: String,
                     visibleTo: String,
                     contentDigest: Option[Node],
                     additionalMetadata: Option[Node],
-                   )
+                   ) {
+  val inFirstBag: Boolean = path.startsWith("original/")
+  val inSecondBag: Boolean = !inFirstBag || accessibleTo.toUpperCase() != "NONE"
+}
 
 object FileInfo {
   def apply(foXml: Node): Try[FileInfo] = {

@@ -328,7 +328,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     val streamId = "EASY_FILE"
     for {
       _ <- if (!file.exists) Success(())
-           else Failure(new IOException(s"${ fileInfo.path } was added to the bag before"))
+           else Failure(new Exception(s"${ fileInfo.path } was added to the bag before"))
       fileItem <- FileItem(fileInfo)
       _ <- fedoraProvider
         .disseminateDatastream(fileInfo.fedoraFileId, streamId)

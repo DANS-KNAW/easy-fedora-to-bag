@@ -149,7 +149,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
   }
 
 
-  "titles" should "have an overflow in alternative" in {
+  "titles" should "have an overflow in dcmiMetadata titles" in {
     val emd = parseEmdContent(Seq(
       <emd:title>
           <dc:title>ABC</dc:title>

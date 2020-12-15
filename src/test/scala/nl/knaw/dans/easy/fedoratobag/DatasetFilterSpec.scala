@@ -92,10 +92,10 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
     val emd = parseEmdContent(Seq(emdTitle, emdDoi))
 
     simpleChecker(loggerExpectsWarnings = Seq(
-      "violated 2: has jump off easy-jumpoff:123",
+      "violated 2: has jump off dans-jumpoff:123",
       "violated 3: invalid title thematische collectie",
       "violated 4: invalid rights not found",
-    )).violations(emd, emd2ddm(emd), amd("PUBLISHED"), Seq("easy-jumpoff:123")) shouldBe
+    )).violations(emd, emd2ddm(emd), amd("PUBLISHED"), Seq("dans-jumpoff:123")) shouldBe
       Success(Some("Violates 2: has jump off; 3: invalid title; 4: invalid rights (not found)"))
   }
 

@@ -31,18 +31,4 @@ case class Options(datasetFilter: DatasetFilter,
                    transformationType: TransformationType = SIMPLE,
                    strict: Boolean = true,
                    europeana: Boolean = false,
-                  ) {
-  private def isDCMI(node: Node) = node
-    .attribute("http://easy.dans.knaw.nl/easy/easymetadata/eas/", "scheme")
-    .exists(_.text == "DCMI")
-
-  def firstFileFilter(emd: Node): FileFilterType = {
-    if (transformationType == ORIGINAL_VERSIONED) ORIGINAL_FILES
-    else if (!europeana) ALL_FILES
-         else {
-           val dcmiType = (emd \ "type" \ "type").filter(isDCMI)
-           if (dcmiType.text.toLowerCase.trim == "text") LARGEST_PDF
-           else LARGEST_IMAGE
-         }
-  }
-}
+                  )

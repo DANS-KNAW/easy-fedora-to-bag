@@ -30,8 +30,9 @@ case class FileInfo(fedoraFileId: String,
                     contentDigest: Option[Node],
                     additionalMetadata: Option[Node],
                    ) {
-  val inFirstBag: Boolean = path.startsWith("original/")
-  val inSecondBag: Boolean = !inFirstBag || accessibleTo.toUpperCase() != "NONE"
+  val isOriginal: Boolean = path.startsWith("original/")
+  val isAccessible: Boolean = accessibleTo.toUpperCase() != "NONE"
+  val isAccessibleOriginal: Boolean = isOriginal && isAccessible
 }
 
 object FileInfo {

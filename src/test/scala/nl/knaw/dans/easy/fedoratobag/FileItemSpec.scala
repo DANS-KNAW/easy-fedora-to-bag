@@ -356,7 +356,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
     ).foreach(s => (mockLogger.warn(_: String)) expects s once())
     (() => mockLogger.isWarnEnabled()) expects() anyNumberOfTimes() returning true
 
-    FileItem.checkNotImplemented(List(triedFileItem.get), Logger(mockLogger)) should matchPattern {
+    FileItem.checkNotImplementedFileMetadata(List(triedFileItem.get), Logger(mockLogger)) should matchPattern {
       case Failure(e) if e.getMessage == "1 file(s) with not implemented additional file metadata: List(original_file AND archival_name)" =>
     }
   }
@@ -387,7 +387,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
     ).foreach(s => (mockLogger.warn(_: String)) expects s once())
     (() => mockLogger.isWarnEnabled()) expects() anyNumberOfTimes() returning true
 
-    FileItem.checkNotImplemented(items.toList, Logger(mockLogger)) should matchPattern {
+    FileItem.checkNotImplementedFileMetadata(items.toList, Logger(mockLogger)) should matchPattern {
       case Failure(e) if e.getMessage == "2 file(s) with not implemented additional file metadata: List(analytic_units, mapprojection, opmerkingen)" =>
     }
   }

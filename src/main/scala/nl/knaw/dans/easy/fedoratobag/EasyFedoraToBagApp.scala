@@ -28,8 +28,8 @@ import com.yourmediashelf.fedora.client.{ FedoraClient, FedoraClientException }
 import javax.naming.ldap.InitialLdapContext
 import nl.knaw.dans.bag.ChecksumAlgorithm
 import nl.knaw.dans.bag.v0.DansV0Bag
-import nl.knaw.dans.easy.fedoratobag.Command.{ FeedBackMessage, logger }
-import nl.knaw.dans.easy.fedoratobag.FileItem.{ checkNotImplemented, filesXml }
+import nl.knaw.dans.easy.fedoratobag.Command.FeedBackMessage
+import nl.knaw.dans.easy.fedoratobag.FileItem.{ checkNotImplementedFileMetadata, filesXml }
 import nl.knaw.dans.easy.fedoratobag.FoXml.{ getEmd, _ }
 import nl.knaw.dans.easy.fedoratobag.OutputFormat.OutputFormat
 import nl.knaw.dans.easy.fedoratobag.TransformationType._
@@ -164,7 +164,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
         .filter(_.name.toLowerCase.contains("license"))
         .traverse(file => copy(file.name, bag2))
       fileItems <- datasetInfo.nextFileInfos.toList.traverse(addPayloadFileTo(bag2))
-      _ <- checkNotImplemented(fileItems, logger)
+      _ <- checkNotImplementedFileMetadata(fileItems, logger)
       _ <- addXmlMetadataTo(bag2, "files.xml")(filesXml(fileItems))
       _ <- bag2.save
     } yield ()
@@ -219,44 +219,42 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
         .getOrElse(Success(()))
       _ <- managedMetadataStream(foXml, "DATASET_LICENSE", bag, "depositor-info/depositor-agreement")
         .getOrElse(Success(()))
+      isOriginalVersioned = options.transformationType == ORIGINAL_VERSIONED
       allFileInfos <- fedoraIDs.filter(_.startsWith("easy-file:")).toList.traverse(getFileInfo)
-      firstFileInfos <- selectFileInfos(options.firstFileFilter(emdXml), allFileInfos)
+      nextFileInfos = forSecondBag(allFileInfos, isOriginalVersioned)
+      filterType = firstFileFilter(emdXml, nextFileInfos.nonEmpty, options.europeana)
+      firstFileInfos <- selectFileInfos(filterType, allFileInfos)
+      _ = logger.debug(s"nextFileInfos = ${ nextFileInfos.map(_.path) }")
       firstBagFileItems <- firstFileInfos.traverse(addPayloadFileTo(bag))
-      _ <- checkNotImplemented(firstBagFileItems, logger)
+      _ <- checkNotImplementedFileMetadata(firstBagFileItems, logger)
       _ <- addXmlMetadataTo(bag, "files.xml")(filesXml(firstBagFileItems))
       _ <- bag.save
       doi = emd.getEmdIdentifier.getDansManagedDoi
       urn = getUrn(datasetId, emd)
-      isOriginalVersioned = options.transformationType == ORIGINAL_VERSIONED
-      nextFileInfos = if (!isOriginalVersioned || allFileInfos.size == firstFileInfos.size) Seq.empty
-                      else allFileInfos.filter(_.inSecondBag)
-      _ = logger.debug(s"nextFileInfos = ${ nextFileInfos.map(_.path) }")
     } yield DatasetInfo(maybeFilterViolations, doi, urn, depositor, nextFileInfos)
   }
 
-  private def getUrn(datasetId: DatasetId, emd: EasyMetadataImpl) = {
-    emd.getEmdIdentifier.getDcIdentifier.asScala
-      .find(_.getScheme == "PID")
-      .map(_.getValue)
-      .getOrElse(throw new Exception(s"no URN in EMD of $datasetId "))
+  private def forSecondBag(all: Seq[FileInfo], isOriginalVersioned: Boolean): Seq[FileInfo] = {
+    if (!isOriginalVersioned) Seq.empty
+    else {
+      val accessibleOriginals = all.filter(_.isAccessibleOriginal)
+      if (all.size == accessibleOriginals.size) Seq.empty
+      else accessibleOriginals ++ all.filterNot(_.isOriginal)
+    }
   }
 
-  private def getAudience(id: String) = {
-    fedoraProvider.loadFoXml(id).map(foXml =>
-      (foXml \\ "discipline-md" \ "OICode").text
-    )
-  }
+  def firstFileFilter(emd: Node, hasSecondBag: Boolean, europeana: Boolean): FileFilterType = {
+    def isDCMI(node: Node) = node
+      .attribute("http://easy.dans.knaw.nl/easy/easymetadata/eas/", "scheme")
+      .exists(_.text == "DCMI")
 
-  private def addMetadataStreamTo(bag: DansV0Bag, target: String)(content: InputStream): Try[Any] = {
-    bag.addTagFile(content, Paths.get(s"metadata/$target"))
-  }
-
-  private def addXmlMetadataTo(bag: DansV0Bag, target: String)(content: Node): Try[Any] = {
-    bag.addTagFile(content.serialize.inputStream, Paths.get(s"metadata/$target"))
-  }
-
-  private def addAgreementsTo(bag: DansV0Bag)(content: Node): Try[Any] = {
-    bag.addTagFile(content.serialize.inputStream, Paths.get(s"metadata/depositor-info/agreements.xml"))
+    if (hasSecondBag) ORIGINAL_FILES
+    else if (!europeana) ALL_FILES
+         else {
+           val dcmiType = (emd \ "type" \ "type").filter(isDCMI)
+           if (dcmiType.text.toLowerCase.trim == "text") LARGEST_PDF
+           else LARGEST_IMAGE
+         }
   }
 
   private def selectFileInfos(fileFilterType: FileFilterType, fileInfos: List[FileInfo]): Try[List[FileInfo]] = {
@@ -285,9 +283,34 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     fileFilterType match {
       case LARGEST_PDF => largest(LARGEST_PDF, LARGEST_IMAGE)
       case LARGEST_IMAGE => largest(LARGEST_IMAGE, LARGEST_PDF)
-      case ORIGINAL_FILES => successUnlessEmpty(fileInfos.filter(_.path.startsWith("original/")))
+      case ORIGINAL_FILES => successUnlessEmpty(fileInfos.filter(_.isOriginal))// TODO is ALL_FILES if no second bag
       case ALL_FILES => successUnlessEmpty(fileInfos)
     }
+  }
+
+  private def getUrn(datasetId: DatasetId, emd: EasyMetadataImpl) = {
+    emd.getEmdIdentifier.getDcIdentifier.asScala
+      .find(_.getScheme == "PID")
+      .map(_.getValue)
+      .getOrElse(throw new Exception(s"no URN in EMD of $datasetId "))
+  }
+
+  private def getAudience(id: String) = {
+    fedoraProvider.loadFoXml(id).map(foXml =>
+      (foXml \\ "discipline-md" \ "OICode").text
+    )
+  }
+
+  private def addMetadataStreamTo(bag: DansV0Bag, target: String)(content: InputStream): Try[Any] = {
+    bag.addTagFile(content, Paths.get(s"metadata/$target"))
+  }
+
+  private def addXmlMetadataTo(bag: DansV0Bag, target: String)(content: Node): Try[Any] = {
+    bag.addTagFile(content.serialize.inputStream, Paths.get(s"metadata/$target"))
+  }
+
+  private def addAgreementsTo(bag: DansV0Bag)(content: Node): Try[Any] = {
+    bag.addTagFile(content.serialize.inputStream, Paths.get(s"metadata/depositor-info/agreements.xml"))
   }
 
   private def getFileInfo(fedoraFileId: String): Try[FileInfo] = {

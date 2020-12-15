@@ -36,7 +36,7 @@ object FileItem {
     { items }
     </files>
 
-  def checkNotImplemented(fileItems: List[Node], logger: Logger): Try[Unit] = {
+  def checkNotImplementedFileMetadata(fileItems: List[Node], logger: Logger): Try[Unit] = {
     val incompleteItems = fileItems.filter(item => (item \ "notImplemented").nonEmpty)
     incompleteItems.foreach(item =>
       (item \ "notImplemented").foreach(tag =>

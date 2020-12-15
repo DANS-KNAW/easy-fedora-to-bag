@@ -71,7 +71,7 @@ object DDM extends DebugEnhancedLogging {
      </ddm:profile>
      <ddm:dcmiMetadata>
        { emd.getEmdIdentifier.getDcIdentifier.asScala.map(bi => <dct:identifier xsi:type={ idType(bi) }>{ bi.getValue.trim }</dct:identifier>) }
-       { emd.getEmdTitle.getDcTitle.asScala.drop(1).map(bs => <dct:alternative xml:lang={ lang(bs) }>{ bs.getValue.trim }</dct:alternative>) }
+       { emd.getEmdTitle.getDcTitle.asScala.drop(1).map(bs => <dc:title xml:lang={ lang(bs) }>{ bs.getValue.trim }</dc:title>) }
        { emd.getEmdTitle.getTermsAlternative.asScala.map(str => <dct:alternative>{ str }</dct:alternative>) }
        { emd.getEmdDescription.getTermsAbstract.asScala.map(bs => <ddm:description xml:lang={ lang(bs) } descriptionType='Abstract'>{ bs.getValue.trim }</ddm:description>) }
        { emd.getEmdDescription.getTermsTableOfContents.asScala.map(bs => <ddm:description xml:lang={ lang(bs) } descriptionType='TableOfContents'>{ bs.getValue.trim }</ddm:description>) }

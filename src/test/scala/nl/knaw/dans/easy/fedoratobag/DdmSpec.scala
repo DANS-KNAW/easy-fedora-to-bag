@@ -171,8 +171,8 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
         </ddm:profile>
         <ddm:dcmiMetadata>
-          <dct:alternative>DEF</dct:alternative>
-          <dct:alternative>GHI</dct:alternative>
+          <dc:title>DEF</dc:title>
+          <dc:title>GHI</dc:title>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
        </ddm:DDM>

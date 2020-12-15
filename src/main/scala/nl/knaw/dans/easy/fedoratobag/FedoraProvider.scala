@@ -34,7 +34,7 @@ class FedoraProvider(fedoraClient: FedoraClient) {
          |PREFIX dans: <http://dans.knaw.nl/ontologies/relations#>
          |SELECT ?s WHERE {?s dans:isSubordinateTo <info:fedora/$datasetId> . }
          |""".stripMargin)
-      .map(_.tail.map(_.split("/").last))
+      .map(_.drop(1).map(_.split("/").last))
   }
 
   private def search(query: String): Try[Seq[String]] = {

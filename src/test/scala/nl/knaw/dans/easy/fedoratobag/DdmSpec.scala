@@ -148,6 +148,39 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     triedDDM.flatMap(validate) shouldBe Success(())
   }
 
+
+  "titles" should "have an overflow in alternative" in {
+    val emd = parseEmdContent(Seq(
+      <emd:title>
+          <dc:title>ABC</dc:title>
+          <dc:title>DEF</dc:title>
+          <dc:title>GHI</dc:title>
+      </emd:title>,
+      emdCreator, emdDescription, emdDates, emdRights,
+    ))
+    val triedDDM = DDM(emd, Seq("D35400"), abrMapping)
+    triedDDM.map(normalized) shouldBe Success(normalized(
+      <ddm:DDM xsi:schemaLocation={ schemaLocation }>
+        <ddm:profile>
+          <dc:title>ABC</dc:title>
+          <dct:description>YYY</dct:description>
+          { ddmCreator }
+          <ddm:created>2017-09-30</ddm:created>
+          <ddm:available>2017-09-30</ddm:available>
+          <ddm:audience>D35400</ddm:audience>
+          <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
+        </ddm:profile>
+        <ddm:dcmiMetadata>
+          <dct:alternative>DEF</dct:alternative>
+          <dct:alternative>GHI</dct:alternative>
+          <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
+        </ddm:dcmiMetadata>
+       </ddm:DDM>
+     ))
+    assume(schemaIsAvailable)
+    triedDDM.flatMap(validate) shouldBe Success(())
+  }
+
   "relations" should "all appear except STREAMING_SURROGATE_RELATION" in {
     val emd = parseEmdContent(Seq(
       emdTitle, emdCreator, emdDescription, emdDates,

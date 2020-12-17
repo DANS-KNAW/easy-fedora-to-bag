@@ -329,35 +329,48 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     val target = fileInfo.bagPath(isOriginalVersioned)
     val file = bag.baseDir / "data" / target.toString
     val streamId = "EASY_FILE"
-    for {
-      _ <- if (!file.exists) Success(())
-           else Failure(new Exception(s"${ fileInfo.path } was added to the bag before"))
+    val maybeFedoraChecksum = fileInfo.maybeDigestValue
+    lazy val maybeBagChecksum = fileInfo.maybeDigestType.flatMap(getChecksum(file, bag))
+    if (file.exists) {
+      // either registered as such in Fedora, or caused by dropping the original level in the folder structure
+      verifyChecksums(file, maybeFedoraChecksum, maybeBagChecksum).flatMap {
+        case true => FileItem(fileInfo) // TODO compare and/or merge with fileInfo of previously added file
+        case _ => Failure(new Exception(s"Trying to replace a file but no checksum(s) available for $file"))
+      }
+    }
+    else for {
       fileItem <- FileItem(fileInfo)
       _ <- fedoraProvider
         .disseminateDatastream(fileInfo.fedoraFileId, streamId)
         .map(bag.addPayloadFile(_, target))
         .tried.flatten
-      _ <- fileInfo.contentDigest.map(validateChecksum(file, bag, fileInfo.fedoraFileId))
-        .getOrElse(Success(logger.warn(s"No digest found for ${ fileInfo.fedoraFileId } path = ${ fileInfo.path }")))
+      _ <- verifyChecksums(file, maybeFedoraChecksum, maybeBagChecksum)
     } yield fileItem
   }
 
-  private def validateChecksum(file: File, bag: DansV0Bag, fedoraFileId: String)(maybeDigest: Node) = Try {
+  private def verifyChecksums(file: File, fedoraValue: Option[String], bagValue: Option[String]) = {
+    (bagValue, fedoraValue) match {
+      case (Some(b), Some(f)) if f == b => Success(true)
+      case (Some(b), Some(f)) if f != b => Failure(new Exception(
+        s"Different checksums in fedora $fedoraValue and bag $bagValue for $file"
+      ))
+      case _ =>
+        logger.warn(s"No checksum in fedora $fedoraValue or bag $bagValue for $file")
+        Success(false)
+    }
+  }
+
+  private def getChecksum(file: File, bag: DansV0Bag)(digestType: String): Option[String] = {
     val algorithms = Map(
       "SHA-1" -> ChecksumAlgorithm.SHA1,
       "MD-5" -> ChecksumAlgorithm.MD5,
       "SHA-256" -> ChecksumAlgorithm.SHA256,
       "SHA-256" -> ChecksumAlgorithm.SHA512,
     )
-    val digestType = (maybeDigest \\ "@TYPE").text
-    val digestValue = (maybeDigest \\ "@DIGEST").text
-    val checksum = (for {
+    for {
       algorithm <- algorithms.get(digestType)
       manifest <- bag.payloadManifests.get(algorithm)
       checksum <- manifest.get(file)
-    } yield checksum)
-      .getOrElse(throw new Exception(s"Could not find digest [$digestType/$digestValue] for $fedoraFileId $file in manifest"))
-    if (checksum != digestValue)
-      throw new Exception(s"checksum error fedora[$digestValue] bag[$checksum] $fedoraFileId $file")
+    } yield checksum
   }
 }

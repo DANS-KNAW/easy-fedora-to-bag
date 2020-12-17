@@ -34,9 +34,11 @@ case class FileInfo(fedoraFileId: String,
                     contentDigest: Option[Node],
                     additionalMetadata: Option[Node],
                    ) {
-  val isOriginal: Boolean = path.startsWith("original/")
   private val isAccessible: Boolean = accessibleTo.toUpperCase() != "NONE"
+  val isOriginal: Boolean = path.getName(0).toString.toLowerCase == "original"
   val isAccessibleOriginal: Boolean = isOriginal && isAccessible
+  val maybeDigestType: Option[String] = contentDigest.map(n => (n \\ "@TYPE").text)
+  val maybeDigestValue: Option[String] = contentDigest.map(n => (n \\ "@DIGEST").text)
 
   def bagPath(isOriginalVersioned: Boolean): Path =
     if (isOriginalVersioned && isOriginal) path.subpath(1, path.getNameCount)

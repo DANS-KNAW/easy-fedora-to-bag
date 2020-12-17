@@ -49,7 +49,7 @@ class FedoraProvider(fedoraClient: FedoraClient) {
       }
   }
 
-  def getObject(objectId: String): ManagedResource[InputStream] = {
+  private def getObject(objectId: String): ManagedResource[InputStream] = {
     managed(FedoraClient.getObjectXML(objectId).execute(fedoraClient))
       .flatMap(response => managed(response.getEntityInputStream))
   }

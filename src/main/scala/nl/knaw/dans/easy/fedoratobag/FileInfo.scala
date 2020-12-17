@@ -17,10 +17,6 @@ package nl.knaw.dans.easy.fedoratobag
 
 import java.nio.file.{ Path, Paths }
 
-import better.files.File
-import nl.knaw.dans.bag.ChecksumAlgorithm
-import nl.knaw.dans.bag.v0.DansV0Bag
-
 import scala.util.Try
 import scala.xml.Node
 

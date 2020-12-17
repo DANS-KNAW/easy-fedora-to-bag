@@ -42,7 +42,7 @@ case class FedoraVersions(fedoraProvider: FedoraProvider) extends DebugEnhancedL
       _ <- ids
         .withFilter(!collectedIds.contains(_))
         .map(findVersions)
-        .filter{
+        .filter {
           case Failure(e: FedoraClientException) if e.getStatus == 404 =>
             logger.error(e.getMessage)
             false

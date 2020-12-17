@@ -15,11 +15,8 @@
  */
 package nl.knaw.dans.easy.fedoratobag
 
-import nl.knaw.dans.easy.fedoratobag.TransformationType.{ ORIGINAL_VERSIONED, SIMPLE, TransformationType }
+import nl.knaw.dans.easy.fedoratobag.TransformationType.{ SIMPLE, TransformationType }
 import nl.knaw.dans.easy.fedoratobag.filter.DatasetFilter
-import nl.knaw.dans.easy.fedoratobag.filter.FileFilterType._
-
-import scala.xml.Node
 
 /**
  *

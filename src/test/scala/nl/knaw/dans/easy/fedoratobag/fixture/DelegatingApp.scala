@@ -33,7 +33,7 @@ trait DelegatingApp extends MockFactory {
     new Configuration("testVersion", null, null, new URI(""), staging, null)
   ) {
     // mock requires a constructor without parameters
-    class MockEasyFedoraToBagApp() extends EasyFedoraToBagApp(null){
+    class MockEasyFedoraToBagApp() extends EasyFedoraToBagApp(null) {
       override lazy val fedoraProvider: FedoraProvider = mock[FedoraProvider]
       override lazy val ldapContext: InitialLdapContext = mock[InitialLdapContext]
       override lazy val bagIndex: BagIndex = mock[BagIndex]

@@ -324,7 +324,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     val triedRecord = app.createBag("easy-dataset:13", bagDir, Options(app.filter))
     triedRecord shouldBe a[Success[_]]
     (bagDir / "data").listRecursively.toList.map(_.name) should
-      contain theSameElementsAs List("original","c.txt", "b.txt", "a.txt")
+      contain theSameElementsAs List("original", "c.txt", "b.txt", "a.txt")
   }
 
   it should "export largest image as payload" in {
@@ -352,7 +352,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     val bagDir = testDir / "bags" / UUID.randomUUID.toString
     app.createBag("easy-dataset:13", bagDir, Options(app.filter, europeana = true)) shouldBe a[Success[_]]
     (bagDir / "data").listRecursively.toList.map(_.name) should
-      contain theSameElementsAs List("original","c.png")
+      contain theSameElementsAs List("original", "c.png")
   }
 
   it should "fall back to largest pdf file" in {

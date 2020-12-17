@@ -203,7 +203,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
     assume(schemaIsAvailable)
     triedFileItem.flatMap(validateItem) shouldBe Success(())
   }
-  
+
   it should "use file name as second title (first title from mandatory name)" in {
     val fileMetadata = {
       <name>SKKJ6_spoor.mix</name>

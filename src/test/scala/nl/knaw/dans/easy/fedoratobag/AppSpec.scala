@@ -172,31 +172,30 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
   it should "skip a duplicate file" in {
     val app: AppWithMockedServices = new AppWithMockedServices() {
       expectAUser()
-      (fedoraProvider.getSubordinates(_: String)) expects "easy-dataset:13" once() returning
-        Success(Seq("easy-file:1", "easy-file:2", "easy-file:3", "easy-file:4"))
-      val foXMLs = Map(
+      Map(
         "easy-dataset:13" -> XML.loadFile((sampleFoXML / "streaming.xml").toJava),
         "easy-discipline:6" -> audienceFoXML("easy-discipline:6", "D35400"),
         "easy-file:1" -> fileFoXml(id = 1, location = "original/a", name = "x.txt", digest = digests("acabadabra")),
         "easy-file:2" -> fileFoXml(id = 2, location = "a", name = "x.txt", digest = digests("acabadabra")),
         "easy-file:3" -> fileFoXml(id = 3, name = "y.txt", digest = digests("barbapappa")),
         "easy-file:4" -> fileFoXml(id = 4, location = "a", name = "z.txt", digest = digests("lalala")),
-      )
-      foXMLs.foreach { case (id, xml) =>
+      ).foreach { case (id, xml) =>
         (fedoraProvider.loadFoXml(_: String)) expects id once() returning Success(xml)
       }
-      // first bag
-      (fedoraProvider.disseminateDatastream(_: String, _: String)
-        ) expects("easy-file:1", "EASY_FILE") once() returning managed("acabadabra".inputStream)
-      (fedoraProvider.disseminateDatastream(_: String, _: String)
-        ) expects("easy-file:3", "EASY_FILE") once() returning managed("barbapappa".inputStream)
-      // second bag
-      (fedoraProvider.disseminateDatastream(_: String, _: String)
-        ) expects("easy-file:1", "EASY_FILE") once() returning managed("acabadabra".inputStream)
-      (fedoraProvider.disseminateDatastream(_: String, _: String)
-        ) expects("easy-file:3", "EASY_FILE") once() returning managed("barbapappa".inputStream)
-      (fedoraProvider.disseminateDatastream(_: String, _: String)
-        ) expects("easy-file:4", "EASY_FILE") once() returning managed("lalala".inputStream)
+      Map(
+        // first bag
+        "easy-file:1" -> "acabadabra",
+        "easy-file:3" -> "barbapappa",
+        // second bag
+        "easy-file:1" -> "acabadabra",
+        "easy-file:3" -> "barbapappa",
+        "easy-file:4" -> "lalala",
+      ).foreach { case (id, fileContent) =>
+        (fedoraProvider.disseminateDatastream(_: String, _: String)
+          ) expects(id, "EASY_FILE") once() returning managed(fileContent.inputStream)
+      }
+      (fedoraProvider.getSubordinates(_: String)) expects "easy-dataset:13" once() returning
+        Success(Seq("easy-file:1", "easy-file:2", "easy-file:3", "easy-file:4"))
     }
 
     // end of mocking
@@ -208,6 +207,8 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
       Options(app.filter, ORIGINAL_VERSIONED),
       AIP
     )(CsvRecord.csvFormat.print(sw)) shouldBe Success("no fedora/IO errors")
+
+    // post condition: the data folders of both bags have the same number of files as their files.xml
 
     testDir.listRecursively.withFilter(_.name == "data").map(_.parent).foreach { bag =>
       val nrOfFiles = (bag / "data").listRecursively.filterNot(_.isDirectory).size

@@ -44,7 +44,7 @@ import org.joda.time.DateTime
 
 import scala.collection.JavaConverters._
 import scala.util.{ Failure, Success, Try }
-import scala.xml.{ Elem, Node }
+import scala.xml.{ Comment, Elem, Node }
 
 class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogging {
   lazy val fedoraProvider: FedoraProvider = new FedoraProvider(new FedoraClient(configuration.fedoraCredentials))
@@ -165,7 +165,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
         .traverse(file => copy(file.name, bag2))
       fileItems <- datasetInfo.nextFileInfos.toList.traverse(addPayloadFileTo(bag2, isOriginalVersioned = true))
       _ <- checkNotImplementedFileMetadata(fileItems, logger)
-      _ <- addXmlMetadataTo(bag2, "files.xml")(filesXml(fileItems))
+      _ <- createFilesXml(datasetInfo.nextFileInfos, fileItems, bag2)
       _ <- bag2.save
     } yield ()
   }
@@ -227,7 +227,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       _ = logger.debug(s"nextFileInfos = ${ nextFileInfos.map(_.path) }")
       firstBagFileItems <- firstFileInfos.traverse(addPayloadFileTo(bag, isOriginalVersioned))
       _ <- checkNotImplementedFileMetadata(firstBagFileItems, logger)
-      _ <- addXmlMetadataTo(bag, "files.xml")(filesXml(firstBagFileItems))
+      _ <- createFilesXml(firstFileInfos, firstBagFileItems, bag)
       _ <- bag.save
       doi = emd.getEmdIdentifier.getDansManagedDoi
       urn = getUrn(datasetId, emd)
@@ -329,17 +329,16 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     val target = fileInfo.bagPath(isOriginalVersioned)
     val file = bag.baseDir / "data" / target.toString
     val streamId = "EASY_FILE"
-    val maybeFedoraChecksum = fileInfo.maybeDigestValue
+
+    // lazy so the else branch can add the file to the bag first
     lazy val maybeBagChecksum = fileInfo.maybeDigestType.flatMap(getChecksum(file, bag))
-    if (file.exists) {
-      // either registered as such in Fedora, or caused by dropping the original level in the folder structure
-      verifyChecksums(file, maybeFedoraChecksum, maybeBagChecksum).flatMap {
-        case true => FileItem(fileInfo) // TODO compare and/or merge with fileInfo of previously added file
-        case _ => Failure(new Exception(s"Trying to replace a file but no checksum(s) available for $file"))
-      }
+    val maybeFedoraChecksum = fileInfo.maybeDigestValue
+
+    if (file.exists) verifyNameClash(file, maybeFedoraChecksum, maybeBagChecksum).flatMap { _ =>
+      FileItem(fileInfo, isOriginalVersioned).map(n => Comment(n.toOneLiner))
     }
     else for {
-      fileItem <- FileItem(fileInfo)
+      fileItem <- FileItem(fileInfo, isOriginalVersioned)
       _ <- fedoraProvider
         .disseminateDatastream(fileInfo.fedoraFileId, streamId)
         .map(bag.addPayloadFile(_, target))
@@ -348,15 +347,37 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     } yield fileItem
   }
 
+  private def createFilesXml(fileInfos: Seq[FileInfo], fileItems: Seq[Node], bag: DansV0Bag) = {
+    val actualItems = fileItems.filterNot(_.isInstanceOf[Comment])
+    val nrOfDuplicates = fileInfos.size - actualItems.size
+    if (nrOfDuplicates != 0)
+      logger.warn(s"$nrOfDuplicates duplicate file(s), see comment(s) in files.xml of ${bag.name}")
+    // TODO merge skipped fileInfos into fileItems?
+    //  See https://drivenbydata.atlassian.net/browse/EASY-2808
+    addXmlMetadataTo(bag, "files.xml")(filesXml(fileItems))
+  }
+
+  private def verifyNameClash(file: File, fedoraValue: Option[String], bagValue: Option[String]) = {
+    (bagValue, fedoraValue) match {
+      case (Some(b), Some(f)) if f == b =>
+        Success(())
+      case (Some(_), Some(_)) => Failure(new Exception(
+        s"Duplicate file paths with different checksums. Current $fedoraValue previous $bagValue, $file"
+      ))
+      case _ => Failure(new Exception(
+        s"Duplicate file paths, no checksum in fedora to verify for $file"
+      ))
+    }
+  }
+
   private def verifyChecksums(file: File, fedoraValue: Option[String], bagValue: Option[String]) = {
     (bagValue, fedoraValue) match {
-      case (Some(b), Some(f)) if f == b => Success(true)
-      case (Some(b), Some(f)) if f != b => Failure(new Exception(
-        s"Different checksums in fedora $fedoraValue and bag $bagValue for $file"
+      case (Some(b), Some(f)) if f == b => Success(())
+      case (Some(_), Some(_)) => Failure(new Exception(
+        s"Different checksums in fedora $fedoraValue and exported bag $bagValue for $file"
       ))
-      case _ =>
-        logger.warn(s"No checksum in fedora $fedoraValue or bag $bagValue for $file")
-        Success(false)
+      case _ => logger.warn(s"No checksum in fedora for $file")
+        Success(())
     }
   }
 

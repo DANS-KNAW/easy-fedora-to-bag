@@ -39,7 +39,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
                        <accessibleTo>RESTRICTED_REQUEST</accessibleTo>
 
     val triedFileItem = FileInfo(fileFoXml(fileMetadata))
-      .flatMap(FileItem(_))
+      .flatMap(FileItem(_, isOriginalVersioned = false))
       .map(trim)
     triedFileItem shouldBe Success(trim(
       <file filepath="data/original/something.txt">
@@ -63,7 +63,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
                        <visibleTo>NONE</visibleTo>
 
     val triedFileItem = FileInfo(fileFoXml(fileMetadata))
-      .flatMap(FileItem(_))
+      .flatMap(FileItem(_, isOriginalVersioned = false))
       .map(trim)
     triedFileItem.map(trim) shouldBe Success(trim(
       <file filepath="data/original/something.txt">
@@ -86,7 +86,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
                        <visibleTo>ANONYMOUS</visibleTo>
 
     FileInfo(fileFoXml(fileMetadata))
-      .flatMap(FileItem(_))
+      .flatMap(FileItem(_, isOriginalVersioned = false))
       .map(trim) should matchPattern {
       case Failure(e: Exception) if e.getMessage ==
         "<accessibleTo> not found" =>
@@ -128,7 +128,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
     }
 
     val triedFileItem = FileInfo(fileFoXml(fileMetadata))
-      .flatMap(FileItem(_))
+      .flatMap(FileItem(_, isOriginalVersioned = false))
       .map(trim)
     triedFileItem.map(trim) shouldBe Success(trim(
       <file filepath="data/Fotos/R0011867.jpg">
@@ -184,7 +184,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
     }
 
     val triedFileItem = FileInfo(fileFoXml(fileMetadata))
-      .flatMap(FileItem(_))
+      .flatMap(FileItem(_, isOriginalVersioned = false))
       .map(trim)
     triedFileItem.map(trim) shouldBe Success(trim(
       <file filepath="data/Fotos/R0011867.jpg">
@@ -234,7 +234,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
     // note that we have two times <dct:title>,
     // once from <name>, once from <addmd:additional-metadata><file_name>
     val triedFileItem = FileInfo(fileFoXml(fileMetadata))
-      .flatMap(FileItem(_))
+      .flatMap(FileItem(_, isOriginalVersioned = false))
       .map(trim)
     triedFileItem.map(trim) shouldBe Success(trim(
       <file filepath="data/GIS/SKKJ6_spoor.mif">
@@ -287,7 +287,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
     }
 
     val triedFileItem = FileInfo(fileFoXml(fileMetadata))
-      .flatMap(FileItem(_))
+      .flatMap(FileItem(_, isOriginalVersioned = false))
       .map(trim)
     triedFileItem.map(trim) shouldBe Success(trim(
       <file filepath="data/B">
@@ -334,7 +334,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
     }
 
     val triedFileItem = FileInfo(fileFoXml(fileMetadata))
-      .flatMap(FileItem(_))
+      .flatMap(FileItem(_, isOriginalVersioned = false))
       .map(trim)
     triedFileItem.map(trim) shouldBe Success(trim(
       <file filepath="data/B">

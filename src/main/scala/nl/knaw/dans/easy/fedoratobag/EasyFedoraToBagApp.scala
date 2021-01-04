@@ -28,7 +28,6 @@ import nl.knaw.dans.easy.fedoratobag.FileItem.{ checkNotImplementedFileMetadata,
 import nl.knaw.dans.easy.fedoratobag.FoXml.{ getEmd, _ }
 import nl.knaw.dans.easy.fedoratobag.OutputFormat.OutputFormat
 import nl.knaw.dans.easy.fedoratobag.TransformationType._
-import nl.knaw.dans.easy.fedoratobag.filter.FileFilterType.{ LARGEST_IMAGE, _ }
 import nl.knaw.dans.easy.fedoratobag.filter._
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
@@ -226,6 +225,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       allFileInfos <- fedoraIDs.filter(_.startsWith("easy-file:")).toList.traverse(getFileInfo)
       fileInfosForSecondBag = allFileInfos.selectForSecondBag(isOriginalVersioned)
       fileInfosForFirstBag <- allFileInfos.selectForFirstBag(emdXml, fileInfosForSecondBag.nonEmpty, options.europeana)
+      _ <- checkDuplicateFiles(fileInfosForFirstBag, fileInfosForSecondBag, isOriginalVersioned)
       _ = logger.debug(s"nextFileInfos = ${ fileInfosForSecondBag.map(_.path) }")
       fileItemsForFirstBag <- fileInfosForFirstBag.traverse(addPayloadFileTo(bag, isOriginalVersioned))
       _ <- checkNotImplementedFileMetadata(fileItemsForFirstBag, logger)
@@ -270,17 +270,28 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       }
   }
 
+  private def checkDuplicateFiles(fileInfosForFirstBag: List[FileInfo], fileInfosForSecondBag: List[FileInfo], isOriginalVersioned: Boolean) = {
+    def findDuplicates(fileInfos: List[FileInfo]) = fileInfos
+      .map(_.bagPath(isOriginalVersioned))
+      .groupBy(identity)
+      .filter(_._2.size > 1)
+      .keys.mkString(",")
+
+    val duplicatesForFirstBag = findDuplicates(fileInfosForFirstBag)
+    val duplicatesForSecondBag = findDuplicates(fileInfosForSecondBag)
+    if (duplicatesForFirstBag.isEmpty && duplicatesForSecondBag.isEmpty) Success(())
+    else Failure(InvalidTransformationException(
+      s"duplicates in first bag: $duplicatesForFirstBag; duplicates in second bag: $duplicatesForSecondBag (isOriginalVersioned==$isOriginalVersioned)"
+    ))
+  }
+
   private def addPayloadFileTo(bag: DansV0Bag, isOriginalVersioned: Boolean)(fileInfo: FileInfo): Try[Node] = {
     val target = fileInfo.bagPath(isOriginalVersioned)
     val file = bag.baseDir / "data" / target.toString
-    val streamId = "EASY_FILE"
-
-    if (file.exists)
-      Failure(InvalidTransformationException(s"${ fileInfo.path } is not unique (isOriginalVersioned=$isOriginalVersioned)"))
-    else for {
+    for {
       fileItem <- FileItem(fileInfo, isOriginalVersioned)
       _ <- fedoraProvider
-        .disseminateDatastream(fileInfo.fedoraFileId, streamId)
+        .disseminateDatastream(fileInfo.fedoraFileId, streamId = "EASY_FILE")
         .map(bag.addPayloadFile(_, target))
         .tried.flatten
       maybeBagChecksum = fileInfo.maybeDigestType.flatMap(getChecksum(file, bag))

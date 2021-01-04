@@ -192,13 +192,6 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
       ).foreach { case (id, xml) =>
         (fedoraProvider.loadFoXml(_: String)) expects id once() returning Success(xml)
       }
-      Map(
-        "easy-file:1" -> "acabadabra",
-        "easy-file:3" -> "barbapappa",
-      ).foreach { case (id, count) =>
-        (fedoraProvider.disseminateDatastream(_: String, _: String)
-          ) expects(id, "EASY_FILE") twice() returning managed("acabadabra".inputStream)
-      }
       (fedoraProvider.getSubordinates(_: String)) expects "easy-dataset:13" once() returning
         Success(Seq("easy-file:1", "easy-file:2", "easy-file:3", "easy-file:4"))
     }
@@ -215,7 +208,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
     // post condition
     sw.toString.split("\n").last should fullyMatch regex
-      s"easy-dataset:13,.*,,,,-,FAILED: .*InvalidTransformationException: a/x.txt is not unique .isOriginalVersioned=true."
+      s"easy-dataset:13,.*,,,,-,FAILED: .*InvalidTransformationException: duplicates in first bag: ; duplicates in second bag: a/x.txt .isOriginalVersioned==true."
   }
 
   "createBag" should "report not strict simple violation" in {

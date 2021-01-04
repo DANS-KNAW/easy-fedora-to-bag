@@ -105,15 +105,21 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     val packageDir2 = configuration.stagingDir / packageUuid2.toString
     val bagDir1 = bagDir(packageDir1)
     val bagDir2 = bagDir(packageDir2)
+
+    def createSecondBag(datasetInfo: DatasetInfo) = {
+      if (datasetInfo.nextFileInfos.isEmpty) Success(None)
+      else for {
+        bag2 <- DansV0Bag.empty(bagDir2)
+        _ <- fillSecondBag(bag2, bagDir1 / "metadata", datasetInfo, packageUuid1)
+        _ <- movePackageAtomically(packageDir2, outputDir)
+      } yield Some(packageUuid2)
+    }
+
     val triedCsvRecord = for {
       datasetInfo <- createBag(datasetId, bagDir1, options)
-      maybeBag2 <- if (datasetInfo.nextFileInfos.isEmpty) Success(None)
-                   else DansV0Bag.empty(bagDir2).map(Some(_))
-      _ <- maybeBag2.map(fillSecondBag(datasetInfo, bagDir1, packageUuid1)).getOrElse(Success(()))
-      // the 2nd bag is moved first, thus a next process has a chance to stumble over a missing first bag in case of interrupts
-      _ <- maybeBag2.map(_ => movePackageAtomically(packageDir2, outputDir)).getOrElse(Success(()))
+      maybeUuid2 <- createSecondBag(datasetInfo)
+      // first bag moved after second, thus a next process can stumble over a missing first bag in case of interrupts
       _ <- movePackageAtomically(packageDir1, outputDir)
-      maybeUuid2 = maybeBag2.map(_ => packageUuid2)
       _ <- CsvRecord(datasetId, datasetInfo, packageUuid1, maybeUuid2, options).print(printer)
     } yield ()
     errorHandling(triedCsvRecord, printer, datasetId, packageUuid1)
@@ -138,14 +144,12 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     }
   }
 
-  private def fillSecondBag(datasetInfo: DatasetInfo, bagDir1: File, isVersionOf: UUID)(bag2: DansV0Bag): Try[Unit] = {
+  private def fillSecondBag(bag2: DansV0Bag, metadataOfBag1: File, datasetInfo: DatasetInfo, isVersionOf: UUID) = {
 
-    def copy(fileName: String) = {
-      (bagDir1 / "metadata" / fileName)
-        .inputStream
-        .map(addMetadataStreamTo(bag2, fileName))
-        .get
-    }
+    def copy(fileName: String) = (metadataOfBag1 / fileName)
+      .inputStream
+      .map(addMetadataStreamTo(bag2, fileName))
+      .get
 
     bag2
       .withEasyUserAccount(datasetInfo.depositor)
@@ -158,7 +162,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       _ <- copy("emd.xml")
       _ <- copy("amd.xml")
       _ <- copy("dataset.xml")
-      _ <- (bagDir1 / "metadata").list.toList
+      _ <- metadataOfBag1.list.toList
         .filter(_.name.toLowerCase.contains("license"))
         .traverse(file => copy(file.name))
       fileItems <- datasetInfo.nextFileInfos.toList.traverse(addPayloadFileTo(bag2, isOriginalVersioned = true))

@@ -15,17 +15,12 @@
  */
 package nl.knaw.dans.easy.fedoratobag
 
-import java.io.{ IOException, InputStream }
-import java.nio.file.Paths
-import java.util.UUID
-
 import better.files.File.CopyOptions
 import better.files.{ File, StringExtensions }
 import cats.instances.list._
 import cats.instances.try_._
 import cats.syntax.traverse._
 import com.yourmediashelf.fedora.client.{ FedoraClient, FedoraClientException }
-import javax.naming.ldap.InitialLdapContext
 import nl.knaw.dans.bag.ChecksumAlgorithm
 import nl.knaw.dans.bag.v0.DansV0Bag
 import nl.knaw.dans.easy.fedoratobag.Command.FeedBackMessage
@@ -42,6 +37,10 @@ import nl.knaw.dans.pf.language.emd.binding.EmdUnmarshaller
 import org.apache.commons.csv.CSVPrinter
 import org.joda.time.DateTime
 
+import java.io.{ IOException, InputStream }
+import java.nio.file.Paths
+import java.util.UUID
+import javax.naming.ldap.InitialLdapContext
 import scala.collection.JavaConverters._
 import scala.util.{ Failure, Success, Try }
 import scala.xml.{ Comment, Elem, Node }
@@ -105,15 +104,16 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     val packageDir1 = configuration.stagingDir / packageUuid1.toString
     val packageDir2 = configuration.stagingDir / packageUuid2.toString
     val bagDir1 = bagDir(packageDir1)
+    val bagDir2 = bagDir(packageDir2)
     val triedCsvRecord = for {
       datasetInfo <- createBag(datasetId, bagDir1, options)
-      maybeBagDir2 = if (datasetInfo.nextFileInfos.isEmpty) None
-                     else Some(bagDir(packageDir2))
-      _ <- maybeBagDir2.map(createSecondBag(datasetInfo, bagDir1, packageUuid1)).getOrElse(Success(()))
+      maybeBag2 <- if (datasetInfo.nextFileInfos.isEmpty) Success(None)
+                   else DansV0Bag.empty(bagDir2).map(Some(_))
+      _ <- maybeBag2.map(fillSecondBag(datasetInfo, bagDir1, packageUuid1)).getOrElse(Success(()))
       // the 2nd bag is moved first, thus a next process has a chance to stumble over a missing first bag in case of interrupts
-      _ <- maybeBagDir2.map(_ => movePackageAtomically(packageDir2, outputDir)).getOrElse(Success(()))
+      _ <- maybeBag2.map(_ => movePackageAtomically(packageDir2, outputDir)).getOrElse(Success(()))
       _ <- movePackageAtomically(packageDir1, outputDir)
-      maybeUuid2 = maybeBagDir2.map(_ => packageUuid2)
+      maybeUuid2 = maybeBag2.map(_ => packageUuid2)
       _ <- CsvRecord(datasetId, datasetInfo, packageUuid1, maybeUuid2, options).print(printer)
     } yield ()
     errorHandling(triedCsvRecord, printer, datasetId, packageUuid1)
@@ -138,31 +138,29 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     }
   }
 
-  private def createSecondBag(datasetInfo: DatasetInfo, bagDir1: File, isVersionOf: UUID)(bagDir2: File): Try[Unit] = {
+  private def fillSecondBag(datasetInfo: DatasetInfo, bagDir1: File, isVersionOf: UUID)(bag2: DansV0Bag): Try[Unit] = {
 
-    def copy(fileName: String, bag2: DansV0Bag) = {
+    def copy(fileName: String) = {
       (bagDir1 / "metadata" / fileName)
         .inputStream
         .map(addMetadataStreamTo(bag2, fileName))
         .get
     }
 
-    def bagInfoTxt(bag: DansV0Bag) = bag
+    bag2
       .withEasyUserAccount(datasetInfo.depositor)
       .withCreated(DateTime.now())
       .withIsVersionOf(isVersionOf)
       // the following keys should match easy-fedora-to-bag
       .addBagInfo("Base-DOI", datasetInfo.doi)
       .addBagInfo("Base-URN", datasetInfo.urn)
-
     for {
-      bag2 <- DansV0Bag.empty(bagDir2).map(bagInfoTxt)
-      _ <- copy("emd.xml", bag2)
-      _ <- copy("amd.xml", bag2)
-      _ <- copy("dataset.xml", bag2)
+      _ <- copy("emd.xml")
+      _ <- copy("amd.xml")
+      _ <- copy("dataset.xml")
       _ <- (bagDir1 / "metadata").list.toList
         .filter(_.name.toLowerCase.contains("license"))
-        .traverse(file => copy(file.name, bag2))
+        .traverse(file => copy(file.name))
       fileItems <- datasetInfo.nextFileInfos.toList.traverse(addPayloadFileTo(bag2, isOriginalVersioned = true))
       _ <- checkNotImplementedFileMetadata(fileItems, logger)
       _ <- createFilesXml(datasetInfo.nextFileInfos, fileItems, bag2)
@@ -351,7 +349,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     val actualItems = fileItems.filterNot(_.isInstanceOf[Comment])
     val nrOfDuplicates = fileInfos.size - actualItems.size
     if (nrOfDuplicates != 0)
-      logger.warn(s"$nrOfDuplicates duplicate file(s), see comment(s) in files.xml of ${bag.name}")
+      logger.warn(s"$nrOfDuplicates duplicate file(s), see comment(s) in files.xml of ${ bag.name }")
     // TODO merge skipped fileInfos into fileItems?
     //  See https://drivenbydata.atlassian.net/browse/EASY-2808
     addXmlMetadataTo(bag, "files.xml")(filesXml(fileItems))

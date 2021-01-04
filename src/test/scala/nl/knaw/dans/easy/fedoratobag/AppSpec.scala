@@ -215,7 +215,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
     // post condition
     sw.toString.split("\n").last should fullyMatch regex
-      s"easy-dataset:13,.*,,,,-,FAILED: .*InvalidTransformationException: a/x.txt is not unique"
+      s"easy-dataset:13,.*,,,,-,FAILED: .*InvalidTransformationException: a/x.txt is not unique .isOriginalVersioned=true."
   }
 
   "createBag" should "report not strict simple violation" in {

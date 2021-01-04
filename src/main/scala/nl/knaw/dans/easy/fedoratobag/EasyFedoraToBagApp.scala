@@ -224,74 +224,16 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
         .getOrElse(Success(()))
       isOriginalVersioned = options.transformationType == ORIGINAL_VERSIONED
       allFileInfos <- fedoraIDs.filter(_.startsWith("easy-file:")).toList.traverse(getFileInfo)
-      nextFileInfos = forSecondBag(allFileInfos, isOriginalVersioned)
-      filterType = firstFileFilter(emdXml, nextFileInfos.nonEmpty, options.europeana)
-      firstFileInfos <- selectFileInfos(filterType, allFileInfos)
-      _ = logger.debug(s"nextFileInfos = ${ nextFileInfos.map(_.path) }")
-      firstBagFileItems <- firstFileInfos.traverse(addPayloadFileTo(bag, isOriginalVersioned))
-      _ <- checkNotImplementedFileMetadata(firstBagFileItems, logger)
-      _ <- addXmlMetadataTo(bag, "files.xml")(filesXml(firstBagFileItems))
+      fileInfosForSecondBag = allFileInfos.selectForSecondBag(isOriginalVersioned)
+      fileInfosForFirstBag <- allFileInfos.selectForFirstBag(emdXml, fileInfosForSecondBag.nonEmpty, options.europeana)
+      _ = logger.debug(s"nextFileInfos = ${ fileInfosForSecondBag.map(_.path) }")
+      fileItemsForFirstBag <- fileInfosForFirstBag.traverse(addPayloadFileTo(bag, isOriginalVersioned))
+      _ <- checkNotImplementedFileMetadata(fileItemsForFirstBag, logger)
+      _ <- addXmlMetadataTo(bag, "files.xml")(filesXml(fileItemsForFirstBag))
       _ <- bag.save
       doi = emd.getEmdIdentifier.getDansManagedDoi
       urn = getUrn(datasetId, emd)
-    } yield DatasetInfo(maybeFilterViolations, doi, urn, depositor, nextFileInfos)
-  }
-
-  private def forSecondBag(all: Seq[FileInfo], isOriginalVersioned: Boolean): Seq[FileInfo] = {
-    if (!isOriginalVersioned) Seq.empty
-    else {
-      val accessibleOriginals = all.filter(_.isAccessibleOriginal)
-      if (all.size == accessibleOriginals.size) Seq.empty
-      else accessibleOriginals ++ all.filterNot(_.isOriginal)
-    }
-  }
-
-  private def dcmiType(emd: Node): String = {
-    def hasDcmiScheme(node: Node) = node
-      .attribute("http://easy.dans.knaw.nl/easy/easymetadata/eas/", "scheme")
-      .exists(_.text == "DCMI")
-
-    (emd \ "type" \ "type")
-      .filter(hasDcmiScheme)
-      .text.toLowerCase.trim
-  }
-
-  private def firstFileFilter(emd: Node, hasSecondBag: Boolean, europeana: Boolean): FileFilterType = {
-    if (hasSecondBag) ORIGINAL_FILES
-    else if (!europeana) ALL_FILES
-         else if (dcmiType(emd) == "text") LARGEST_PDF
-              else LARGEST_IMAGE
-  }
-
-  private def selectFileInfos(fileFilterType: FileFilterType, fileInfos: List[FileInfo]): Try[List[FileInfo]] = {
-
-    def largest(by: FileFilterType, orElseBy: FileFilterType): Try[List[FileInfo]] = {
-      val infosByType = fileInfos
-        .filter(_.accessibleTo == "ANONYMOUS")
-        .groupBy(fi => if (fi.mimeType.startsWith("image/")) LARGEST_IMAGE
-                       else if (fi.mimeType.startsWith("application/pdf")) LARGEST_PDF
-                            else ALL_FILES
-        )
-      val selected = infosByType.getOrElse(by, infosByType.getOrElse(orElseBy, List.empty))
-      maxSizeUnlessEmpty(selected)
-    }
-
-    def maxSizeUnlessEmpty(selected: List[FileInfo]) = {
-      if (selected.isEmpty) Failure(NoPayloadFilesException())
-      else Success(List(selected.maxBy(_.size)))
-    }
-
-    def successUnlessEmpty(fileInfos: List[FileInfo]) = {
-      if (fileInfos.isEmpty) Failure(NoPayloadFilesException())
-      else Success(fileInfos)
-    }
-
-    fileFilterType match {
-      case LARGEST_PDF => largest(LARGEST_PDF, LARGEST_IMAGE)
-      case LARGEST_IMAGE => largest(LARGEST_IMAGE, LARGEST_PDF)
-      case ORIGINAL_FILES => successUnlessEmpty(fileInfos.filter(_.isOriginal)) // TODO is ALL_FILES if no second bag
-      case ALL_FILES => successUnlessEmpty(fileInfos)
-    }
+    } yield DatasetInfo(maybeFilterViolations, doi, urn, depositor, fileInfosForSecondBag)
   }
 
   private def getUrn(datasetId: DatasetId, emd: EasyMetadataImpl) = {

@@ -16,13 +16,13 @@
 package nl.knaw.dans.easy.fedoratobag
 
 import java.net.URI
-
 import com.typesafe.scalalogging.Logger
-import nl.knaw.dans.easy.fedoratobag.filter.{ BagIndex, SimpleDatasetFilter, ThemaDatasetFilter }
+import nl.knaw.dans.easy.fedoratobag.filter.{ BagIndex, FedoraVersionedFilter, OriginalVersionedFilter, SimpleDatasetFilter, ThemaDatasetFilter }
 import nl.knaw.dans.easy.fedoratobag.fixture.{ BagIndexSupport, EmdSupport, TestSupportFixture }
 import org.scalamock.scalatest.MockFactory
 import org.slf4j.{ Logger => UnderlyingLogger }
 
+import java.nio.file.Paths
 import scala.util.Success
 import scala.xml.Elem
 
@@ -57,6 +57,35 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
       "violated 3: invalid title some collection",
     )).violations(emd, emd2ddm(emd), amd("PUBLISHED"), Seq()) shouldBe
       Success(Some("Violates 3: invalid title"))
+  }
+
+  it should "report mix of original and other files" in {
+    val emdTitle = <emd:title><dc:title xml:lang="nld">no theme</dc:title></emd:title>
+    val emd = parseEmdContent(Seq(emdTitle, emdDoi, emdRights))
+    val fileInfos = List(
+      "original/x.txt",
+      "x.txt",
+    ).map(p => new FileInfo("easy-file:2",Paths.get(p),"x.txt",2,"text/plain","ANONYMOUS","ANONYMOUS",None,None))
+
+    simpleChecker(loggerExpectsWarnings = Seq(
+      "violated 8: original and other files should not occur both",
+    )).violations(emd, emd2ddm(emd), amd("PUBLISHED"), fedoraIDs = Seq(), fileInfos) shouldBe
+      Success(Some("Violates 8: original and other files"))
+  }
+
+  it should "allow mix of original and other files" in {
+    val emdTitle = <emd:title><dc:title xml:lang="nld">no theme</dc:title></emd:title>
+    val emd = parseEmdContent(Seq(emdTitle, emdDoi, emdRights))
+    val ddm = emd2ddm(emd)
+    val fileInfos = List(
+      "original/x.txt",
+      "x.txt",
+    ).map(p => new FileInfo("easy-file:2",Paths.get(p),"x.txt",2,"text/plain","ANONYMOUS","ANONYMOUS",None,None))
+
+    FedoraVersionedFilter().violations(emd, ddm, amd("PUBLISHED"), fedoraIDs = Seq(), fileInfos) shouldBe
+      Success(None)
+    OriginalVersionedFilter().violations(emd, ddm, amd("PUBLISHED"), fedoraIDs = Seq(), fileInfos) shouldBe
+      Success(None)
   }
 
   "SimpleChecker.simpleViolations" should "succeed" in {

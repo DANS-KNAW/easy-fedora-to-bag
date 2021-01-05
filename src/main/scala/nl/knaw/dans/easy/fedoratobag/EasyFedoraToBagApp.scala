@@ -37,7 +37,7 @@ import org.apache.commons.csv.CSVPrinter
 import org.joda.time.DateTime
 
 import java.io.{ IOException, InputStream }
-import java.nio.file.Paths
+import java.nio.file.{ Path, Paths }
 import java.util.UUID
 import javax.naming.ldap.InitialLdapContext
 import scala.collection.JavaConverters._
@@ -272,17 +272,31 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
 
   private def checkDuplicateFiles(fileInfosForFirstBag: List[FileInfo], fileInfosForSecondBag: List[FileInfo], isOriginalVersioned: Boolean) = {
     def findDuplicates(fileInfos: List[FileInfo]) = fileInfos
-      .map(_.bagPath(isOriginalVersioned))
-      .groupBy(identity)
+      .groupBy(_.bagPath(isOriginalVersioned))
       .filter(_._2.size > 1)
-      .keys.mkString(",")
+      .mapValues(infos =>
+        infos.map(info =>
+          s"${ info.path }[${ info.fedoraFileId },${ info.maybeDigestValue.getOrElse("") }]"
+        ).mkString("[", ",", "]")
+      )
 
     val duplicatesForFirstBag = findDuplicates(fileInfosForFirstBag)
     val duplicatesForSecondBag = findDuplicates(fileInfosForSecondBag)
     if (duplicatesForFirstBag.isEmpty && duplicatesForSecondBag.isEmpty) Success(())
-    else Failure(InvalidTransformationException(
-      s"duplicates in first bag: $duplicatesForFirstBag; duplicates in second bag: $duplicatesForSecondBag (isOriginalVersioned==$isOriginalVersioned)"
-    ))
+    else {
+      val prefix1 = "duplicates in first bag: "
+      val prefix2 = "duplicates in second bag: "
+      logDuplicates(prefix1, duplicatesForFirstBag)
+      logDuplicates(prefix2, duplicatesForSecondBag)
+      Failure(InvalidTransformationException(
+        s"$prefix1${ duplicatesForFirstBag.keys.mkString(", ") }; $prefix2${ duplicatesForSecondBag.keys.mkString(", ") } (isOriginalVersioned==$isOriginalVersioned)"
+      ))
+    }
+  }
+
+  private def logDuplicates(prefix: String, duplicates: Map[Path, String]): Unit = {
+    if (duplicates.nonEmpty)
+      logger.error(prefix + duplicates.values.mkString("; "))
   }
 
   private def addPayloadFileTo(bag: DansV0Bag, isOriginalVersioned: Boolean)(fileInfo: FileInfo): Try[Node] = {

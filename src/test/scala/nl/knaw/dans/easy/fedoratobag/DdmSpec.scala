@@ -247,7 +247,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     assume(schemaIsAvailable)
     triedDDM.flatMap(validate) shouldBe Success(())
   }
-  it should "prefix www with https://" in {
+  it should "add protocol if missing in href" in {
     val emd = parseEmdContent(Seq(
       emdTitle, emdCreator, emdDescription, emdDates,
         <emd:relation>
@@ -263,7 +263,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }
         <ddm:dcmiMetadata>
-          <ddm:replaces scheme="id-type:URN" href="https://www.persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-mp3-pb2">
+          <ddm:replaces href="www.persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-mp3-pb2">
             Vlaardingen
           </ddm:replaces>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>

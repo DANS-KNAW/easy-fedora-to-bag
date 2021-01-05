@@ -45,7 +45,7 @@ object Command extends App with DebugEnhancedLogging {
     lazy val isAip = commandLine.outputFormat.isSupplied && commandLine.outputFormat() == AIP
     Try(commandLine.transformation() match {
       case FEDORA_VERSIONED if !commandLine.europeana() && !isAip => FedoraVersionedFilter()
-      case ORIGINAL_VERSIONED if !isAip => SimpleDatasetFilter()
+      case ORIGINAL_VERSIONED if !isAip => OriginalVersionedFilter()
       case THEMA if isAip => ThemaDatasetFilter(app.bagIndex)
       case SIMPLE if isAip => SimpleDatasetFilter(app.bagIndex)
       case SIMPLE => SimpleDatasetFilter()

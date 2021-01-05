@@ -31,6 +31,10 @@ package object filter {
       }
     }
 
+    def hasOriginalAndOthers: Boolean = {
+      fileInfos.exists(_.isOriginal) && fileInfos.exists(!_.isOriginal)
+    }
+
     def selectForFirstBag(emd: Node, hasSecondBag: Boolean, europeana: Boolean): Try[List[FileInfo]] = {
 
       def largest(by: FileFilterType, orElseBy: FileFilterType): Try[List[FileInfo]] = {

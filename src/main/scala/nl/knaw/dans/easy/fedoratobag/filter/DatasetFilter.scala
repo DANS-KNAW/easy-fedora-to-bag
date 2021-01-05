@@ -28,11 +28,12 @@ case class InvalidTransformationException(msg: String) extends Exception(msg)
 
 trait DatasetFilter extends DebugEnhancedLogging {
   val targetIndex: TargetIndex
+  val allowOriginalAndOthers: Boolean = false
   private val invalidRightsKey = "4: invalid rights"
   private val invalidStateKey = "5: invalid state"
   private val keysWithValues = Seq(invalidRightsKey, invalidStateKey)
 
-  def violations(emd: EasyMetadataImpl, ddm: Node, amd: Node, fedoraIDs: Seq[String]): Try[Option[String]] = {
+  def violations(emd: EasyMetadataImpl, ddm: Node, amd: Node, fedoraIDs: Seq[String] = Seq.empty, fileInfos: List[FileInfo] = List.empty): Try[Option[String]] = {
     val maybeDoi = Option(emd.getEmdIdentifier.getDansManagedDoi)
     val triedMaybeInTargetResponse: Try[Option[String]] = maybeDoi
       .map(targetIndex.getByDoi)
@@ -47,6 +48,8 @@ trait DatasetFilter extends DebugEnhancedLogging {
       invalidStateKey -> findInvalidState(amd),
       "6: DANS relations" -> findDansRelations(ddm).map(_.toOneLiner),
       "7: is in the vault" -> triedMaybeInTargetResponse.getOrElse(None).toSeq,
+      "8: original and other files" -> (if (allowOriginalAndOthers || !fileInfos.hasOriginalAndOthers) Seq.empty
+                                        else Seq("should not occur both")),
     ).filter(_._2.nonEmpty).toMap
 
     violations.foreach { case (rule, violations) =>

@@ -195,7 +195,8 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
         .map(id => getAudience(id.getValue)).collectResults
       ddm <- DDM(emd, audiences, configuration.abrMapping)
       fedoraIDs <- fedoraProvider.getSubordinates(datasetId)
-      maybeFilterViolations <- options.datasetFilter.violations(emd, ddm, amd, fedoraIDs)
+      allFileInfos <- fedoraIDs.filter(_.startsWith("easy-file:")).toList.traverse(getFileInfo)
+      maybeFilterViolations <- options.datasetFilter.violations(emd, ddm, amd, fedoraIDs, allFileInfos)
       _ = if (options.strict) maybeFilterViolations.foreach(msg => throw InvalidTransformationException(msg))
       _ = logger.info(s"Creating $bagDir from $datasetId with owner $depositor")
       bag <- DansV0Bag.empty(bagDir)
@@ -222,7 +223,6 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       _ <- managedMetadataStream(foXml, "DATASET_LICENSE", bag, "depositor-info/depositor-agreement")
         .getOrElse(Success(()))
       isOriginalVersioned = options.transformationType == ORIGINAL_VERSIONED
-      allFileInfos <- fedoraIDs.filter(_.startsWith("easy-file:")).toList.traverse(getFileInfo)
       fileInfosForSecondBag = allFileInfos.selectForSecondBag(isOriginalVersioned)
       fileInfosForFirstBag <- allFileInfos.selectForFirstBag(emdXml, fileInfosForSecondBag.nonEmpty, options.europeana)
       _ <- checkDuplicateFiles(fileInfosForFirstBag, fileInfosForSecondBag, isOriginalVersioned)

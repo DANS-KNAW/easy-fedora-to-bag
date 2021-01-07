@@ -15,6 +15,8 @@
  */
 package nl.knaw.dans.easy.fedoratobag.filter
 
-case class ThemaDatasetFilter(override val targetIndex: BagIndex) extends SimpleDatasetFilter(targetIndex) {
+case class ThemaDatasetFilter(override val allowOriginalAndOthers: Boolean = false,
+                              override val targetIndex: BagIndex
+                             ) extends SimpleDatasetFilter(allowOriginalAndOthers, targetIndex) {
   override def forbiddenTitle(title: String): Boolean = !super.forbiddenTitle(title)
 }

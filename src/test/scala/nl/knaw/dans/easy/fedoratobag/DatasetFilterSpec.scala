@@ -16,7 +16,7 @@
 package nl.knaw.dans.easy.fedoratobag
 
 import com.typesafe.scalalogging.Logger
-import nl.knaw.dans.easy.fedoratobag.filter.{ BagIndex, FedoraVersionedFilter, OriginalVersionedFilter, SimpleDatasetFilter, ThemaDatasetFilter }
+import nl.knaw.dans.easy.fedoratobag.filter.{ BagIndex, FedoraVersionedFilter, SimpleDatasetFilter, ThemaDatasetFilter }
 import nl.knaw.dans.easy.fedoratobag.fixture.{ BagIndexSupport, EmdSupport, TestSupportFixture }
 import org.scalamock.scalatest.MockFactory
 import org.slf4j.{ Logger => UnderlyingLogger }
@@ -84,7 +84,8 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
 
     FedoraVersionedFilter().violations(emd, ddm, amd("PUBLISHED"), fedoraIDs = Seq(), fileInfos) shouldBe
       Success(None)
-    OriginalVersionedFilter().violations(emd, ddm, amd("PUBLISHED"), fedoraIDs = Seq(), fileInfos) shouldBe
+    SimpleDatasetFilter(allowOriginalAndOthers = true)
+      .violations(emd, ddm, amd("PUBLISHED"), fedoraIDs = Seq(), fileInfos) shouldBe
       Success(None)
   }
 
@@ -184,7 +185,7 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
       (mockLogger.warn(_: String)) expects s once()
     )
 
-    new SimpleDatasetFilter(bagIndex) {
+    new SimpleDatasetFilter(targetIndex = bagIndex) {
       override lazy val logger: Logger = Logger(mockLogger)
     }
   }
@@ -198,7 +199,7 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
       (mockLogger.warn(_: String)) expects s once()
     )
 
-    new ThemaDatasetFilter(bagIndex) {
+    new ThemaDatasetFilter(targetIndex = bagIndex) {
       override lazy val logger: Logger = Logger(mockLogger)
     }
   }

@@ -41,34 +41,38 @@ object Command extends App with DebugEnhancedLogging {
     .doIfFailure { case e => logger.error(e.getMessage, e) }
     .doIfFailure { case NonFatal(e) => println(s"FAILED: ${ e.getMessage }") }
 
+  private val europeana = commandLine.europeana()
+  private val transformationType = commandLine.transformation()
+  private val csvLogFile = commandLine.logFile()
+
   private def runSubcommand(app: EasyFedoraToBagApp): Try[FeedBackMessage] = {
     lazy val isAip = commandLine.outputFormat.isSupplied && commandLine.outputFormat() == AIP
-    Try(commandLine.transformation() match {
-      case FEDORA_VERSIONED if !commandLine.europeana() && !isAip => FedoraVersionedFilter()
-      case ORIGINAL_VERSIONED if !isAip => OriginalVersionedFilter()
-      case THEMA if isAip => ThemaDatasetFilter(app.bagIndex)
-      case SIMPLE if isAip => SimpleDatasetFilter(app.bagIndex)
-      case SIMPLE => SimpleDatasetFilter()
+    Try(transformationType match {
+      case FEDORA_VERSIONED if !europeana && !isAip => FedoraVersionedFilter()
+      case ORIGINAL_VERSIONED if !isAip => SimpleDatasetFilter(allowOriginalAndOthers = true)
+      case THEMA if isAip => ThemaDatasetFilter(allowOriginalAndOthers = europeana, targetIndex = app.bagIndex)
+      case SIMPLE if isAip => SimpleDatasetFilter(allowOriginalAndOthers = europeana, targetIndex = app.bagIndex)
+      case SIMPLE => SimpleDatasetFilter(allowOriginalAndOthers = europeana)
       case _ => throw new NotImplementedError(s"${ commandLine.args } not implemented")
     }).flatMap { datasetFilter =>
       if (!commandLine.outputDir.isSupplied)
         dryRunFedoraVersioned(app)
       else runExport(app, datasetFilter)
     }
-  }.map(msg => s"$msg, for details see ${ commandLine.logFile().toJava.getAbsolutePath }")
+  }.map(msg => s"$msg, for details see ${ csvLogFile.toJava.getAbsolutePath }")
 
   private def dryRunFedoraVersioned(app: EasyFedoraToBagApp) = {
     FedoraVersions(app.fedoraProvider)
       .findChains(datasetIds).map { families =>
-      commandLine.logFile().printLines(families.map(_.mkString(",")))
+      csvLogFile.printLines(families.map(_.mkString(",")))
       s"DRY RUN --- produced IDs of bag sequences per CSV line"
     }
   }
 
   private def runExport(app: EasyFedoraToBagApp, datasetFilter: SimpleDatasetFilter) = {
-    val options = Options(datasetFilter, commandLine.transformation(), commandLine.strictMode(), commandLine.europeana())
-    val printer = CsvRecord.printer(commandLine.logFile())
-    if (commandLine.transformation() == FEDORA_VERSIONED)
+    val options = Options(datasetFilter, transformationType, commandLine.strictMode(), europeana)
+    val printer = CsvRecord.printer(csvLogFile)
+    if (transformationType == FEDORA_VERSIONED)
       printer.apply(app.createSequences(datasetIds, commandLine.outputDir(), options))
     else printer.apply(app.createExport(datasetIds, commandLine.outputDir(), options, commandLine.outputFormat()))
   }

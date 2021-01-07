@@ -196,7 +196,9 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       ddm <- DDM(emd, audiences, configuration.abrMapping)
       fedoraIDs <- fedoraProvider.getSubordinates(datasetId)
       allFileInfos <- fedoraIDs.filter(_.startsWith("easy-file:")).toList.traverse(getFileInfo)
-      maybeFilterViolations <- options.datasetFilter.violations(emd, ddm, amd, fedoraIDs, allFileInfos)
+      possibleDuplicates = if (options.europeana) List.empty
+                           else allFileInfos
+      maybeFilterViolations <- options.datasetFilter.violations(emd, ddm, amd, fedoraIDs, possibleDuplicates)
       _ = if (options.strict) maybeFilterViolations.foreach(msg => throw InvalidTransformationException(msg))
       _ = logger.info(s"Creating $bagDir from $datasetId with owner $depositor")
       bag <- DansV0Bag.empty(bagDir)

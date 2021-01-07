@@ -19,5 +19,6 @@ import scala.xml.Node
 
 case class FedoraVersionedFilter() extends SimpleDatasetFilter {
   override def findDansRelations(ddm: Node): Seq[Node] = Seq.empty
+
   override val allowOriginalAndOthers: Boolean = true
 }

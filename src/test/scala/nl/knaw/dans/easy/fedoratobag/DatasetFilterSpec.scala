@@ -15,13 +15,13 @@
  */
 package nl.knaw.dans.easy.fedoratobag
 
-import java.net.URI
 import com.typesafe.scalalogging.Logger
 import nl.knaw.dans.easy.fedoratobag.filter.{ BagIndex, FedoraVersionedFilter, OriginalVersionedFilter, SimpleDatasetFilter, ThemaDatasetFilter }
 import nl.knaw.dans.easy.fedoratobag.fixture.{ BagIndexSupport, EmdSupport, TestSupportFixture }
 import org.scalamock.scalatest.MockFactory
 import org.slf4j.{ Logger => UnderlyingLogger }
 
+import java.net.URI
 import java.nio.file.Paths
 import scala.util.Success
 import scala.xml.Elem
@@ -65,7 +65,7 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
     val fileInfos = List(
       "original/x.txt",
       "x.txt",
-    ).map(p => new FileInfo("easy-file:2",Paths.get(p),"x.txt",2,"text/plain","ANONYMOUS","ANONYMOUS",None,None))
+    ).map(p => new FileInfo("easy-file:2", Paths.get(p), "x.txt", 2, "text/plain", "ANONYMOUS", "ANONYMOUS", None, None))
 
     simpleChecker(loggerExpectsWarnings = Seq(
       "violated 8: original and other files should not occur both",
@@ -80,7 +80,7 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
     val fileInfos = List(
       "original/x.txt",
       "x.txt",
-    ).map(p => new FileInfo("easy-file:2",Paths.get(p),"x.txt",2,"text/plain","ANONYMOUS","ANONYMOUS",None,None))
+    ).map(p => new FileInfo("easy-file:2", Paths.get(p), "x.txt", 2, "text/plain", "ANONYMOUS", "ANONYMOUS", None, None))
 
     FedoraVersionedFilter().violations(emd, ddm, amd("PUBLISHED"), fedoraIDs = Seq(), fileInfos) shouldBe
       Success(None)

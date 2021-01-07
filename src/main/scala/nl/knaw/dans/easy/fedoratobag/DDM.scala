@@ -211,7 +211,7 @@ object DDM extends DebugEnhancedLogging {
     s"$uri/${ id.getEntityId }"
   }
 
-  private def toXml(spatial: Spatial): Elem = {
+  private def toXml(spatial: Spatial): Node = {
     (Option(spatial.getPlace),
       Option(spatial.getPoint),
       Option(spatial.getBox),
@@ -233,7 +233,10 @@ object DDM extends DebugEnhancedLogging {
       optional(emdPoint.getX),
       optional(emdPoint.getY),
     )
-    point.dcxGml.getOrElse(notImplemented("invalid point")(point))
+    point.dcxGml.getOrElse {
+      logger.warn(s"Empty point: $emdPoint")
+      Text("")
+    }
   }
 
   private def toXml(spatial: Spatial.Box): Elem = {

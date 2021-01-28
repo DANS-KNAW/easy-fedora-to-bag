@@ -23,9 +23,10 @@ import scala.xml.Node
 package object filter {
   implicit class FileInfos(val fileInfos: List[FileInfo]) extends AnyVal {
     def selectForSecondBag(isOriginalVersioned: Boolean): List[FileInfo] = {
-      if (!isOriginalVersioned) List.empty
+      lazy val originals = fileInfos.filter(_.isOriginal)
+      if (!isOriginalVersioned || originals.isEmpty) List.empty
       else {
-        val accessibleOriginals = fileInfos.filter(_.isAccessibleOriginal)
+        val accessibleOriginals = originals.filter(_.isAccessibleOriginal)
         if (fileInfos.size == accessibleOriginals.size) List.empty
         else accessibleOriginals ++ fileInfos.filterNot(_.isOriginal)
       }

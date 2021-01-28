@@ -59,16 +59,11 @@ package object filter {
         else Success(fileInfos)
       }
 
-      val fileFilterType = if (hasSecondBag) ORIGINAL_FILES
-                           else if (!europeana) ALL_FILES
-                                else if (dcmiType(emd) == "text") LARGEST_PDF
-                                     else LARGEST_IMAGE
-      fileFilterType match {
-        case LARGEST_PDF => largest(LARGEST_PDF, LARGEST_IMAGE)
-        case LARGEST_IMAGE => largest(LARGEST_IMAGE, LARGEST_PDF)
-        case ORIGINAL_FILES => successUnlessEmpty(fileInfos.filter(_.isOriginal)) // TODO is ALL_FILES if no second bag
-        case ALL_FILES => successUnlessEmpty(fileInfos)
-      }
+      if (hasSecondBag) successUnlessEmpty(fileInfos.filter(_.isOriginal))
+      else if (!europeana) successUnlessEmpty(fileInfos) // all files
+           else if (dcmiType(emd) == "text")
+                  largest(LARGEST_PDF, LARGEST_IMAGE)
+                else largest(LARGEST_IMAGE, LARGEST_PDF)
     }
   }
 

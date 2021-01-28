@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.easy.fedoratobag
 
-import nl.knaw.dans.easy.fedoratobag.filter.FileFilterType._
+import nl.knaw.dans.easy.fedoratobag.filter.FileType._
 
 import scala.util.{ Failure, Success, Try }
 import scala.xml.Node
@@ -38,14 +38,14 @@ package object filter {
 
     def selectForFirstBag(emd: Node, hasSecondBag: Boolean, europeana: Boolean): Try[List[FileInfo]] = {
 
-      def largest(by: FileFilterType, orElseBy: FileFilterType): Try[List[FileInfo]] = {
+      def largest(preferred: FileType, alternative: FileType): Try[List[FileInfo]] = {
         val infosByType = fileInfos
           .filter(_.accessibleTo == "ANONYMOUS")
-          .groupBy(fi => if (fi.mimeType.startsWith("image/")) LARGEST_IMAGE
-                         else if (fi.mimeType.startsWith("application/pdf")) LARGEST_PDF
-                              else ALL_FILES
+          .groupBy(fi => if (fi.mimeType.startsWith("image/")) IMAGE
+                         else if (fi.mimeType.startsWith("application/pdf")) PDF
+                              else NEITHER_PDF_NOR_IMAGE
           )
-        val selected = infosByType.getOrElse(by, infosByType.getOrElse(orElseBy, List.empty))
+        val selected = infosByType.getOrElse(preferred, infosByType.getOrElse(alternative, List.empty))
         maxSizeUnlessEmpty(selected)
       }
 
@@ -62,8 +62,8 @@ package object filter {
       if (hasSecondBag) successUnlessEmpty(fileInfos.filter(_.isOriginal))
       else if (!europeana) successUnlessEmpty(fileInfos) // all files
            else if (dcmiType(emd) == "text")
-                  largest(LARGEST_PDF, LARGEST_IMAGE)
-                else largest(LARGEST_IMAGE, LARGEST_PDF)
+                  largest(PDF, IMAGE)
+                else largest(IMAGE, PDF)
     }
   }
 

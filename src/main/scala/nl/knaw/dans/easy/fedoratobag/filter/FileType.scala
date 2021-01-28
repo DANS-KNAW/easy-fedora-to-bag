@@ -15,12 +15,12 @@
  */
 package nl.knaw.dans.easy.fedoratobag.filter
 
-object FileFilterType extends Enumeration {
-  type FileFilterType = Value
+object FileType extends Enumeration {
+  type FileType = Value
 
   // @formatter:off
-  val LARGEST_PDF: FileFilterType = Value("LARGEST_PDF")
-  val LARGEST_IMAGE: FileFilterType = Value("LARGEST_IMAGE")
-  val ALL_FILES: FileFilterType = Value("ALL_FILES")
+  val PDF: FileType = Value("PDF")
+  val IMAGE: FileType = Value("IMAGE")
+  val NEITHER_PDF_NOR_IMAGE: FileType = Value("NEITHER_PDF_NOR_IMAGE")
   // @formatter:on
 }

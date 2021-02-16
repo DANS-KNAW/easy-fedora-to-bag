@@ -23,6 +23,9 @@ import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import scala.collection.mutable
 import scala.util.{ Failure, Success, Try }
 import scala.xml.XML
+import cats.instances.list._
+import cats.instances.try_._
+import cats.syntax.traverse._
 
 case class FedoraVersions(fedoraProvider: FedoraProvider) extends DebugEnhancedLogging {
   val resolver: Resolver = Resolver()

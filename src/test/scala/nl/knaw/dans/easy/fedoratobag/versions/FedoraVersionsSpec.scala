@@ -123,10 +123,14 @@ class FedoraVersionsSpec extends TestSupportFixture with MockFactory {
      * INFO  easy-dataset:1 following EmdVersionInfo: 2019-12-23T00:00:00.000+01:00; self=(easy-dataset:2); previous=(easy-dataset:3); next=(10.17026/dans-zjf-522e)
      * INFO  easy-dataset:1 following EmdVersionInfo: 2018-02-12T00:00:00.000+01:00; self=(easy-dataset:4,10.17026/dans-zjf-522e); previous=(); next=()
      * INFO  easy-dataset:1 Family[4]: easy-dataset:2 -> 1577055600000, easy-dataset:1 -> 1550876400000, easy-dataset:4 -> 1518390000000, easy-dataset:3 -> 1521759600000 Connections[0]:
+     * INFO  easy-dataset:1 new family Map(easy-dataset:2 -> 1577055600000, easy-dataset:1 -> 1550876400000, easy-dataset:4 -> 1518390000000, easy-dataset:3 -> 1521759600000)
      * INFO  easy-dataset:5 EmdVersionInfo: 1900-01-01T00:00:00.000+00:19:32; self=(); previous=(); next=()
      * WARN  easy-dataset:5 Family[1]: easy-dataset:5 -> -2208989972000 Connections[0]:
+     * INFO  easy-dataset:5 new family Map(easy-dataset:5 -> -2208989972000)
      * INFO  easy-dataset:6 EmdVersionInfo: 1900-01-01T00:00:00.000+00:19:32; self=(easy-dataset:5); previous=(easy-dataset:3); next=()
      * WARN  easy-dataset:6 Family[1]: easy-dataset:6 -> -2208989972000 Connections[1]: easy-dataset:3
+     * INFO  easy-dataset:6 family merged with Map(easy-dataset:2 -> 1577055600000, easy-dataset:1 -> 1550876400000, easy-dataset:4 -> 1518390000000, easy-dataset:3 -> 1521759600000)
+     * INFO  easy-dataset:6 new family Map(easy-dataset:2 -> 1577055600000, easy-dataset:1 -> 1550876400000, easy-dataset:4 -> 1518390000000, easy-dataset:3 -> 1521759600000, easy-dataset:6 -> -2208989972000)
      *
      * warnings in case of default dates (< 1970), see date calculation in EmdVersionInfo.apply
      * nn in "[nn] Connections" implies the number of set operations in Versions.findVersions.connect

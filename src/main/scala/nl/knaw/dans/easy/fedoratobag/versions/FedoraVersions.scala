@@ -67,6 +67,7 @@ case class FedoraVersions(fedoraProvider: FedoraProvider) extends DebugEnhancedL
         family.keySet.intersect(connections.toSet).nonEmpty
       ) // not inline: changing while searching might require a specific order
       connectedWith.foreach { oldFamily =>
+        logger.info(s"$startDatasetId family merged with $oldFamily")
         families -= oldFamily
         family ++= oldFamily
       }
@@ -122,6 +123,7 @@ case class FedoraVersions(fedoraProvider: FedoraProvider) extends DebugEnhancedL
       _ <- follow(emdVersionInfo.next, _.next)
       _ = log()
       _ = if (connections.nonEmpty) connect()
+      _ = logger.info(s"$startDatasetId new family $family")
       _ = families += family
     } yield connections
   }

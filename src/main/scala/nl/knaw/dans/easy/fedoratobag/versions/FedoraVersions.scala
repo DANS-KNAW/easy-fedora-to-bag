@@ -114,7 +114,7 @@ case class FedoraVersions(fedoraProvider: FedoraProvider) extends DebugEnhancedL
         )
       )
       if (family.values.exists(_ <= 0))
-        logger.warn(msg + " date before 1970")
+        logger.warn(msg)
       else logger.info(msg)
     }
 

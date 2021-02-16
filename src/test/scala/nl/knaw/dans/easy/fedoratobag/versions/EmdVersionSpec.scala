@@ -15,10 +15,13 @@
  */
 package nl.knaw.dans.easy.fedoratobag.versions
 
+import better.files.File
 import nl.knaw.dans.easy.fedoratobag.fixture.TestSupportFixture
 import org.joda.time.DateTime
 
+import scala.reflect.runtime.universe.Try
 import scala.util.Success
+import scala.xml.XML
 
 class EmdVersionSpec extends TestSupportFixture {
   "apply" should "return all types of identifiers" in {

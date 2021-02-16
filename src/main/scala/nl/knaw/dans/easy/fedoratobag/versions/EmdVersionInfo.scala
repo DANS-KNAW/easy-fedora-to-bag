@@ -38,9 +38,9 @@ object EmdVersionInfo {
       .getOrElse("1900-01-01")
     new EmdVersionInfo(
       submitted = fixDateIfTooLarge(date).getOrElse(0),
-      self = (emd \ "identifier" \ "identifier").theSeq.filter(isSelf).map(_.text),
-      previous = getDansIDs((relations \ "replaces").theSeq ++ (relations \ "isVersionOf").theSeq),
-      next = getDansIDs((relations \ "replacedBy").theSeq ++ (relations \ "hasVersion").theSeq),
+      self = (emd \ "identifier" \ "identifier").filter(isSelf).map(_.text),
+      previous = getDansIDs((relations \ "replaces") ++ (relations \ "isVersionOf")),
+      next = getDansIDs((relations \ "replacedBy") ++ (relations \ "hasVersion")),
     )
   }
 
@@ -53,11 +53,11 @@ object EmdVersionInfo {
   val easNameSpace = "http://easy.dans.knaw.nl/easy/easymetadata/eas/"
 
   private def isSelf(node: Node) = {
-    val scheme = node
+    node
       .attribute(easNameSpace, "scheme")
       .map(_.text)
       .getOrElse("")
-    Seq("PID", "DMO_ID", "DOI").exists(scheme.contains)
+      .matches("(PID|DMO_ID|DOI)")
   }
 
   private def getDansIDs(relations: Seq[Node]) = {

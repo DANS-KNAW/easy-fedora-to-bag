@@ -116,12 +116,14 @@ case class FedoraVersions(fedoraProvider: FedoraProvider) extends DebugEnhancedL
     }
 
     for {
-      versionInfo <- readVersionInfo(startDatasetId)
-      _ <- follow(versionInfo.previous, _.previous)
-      _ <- follow(versionInfo.next, _.next)
+      emdVersionInfo <- readVersionInfo(startDatasetId)
+      _ = logger.info(s"start findVersions for $startDatasetId")
+      _ <- follow(emdVersionInfo.previous, _.previous)
+      _ <- follow(emdVersionInfo.next, _.next)
       _ = log()
       _ = if (connections.nonEmpty) connect()
       _ = families += family
+      _ = logger.info(s"completed findVersions without exceptions for $startDatasetId with ${families.size} families")
     } yield connections
   }
 }

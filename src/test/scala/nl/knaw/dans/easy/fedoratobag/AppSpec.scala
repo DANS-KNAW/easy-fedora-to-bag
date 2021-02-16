@@ -55,7 +55,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     }
 
     // make almost private method available for tests
-    override def createBag(datasetId: DatasetId, bagDir: File, options: Options, firstVersionInfo: Option[VersionInfo] = None): Try[DatasetInfo] =
+    override def createBag(datasetId: DatasetId, bagDir: File, options: Options, firstBagVersion: Option[BagVersion] = None): Try[DatasetInfo] =
       super.createBag(datasetId, bagDir, options)
   }
 

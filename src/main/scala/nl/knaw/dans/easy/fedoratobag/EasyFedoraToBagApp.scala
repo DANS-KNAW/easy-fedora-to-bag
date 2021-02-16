@@ -54,7 +54,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
   def createSequences(lines: Iterator[String], outputDir: File, options: Options)(printer: CSVPrinter): Try[FeedBackMessage] = {
     logger.info(options.toString)
 
-    def exportBag(firstVersion: Option[VersionInfo], datasetId: DatasetId): Try[VersionInfo] = {
+    def exportBag(firstVersion: Option[BagVersion], datasetId: DatasetId): Try[BagVersion] = {
       val packageUUID = UUID.randomUUID
       val packageDir = configuration.stagingDir / packageUUID.toString
       val csvUuid1 = firstVersion.map(_.packageId).getOrElse(packageUUID)
@@ -62,12 +62,12 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       for {
         datasetInfo <- createBag(datasetId, packageDir / UUID.randomUUID.toString, options, firstVersion)
         _ <- movePackageAtomically(packageDir, outputDir)
-        thisVersionInfo = VersionInfo(datasetInfo, packageUUID)
+        thisVersionInfo = BagVersion(datasetInfo, packageUUID)
         _ <- CsvRecord(datasetId, datasetInfo, csvUuid1, csvUuid2, options).print(printer)
       } yield thisVersionInfo
     }
 
-    def exportWithRecover(firstVersion: VersionInfo)(datasetId: DatasetId): Try[Any] = {
+    def exportWithRecover(firstVersion: BagVersion)(datasetId: DatasetId): Try[Any] = {
       val tried = exportBag(Some(firstVersion), datasetId)
       errorHandling(tried, printer, datasetId, firstVersion.packageId)
     }
@@ -172,7 +172,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     } yield ()
   }
 
-  def createBag(datasetId: DatasetId, bagDir: File, options: Options, firstVersionInfo: Option[VersionInfo] = None): Try[DatasetInfo] = {
+  def createBag(datasetId: DatasetId, bagDir: File, options: Options, firstBagVersion: Option[BagVersion] = None): Try[DatasetInfo] = {
 
     def managedMetadataStream(foXml: Elem, streamId: String, bag: DansV0Bag, metadataFile: String) = {
       managedStreamLabel(foXml, streamId)
@@ -201,7 +201,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       _ = logger.info(s"Creating $bagDir from $datasetId with owner $depositor")
       bag <- DansV0Bag.empty(bagDir)
       _ = bag.withEasyUserAccount(depositor).withCreated(DateTime.now())
-      _ = firstVersionInfo.map(_.addVersionOf(bag))
+      _ = firstBagVersion.map(_.addVersionOf(bag))
       _ <- addXmlMetadataTo(bag, "emd.xml")(emdXml)
       _ <- addXmlMetadataTo(bag, "amd.xml")(amd)
       _ <- getDdm(foXml)

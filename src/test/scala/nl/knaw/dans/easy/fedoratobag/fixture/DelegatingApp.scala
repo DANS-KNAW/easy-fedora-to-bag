@@ -15,15 +15,14 @@
  */
 package nl.knaw.dans.easy.fedoratobag.fixture
 
-import java.net.URI
-
 import better.files.File
-import javax.naming.ldap.InitialLdapContext
 import nl.knaw.dans.bag.v0.DansV0Bag
 import nl.knaw.dans.easy.fedoratobag.filter.BagIndex
-import nl.knaw.dans.easy.fedoratobag.{ Configuration, DatasetId, DatasetInfo, EasyFedoraToBagApp, FedoraProvider, Options, VersionInfo }
+import nl.knaw.dans.easy.fedoratobag.{ BagVersion, Configuration, DatasetId, DatasetInfo, EasyFedoraToBagApp, FedoraProvider, Options }
 import org.scalamock.scalatest.MockFactory
 
+import java.net.URI
+import javax.naming.ldap.InitialLdapContext
 import scala.util.Try
 
 trait DelegatingApp extends MockFactory {
@@ -41,18 +40,18 @@ trait DelegatingApp extends MockFactory {
 
     private val delegate = mock[MockEasyFedoraToBagApp]
     createBagExpects.foreach { case (id, result) =>
-      (delegate.createBag(_: DatasetId, _: File, _: Options, _: Option[VersionInfo])
+      (delegate.createBag(_: DatasetId, _: File, _: Options, _: Option[BagVersion])
         ) expects(id, *, *, *) returning result
     }
 
-    override def createBag(datasetId: DatasetId, bagDir: File, options: Options, firstVersionInfo: Option[VersionInfo] = None): Try[DatasetInfo] = {
+    override def createBag(datasetId: DatasetId, bagDir: File, options: Options, firstBagVersion: Option[BagVersion] = None): Try[DatasetInfo] = {
       // mimic a part of the real method, the tested caller wants to move the bag
       DansV0Bag.empty(bagDir).map { bag =>
-        firstVersionInfo.foreach(_.addVersionOf(bag))
+        firstBagVersion.foreach(_.addVersionOf(bag))
         bag.save()
       }.getOrElse(s"mock of createBag failed for $datasetId")
       // mock the outcome of the method
-      delegate.createBag(datasetId, bagDir, options, firstVersionInfo)
+      delegate.createBag(datasetId, bagDir, options, firstBagVersion)
     }
   }
 }

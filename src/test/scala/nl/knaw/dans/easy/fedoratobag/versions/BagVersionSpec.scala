@@ -20,7 +20,7 @@ import org.joda.time.DateTime
 
 import scala.util.Success
 
-class VersionInfoSpec extends TestSupportFixture {
+class BagVersionSpec extends TestSupportFixture {
   "apply" should "return all types of identifiers" in {
     VersionInfo(
       <emd:easymetadata xmlns:eas={ VersionInfo.easNameSpace }>

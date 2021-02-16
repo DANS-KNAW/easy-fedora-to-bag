@@ -23,9 +23,6 @@ import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import scala.collection.mutable
 import scala.util.{ Failure, Success, Try }
 import scala.xml.XML
-import cats.instances.list._
-import cats.instances.try_._
-import cats.syntax.traverse._
 
 case class FedoraVersions(fedoraProvider: FedoraProvider) extends DebugEnhancedLogging {
   val resolver: Resolver = Resolver()
@@ -97,6 +94,7 @@ case class FedoraVersions(fedoraProvider: FedoraProvider) extends DebugEnhancedL
       grouped.get(false).toSeq.flatten.map { id =>
         for {
           versionInfo <- readVersionInfo(id)
+          _ = logger.info(s"$startDatasetId following $versionInfo")
           _ <- follow(f(versionInfo), f)
         } yield ()
       }.find(_.isFailure).getOrElse(Success(()))
@@ -104,11 +102,10 @@ case class FedoraVersions(fedoraProvider: FedoraProvider) extends DebugEnhancedL
 
     def log(): Unit = {
       val msg = family.mkString(
-        "Family: ",
+        s"$startDatasetId Family[${ family.size }]: ",
         ", ",
-        if (connections.isEmpty) ""
-        else connections.mkString(
-          s" [${ family.size }] Connections: ",
+        connections.mkString(
+          s" Connections[${ connections.size }]: ",
           ", ",
           ""
         )
@@ -120,13 +117,12 @@ case class FedoraVersions(fedoraProvider: FedoraProvider) extends DebugEnhancedL
 
     for {
       emdVersionInfo <- readVersionInfo(startDatasetId)
-      _ = logger.info(s"start findVersions for $startDatasetId")
+      _ = logger.info(s"$startDatasetId $emdVersionInfo")
       _ <- follow(emdVersionInfo.previous, _.previous)
       _ <- follow(emdVersionInfo.next, _.next)
       _ = log()
       _ = if (connections.nonEmpty) connect()
       _ = families += family
-      _ = logger.info(s"completed findVersions without exceptions for $startDatasetId with ${families.size} families")
     } yield connections
   }
 }

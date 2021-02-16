@@ -26,7 +26,9 @@ case class EmdVersionInfo(submitted: Long,
                           self: Seq[String],
                           previous: Seq[String],
                           next: Seq[String],
-                         )
+                         ) {
+  override def toString = s"EmdVersionInfo: ${new DateTime(submitted)}; self=${self.mkString("(",",",")")}; previous=${previous.mkString("(",",",")")}; next=${next.mkString("(",",",")")}"
+}
 
 object EmdVersionInfo {
   def apply(emd: Elem): Try[EmdVersionInfo] = Try {
@@ -53,11 +55,12 @@ object EmdVersionInfo {
   val easNameSpace = "http://easy.dans.knaw.nl/easy/easymetadata/eas/"
 
   private def isSelf(node: Node) = {
-    node
+    val scheme = node
       .attribute(easNameSpace, "scheme")
       .map(_.text)
       .getOrElse("")
-      .matches("(PID|DMO_ID|DOI)")
+    val bool = scheme.matches("(PID|DMO_ID|DOI)")
+    bool
   }
 
   private def getDansIDs(relations: Seq[Node]) = {

@@ -22,25 +22,25 @@ import org.joda.time.format.DateTimeFormat.forPattern
 import scala.util.Try
 import scala.xml.{ Elem, Node }
 
-case class VersionInfo(submitted: Long,
-                       self: Seq[String],
-                       previous: Seq[String],
-                       next: Seq[String],
-                      )
+case class EmdVersionInfo(submitted: Long,
+                          self: Seq[String],
+                          previous: Seq[String],
+                          next: Seq[String],
+                         )
 
-object VersionInfo {
-  def apply(emd: Elem): Try[VersionInfo] = Try {
+object EmdVersionInfo {
+  def apply(emd: Elem): Try[EmdVersionInfo] = Try {
     val relations = emd \ "relation"
     val dateContainer = emd \ "date"
     val date = (dateContainer \ "dateSubmitted").headOption
       .getOrElse(dateContainer \ "created").headOption
       .map(_.text)
       .getOrElse("1900-01-01")
-    new VersionInfo(
-      fixDateIfTooLarge(date).getOrElse(0),
-      (emd \ "identifier" \ "identifier").theSeq.filter(isSelf).map(_.text),
-      getDansIDs((relations \ "replaces").theSeq ++ (relations \ "isVersionOf").theSeq),
-      getDansIDs((relations \ "replacedBy").theSeq ++ (relations \ "hasVersion").theSeq),
+    new EmdVersionInfo(
+      submitted = fixDateIfTooLarge(date).getOrElse(0),
+      self = (emd \ "identifier" \ "identifier").theSeq.filter(isSelf).map(_.text),
+      previous = getDansIDs((relations \ "replaces").theSeq ++ (relations \ "isVersionOf").theSeq),
+      next = getDansIDs((relations \ "replacedBy").theSeq ++ (relations \ "hasVersion").theSeq),
     )
   }
 

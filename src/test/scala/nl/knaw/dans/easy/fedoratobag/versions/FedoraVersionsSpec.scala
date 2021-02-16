@@ -15,8 +15,6 @@
  */
 package nl.knaw.dans.easy.fedoratobag.versions
 
-import java.io.InputStream
-
 import better.files._
 import nl.knaw.dans.easy.fedoratobag.fixture.TestSupportFixture
 import nl.knaw.dans.easy.fedoratobag.{ FedoraProvider, XmlExtensions }
@@ -24,6 +22,7 @@ import org.scalamock.handlers.{ CallHandler1, CallHandler2 }
 import org.scalamock.scalatest.MockFactory
 import resource.{ DefaultManagedResource, ManagedResource }
 
+import java.io.InputStream
 import scala.util.{ Failure, Success, Try }
 import scala.xml.Elem
 
@@ -67,29 +66,29 @@ class FedoraVersionsSpec extends TestSupportFixture with MockFactory {
   it should "follow in both directions" in {
     val emds = Seq(
       "easy-dataset:1" ->
-        <emd:easymetadata xmlns:eas={ VersionInfo.easNameSpace }>
+        <emd:easymetadata xmlns:eas={ EmdVersionInfo.easNameSpace }>
           <emd:date><eas:dateSubmitted>2019-02-23</eas:dateSubmitted></emd:date>
           <emd:relation><dct:hasVersion>easy-dataset:2</dct:hasVersion></emd:relation>
           <emd:relation><dct:replaces>http://www.persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-2ajw-cq</dct:replaces></emd:relation>
         </emd:easymetadata>,
       "easy-dataset:2" ->
-        <emd:easymetadata xmlns:eas={ VersionInfo.easNameSpace }>
+        <emd:easymetadata xmlns:eas={ EmdVersionInfo.easNameSpace }>
           <emd:date><eas:dateSubmitted>2019-12-23</eas:dateSubmitted></emd:date>
           <emd:relation><dct:replacedBy>https://doi.org/10.17026/dans-zjf-522e</dct:replacedBy></emd:relation>
           <emd:relation><dct:isVersionOf>easy-dataset:3</dct:isVersionOf></emd:relation>
         </emd:easymetadata>,
       "easy-dataset:3" ->
-        <emd:easymetadata xmlns:eas={ VersionInfo.easNameSpace }>
+        <emd:easymetadata xmlns:eas={ EmdVersionInfo.easNameSpace }>
           <emd:date><eas:dateSubmitted>2018-03-23</eas:dateSubmitted></emd:date>
         </emd:easymetadata>,
       "easy-dataset:4" ->
-        <emd:easymetadata xmlns:eas={ VersionInfo.easNameSpace }>
+        <emd:easymetadata xmlns:eas={ EmdVersionInfo.easNameSpace }>
           <emd:date><eas:dateSubmitted>2018-02-12</eas:dateSubmitted></emd:date>
         </emd:easymetadata>,
       "easy-dataset:5" ->
         <emd:easymetadata/>,
       "easy-dataset:6" ->
-        <emd:easymetadata xmlns:eas={ VersionInfo.easNameSpace }>
+        <emd:easymetadata xmlns:eas={ EmdVersionInfo.easNameSpace }>
           <emd:relation><dct:isVersionOf>easy-dataset:3</dct:isVersionOf></emd:relation>
         </emd:easymetadata>,
     )
@@ -112,7 +111,7 @@ class FedoraVersionsSpec extends TestSupportFixture with MockFactory {
      * WARN  Family: easy-dataset:5 -> -2208989972000
      * WARN  Family: easy-dataset:6 -> -2208989972000 [1]  Connections: easy-dataset:3
      *
-     * warnings in case of default dates (< 1970), see date calculation in VersionInfo.apply
+     * warnings in case of default dates (< 1970), see date calculation in EmdVersionInfo.apply
      * nn in "[nn] Connections" implies the number of set operations in Versions.findVersions.connect
      */
     versions.findChains(Iterator("easy-dataset:1", "easy-dataset:5", "easy-dataset:6")) shouldBe

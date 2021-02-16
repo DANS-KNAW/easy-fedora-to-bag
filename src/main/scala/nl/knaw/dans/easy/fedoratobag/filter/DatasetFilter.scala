@@ -17,7 +17,7 @@ package nl.knaw.dans.easy.fedoratobag.filter
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory.{ OPEN_ACCESS, REQUEST_PERMISSION }
 import nl.knaw.dans.easy.fedoratobag._
-import nl.knaw.dans.easy.fedoratobag.versions.VersionInfo
+import nl.knaw.dans.easy.fedoratobag.versions.EmdVersionInfo
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import nl.knaw.dans.pf.language.emd.EasyMetadataImpl
 
@@ -98,8 +98,8 @@ trait DatasetFilter extends DebugEnhancedLogging {
   private def hasDansId(node: Node): Boolean = {
     // see both DDM.toRelationXml methods for what might occur
     (node \@ "href", node.text) match {
-      case (href, _) if VersionInfo.isDansId(href) => true
-      case (_, text) if VersionInfo.isDansId(text) => true
+      case (href, _) if EmdVersionInfo.isDansId(href) => true
+      case (_, text) if EmdVersionInfo.isDansId(text) => true
       case _ => false
     }
   }

@@ -72,18 +72,18 @@ case class FedoraVersions(fedoraProvider: FedoraProvider) extends DebugEnhancedL
       }
     }
 
-    def readVersionInfo(anyId: String): Try[VersionInfo] = for {
+    def readVersionInfo(anyId: String): Try[EmdVersionInfo] = for {
       datasetId <- resolver.getDatasetId(anyId)
       emd <- fedoraProvider
         .datastream(datasetId, "EMD")
         .map(XML.load)
         .tried
-      versionInfo <- VersionInfo(emd)
+      versionInfo <- EmdVersionInfo(emd)
       _ = family += datasetId -> versionInfo.submitted
       _ = collectedIds ++= (versionInfo.self :+ datasetId).distinct
     } yield versionInfo
 
-    def follow(ids: Seq[String], f: VersionInfo => Seq[String]): Try[Unit] = {
+    def follow(ids: Seq[String], f: EmdVersionInfo => Seq[String]): Try[Unit] = {
       val grouped = ids.groupBy(collectedIds.contains(_))
 
       connections ++= grouped.get(true).toSeq.flatten
@@ -111,8 +111,8 @@ case class FedoraVersions(fedoraProvider: FedoraProvider) extends DebugEnhancedL
         )
       )
       if (family.values.exists(_ <= 0))
-        logger.warn(msg)
-      else logger.info(msg) // default dates: before 1970
+        logger.warn(msg + " date before 1970")
+      else logger.info(msg)
     }
 
     for {

@@ -32,7 +32,7 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   val description: String = s"""Tool for exporting datasets from Fedora and constructing Archival/Submission Information Packages."""
   val synopsis: String =
     s"""
-       |  easy-fedora-to-bag {-d <dataset-id> | -i <dataset-ids-file>} -o <staged-AIP-dir> [-s] [-l <log-file>] [-e] -f { AIP | SIP } <transformation>
+       |  easy-fedora-to-bag {-d <dataset-id> | -i <dataset-ids-file>} -o <output-dir> [-s] [-l <log-file>] [-e] -f { AIP | SIP } <transformation>
      """.stripMargin
 
   version(s"$printedName v${ configuration.version }")
@@ -56,7 +56,7 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   val inputFile: ScallopOption[File] = opt(name = "input-file", short = 'i',
     descr = "File containing a newline-separated list of easy-dataset-ids to be transformed. Use either this or the dataset-id argument")
   val outputDir: ScallopOption[File] = opt(name = "output-dir", short = 'o',
-    descr = "Empty directory in which to stage the created IPs. It will be created if it doesn't exist.")
+    descr = "Empty directory that will be created if it doesn't exist. Successful bags (or packages) will be moved to this directory.")
   val outputFormat: ScallopOption[OutputFormat] = opt(name = "output-format", short = 'f',
     descr = OutputFormat.values.mkString("Output format: ", ", ", ". 'SIP' is only implemented for simple, it creates the bags one directory level deeper. easy-bag-to-deposit completes these sips with deposit.properties"))
   val logFile: ScallopOption[File] = opt(name = "log-file", short = 'l',

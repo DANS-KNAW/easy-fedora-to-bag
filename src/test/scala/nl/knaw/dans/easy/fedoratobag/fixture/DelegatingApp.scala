@@ -44,14 +44,14 @@ trait DelegatingApp extends MockFactory {
         ) expects(id, *, *, *) returning result
     }
 
-    override def createBag(datasetId: DatasetId, bagDir: File, options: Options, firstBagVersion: Option[BagVersion] = None): Try[DatasetInfo] = {
+    override def createBag(datasetId: DatasetId, bagDir: File, options: Options, maybeFirstBagVersion: Option[BagVersion] = None): Try[DatasetInfo] = {
       // mimic a part of the real method, the tested caller wants to move the bag
       DansV0Bag.empty(bagDir).map { bag =>
-        firstBagVersion.foreach(_.addVersionOf(bag))
+        maybeFirstBagVersion.foreach(_.addTo(bag))
         bag.save()
       }.getOrElse(s"mock of createBag failed for $datasetId")
       // mock the outcome of the method
-      delegate.createBag(datasetId, bagDir, options, firstBagVersion)
+      delegate.createBag(datasetId, bagDir, options, maybeFirstBagVersion)
     }
   }
 }

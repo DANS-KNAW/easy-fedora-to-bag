@@ -74,7 +74,7 @@ object Command extends App with DebugEnhancedLogging {
     val printer = CsvRecord.printer(csvLogFile)
     if (transformationType == FEDORA_VERSIONED)
       printer.apply(app.createSequences(datasetIds, commandLine.outputDir(), options))
-    else printer.apply(app.createExport(datasetIds, commandLine.outputDir(), options, commandLine.outputFormat()))
+    else printer.apply(app.createOriginalVersionedExport(datasetIds, commandLine.outputDir(), options, commandLine.outputFormat()))
   }
 
   private def datasetIds = {

@@ -15,6 +15,7 @@
  */
 package nl.knaw.dans.easy
 
+import nl.knaw.dans.bag.v0.DansV0Bag
 import org.joda.time.format.{ DateTimeFormatter, ISODateTimeFormat }
 import org.joda.time.{ DateTime, DateTimeZone }
 

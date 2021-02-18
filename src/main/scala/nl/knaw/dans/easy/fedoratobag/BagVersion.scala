@@ -24,7 +24,7 @@ case class BagVersion(
                        urn: String,
                        packageId: UUID,
                      ) {
-  def addVersionOf(bag: DansV0Bag): DansV0Bag = {
+  def addTo(bag: DansV0Bag): DansV0Bag = {
     bag.withIsVersionOf(packageId)
       // the following keys should match easy-convert-bag-to-deposit BagInfo
       .addBagInfo("Base-DOI", doi)

@@ -55,7 +55,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     }
 
     // make almost private method available for tests
-    override def createBag(datasetId: DatasetId, bagDir: File, options: Options, firstBagVersion: Option[BagVersion] = None): Try[DatasetInfo] =
+    override def createBag(datasetId: DatasetId, bagDir: File, options: Options, maybeFirstBagVersion: Option[BagVersion] = None): Try[DatasetInfo] =
       super.createBag(datasetId, bagDir, options)
   }
 
@@ -86,7 +86,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     // end of mocking
 
     val sw = new StringWriter()
-    app.createExport(
+    app.createOriginalVersionedExport(
       Iterator("easy-dataset:17"),
       (testDir / "output").createDirectories,
       Options(SimpleDatasetFilter(allowOriginalAndOthers = true), ORIGINAL_VERSIONED),
@@ -132,7 +132,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     // end of mocking
 
     val sw = new StringWriter()
-    app.createExport(
+    app.createOriginalVersionedExport(
       Iterator("easy-dataset:17"),
       (testDir / "output").createDirectories,
       Options(new SimpleDatasetFilter(), ORIGINAL_VERSIONED),
@@ -167,7 +167,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     // end of mocking
 
     val sw = new StringWriter()
-    app.createExport(
+    app.createOriginalVersionedExport(
       Iterator("easy-dataset:17"),
       (testDir / "output").createDirectories,
       Options(SimpleDatasetFilter()),
@@ -199,7 +199,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     // end of mocking
 
     val sw = new StringWriter()
-    app.createExport(
+    app.createOriginalVersionedExport(
       Iterator("easy-dataset:13"),
       (testDir / "output").createDirectories(),
       Options(SimpleDatasetFilter(allowOriginalAndOthers = true), ORIGINAL_VERSIONED),
@@ -478,7 +478,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
     val bagDir = testDir / "bags" / UUID.randomUUID.toString
     app.createBag("easy-dataset:13", bagDir, Options(SimpleDatasetFilter(allowOriginalAndOthers = true), ORIGINAL_VERSIONED))
-      .map(_.nextFileInfos.map(_.path.toString).sortBy(identity)) shouldBe
+      .map(_.nextBagFileInfos.map(_.path.toString).sortBy(identity)) shouldBe
       Success(Vector("original/b.pdf", "original/c.pdf", "x/a.txt", "x/e.png"))
 
     (bagDir / "data").listRecursively.toList.map(_.name) should

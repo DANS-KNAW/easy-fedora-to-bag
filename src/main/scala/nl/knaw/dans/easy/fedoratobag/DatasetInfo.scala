@@ -19,5 +19,5 @@ case class DatasetInfo(maybeFilterViolations: Option[String],
                        doi: String,
                        urn: String,
                        depositor: Depositor,
-                       nextFileInfos: Seq[FileInfo] = Seq.empty,
+                       nextBagFileInfos: Seq[FileInfo] = Seq.empty,
                       )

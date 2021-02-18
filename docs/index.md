@@ -7,7 +7,7 @@ Retrieves a dataset from Fedora and transforms it to an AIP bag conforming to DA
 SYNOPSIS
 --------
 
-    easy-fedora-to-bag {-d <dataset-id> | -i <dataset-ids-file>} -o <staged-AIP-dir> [-s] [-l <log-file>] [-e] -f { AIP | SIP } <transformation>
+    easy-fedora-to-bag {-d <dataset-id> | -i <dataset-ids-file>} -o <output-dir> [-s] [-l <log-file>] [-e] -f { AIP | SIP } <transformation>
 
 DESCRIPTION
 -----------
@@ -27,8 +27,8 @@ ARGUMENTS
      -l, --log-file  <arg>        The name of the logfile in csv format. If not provided a file
                                   easy-fedora-to-bag-<timestamp>.csv will be created in the home-dir of the user.
                                   (default = /home/vagrant/easy-fedora-to-bag-2020-02-02T20:20:02.000Z.csv)
-     -o, --output-dir  <arg>      Empty directory in which to stage the created IPs. It will be created if it
-                                  doesn't exist.
+     -o, --output-dir  <arg>      Empty directory that will be created if it doesn't exist. Successful bags (or 
+                                  packages) will be moved to this directory.
      -f, --output-format  <arg>   Output format: AIP, SIP. 'SIP' is only implemented for simple, it creates the
                                   bags one directory level deeper. easy-bag-to-deposit completes these sips with
                                   deposit.properties
@@ -71,8 +71,8 @@ EXAMPLES
 
 RESULTING FILES
 ---------------
-For every dataset in the output there is a bag-dir created in the `<output-dir>`. This bag-dir contains the transformed metadata and data in a DANS-Bagit-Profile AIP and is named with a UUID.
-Furthermore, a `<log-file>` is generated in csv format with the following headers:
+
+A `<log-file>` is generated in csv format with the following headers:
 
     easy-dataset-id  input easy-dataset-id
     UUID             UUID created for the resulting package of the specified output format
@@ -80,6 +80,22 @@ Furthermore, a `<log-file>` is generated in csv format with the following header
     depositor        EASY-User-Account of the depositor of the dataset
     transformation   transformation used
     comments         if the dataset does not conform to the transformation-requirements, it is chronicled here
+
+For every dataset in the input a bag-directory is created (or more in case of a versioned transformation):
+* in case of AIP: `<output-dir>/<bag-UUID>`
+* in case of SIP: `<output-dir>/<package-UUID>/<bag-UUID>`
+
+In case of problems (possibly incomplete) bags or packages may be left in the directory
+defined with `staging.dir` in the `application properties`.
+
+The bag-directories contain the transformed metadata and data in a DANS-Bagit-Profile.
+The `bag-info.txt` file will contain at least:
+
+    EASY-User-Account: ...
+    Created: ...
+    Payload-Oxum: ...
+    Bagging-Date: ...
+    Bag-Size: ...
 
 
 TRANSFORMATIONS
@@ -97,20 +113,34 @@ With the option `--strict` the transformation will check that the input dataset 
 * is not in the vault already (i.e. check in `easy-bag-index`)
 
 ### original-versioned
-An original-versioned transformation transforms the dataset into two bags, if there exists an `original` folder and at least 1 file outside this folder. 
+An original-versioned transformation transforms the dataset into two bags, 
+if there exists an `original` folder and at least 1 file outside this folder[(*)](https://github.com/DANS-KNAW/easy-fedora-to-bag/blob/94951d6d74dc1be590d959b53f03e1311ff7baf7/src/main/scala/nl/knaw/dans/easy/fedoratobag/filter/package.scala#L25). 
 The first bag will contain the content of the original folder. 
-The second bag will be a Is-Version-Of of the first bag, and will contain the accessible files from the original folder, and all remaining files.  
-Two additional properties are added to the bag-info.txt, Base-URN and Base-Doi, denoting the urn:nbn and doi of the first version
+The second bag will contain the accessible files from the original folder, and all remaining files.  
+
+Output for a dataset that meets the conditions to produce two bags:
+
+    <output-dir>/<package-1-UUID>/<bag-1-UUID>/bag-info-txt
+    <output-dir>/<package-2-UUID>/<bag-2-UUID>/bag-info-txt
+
+The `bag-info.txt` of the second bag will have additional content to refer to the first bag, an example:
+
+    Is-Version-Of: urn:uuid:<package-1-UUID>
+    Base-DOI: 10.17026/test-Iiib-z9p-4ywa
+    Base-URN: urn:nbn:nl:ui:13-00-1haq
 
 ### fedora-versioned
 A fedora-versioned transformation takes several dataset-ids that are meant to be versions of each other, and creates a bag-sequence in the given order.
-The `input-file` should contain a list of dataset-ids, in the correct order, first version first.
-Two additional properties are added to the bag-info.txt, Base-URN and Base-Doi, denoting the urn:nbn and doi of the first version.
+Each line of the `input-file` should contain a list of dataset-ids, in the correct order, first version first.
 
 Omitting the option `output-dir` implies a dry run.
 In that case the CSV file will have one bag-sequence per line.
 A sequence may contain datasets not in the input if referenced by datasets in the input.
 Datasets not in the input that reference a sequence but are not referenced by a sequence won't appear.
+
+Except for the first dataset of each input line,
+`bag-info.txt` will have additional content (like for original-versioned)
+to refer to the package of the first dataset on the same input line.
 
 INSTALLATION AND CONFIGURATION
 ------------------------------

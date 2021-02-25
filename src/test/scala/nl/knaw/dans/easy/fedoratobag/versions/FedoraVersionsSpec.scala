@@ -31,7 +31,7 @@ class FedoraVersionsSpec extends TestSupportFixture with MockFactory {
     override val resolver: Resolver = mock[Resolver]
 
     def fedoraExpects(datasetID: String, returning: Elem): CallHandler2[String, String, ManagedResource[InputStream]] = {
-      (fedoraProvider.datastream(_: String, _: String)) expects(datasetID, "EMD") once() returning
+      (fedoraProvider.disseminateDatastream(_: String, _: String)) expects(datasetID, "EMD") once() returning
         new DefaultManagedResource[InputStream](returning.serialize.inputStream)
     }
 

@@ -76,7 +76,7 @@ case class FedoraVersions(fedoraProvider: FedoraProvider) extends DebugEnhancedL
     def readVersionInfo(anyId: String): Try[EmdVersionInfo] = for {
       datasetId <- resolver.getDatasetId(anyId)
       emd <- fedoraProvider
-        .datastream(datasetId, "EMD")
+        .disseminateDatastream(datasetId, "EMD")
         .map(XML.load)
         .tried
       versionInfo <- EmdVersionInfo(emd)

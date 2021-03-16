@@ -1238,8 +1238,8 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     val emd = parseEmdContent(Seq(
       emdTitle, emdCreator, emdDescription,
           <emd:date>
-              <dct:created>2013-03</dct:created>
               <dct:available>2013-04</dct:available>
+              <eas:created eas:scheme="W3CDTF" eas:format="MILLISECOND">2018-11-06T00:00:00.000+01:00</eas:created>
               <eas:available eas:scheme="W3CDTF" eas:format="DAY">2017-09-30T00:00:00.000+02:00</eas:available>
               <eas:available eas:scheme="W3CDTF" eas:format="MONTH">1901-04-01T00:00:00.000+00:19:32</eas:available>
           </emd:date>,
@@ -1252,7 +1252,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <dc:title>XXX</dc:title>
           <dct:description>YYY</dct:description>
           { ddmCreator }
-          <ddm:created>2013-03</ddm:created>
+          <ddm:created>2018-11-06</ddm:created>
           <ddm:available>2013-04</ddm:available>
           <ddm:available>2017-09-30</ddm:available>
           <ddm:available>1901-04</ddm:available>
@@ -1289,7 +1289,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
               <dct:dateSubmitted>10-2013</dct:dateSubmitted>
               <eas:date eas:scheme="W3CDTF" eas:format="MONTH">1909-04-01T00:00:00.000+00:19:32</eas:date>
               <eas:date eas:scheme="W3CDTF" eas:format="MONTH">1910-04-01T00:00:00.000+00:19:32</eas:date>
-              <eas:valid eas:scheme="W3CDTF" eas:format="MONTH">1904-04-01T00:00:00.000+00:19:32</eas:valid>
+              <eas:valid eas:scheme="W3CDTF" eas:format="MILLISECOND">1904-04-01T00:00:00.000+00:19:32</eas:valid>
               <eas:issued eas:scheme="W3CDTF" eas:format="MONTH">1905-04-01T00:00:00.000+00:19:32</eas:issued>
               <eas:modified eas:scheme="W3CDTF" eas:format="MONTH">1906-04-01T00:00:00.000+00:19:32</eas:modified>
               <eas:dateAccepted eas:scheme="W3CDTF" eas:format="MONTH">1903-04-01T00:00:00.000+00:19:32</eas:dateAccepted>
@@ -1327,7 +1327,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <dct:dateAccepted>05-2013</dct:dateAccepted>
           <dct:dateAccepted xsi:type="dct:W3CDTF">1903-04</dct:dateAccepted>
           <dct:valid>06-2013</dct:valid>
-          <dct:valid xsi:type="dct:W3CDTF">1904-04</dct:valid>
+          <dct:valid xsi:type="dct:W3CDTF">1904-04-01T00:00:00.000+0019</dct:valid>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>

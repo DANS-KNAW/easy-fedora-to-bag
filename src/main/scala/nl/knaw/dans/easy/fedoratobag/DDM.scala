@@ -315,11 +315,11 @@ object DDM extends DebugEnhancedLogging {
       try {
         LocalDate.parse(d.substring(0,8), DateTimeFormatter.BASIC_ISO_DATE).toString
       } catch {
-        case e: DateTimeException => d
+        case _: DateTimeException => d
       }
     else
       d
-  }
+  }.replaceAll("T.*","") // no more than DAY precision
 
   private def toRelationXml(key: String, rel: Relation): Elem = Try {
     {

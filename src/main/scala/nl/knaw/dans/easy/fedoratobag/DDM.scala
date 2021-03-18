@@ -319,7 +319,7 @@ object DDM extends DebugEnhancedLogging {
       }
     else
       d
-  }.replaceAll("T.*","") // no more than DAY precision
+  }.replaceAll("[+]([0-9][0-9])([0-9][0-9])","+$1:$2")
 
   private def toRelationXml(key: String, rel: Relation): Elem = Try {
     {

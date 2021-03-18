@@ -15,8 +15,6 @@
  */
 package nl.knaw.dans.easy.fedoratobag
 
-import java.net.URI
-
 import nl.knaw.dans.common.lang.dataset.AccessCategory._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import nl.knaw.dans.lib.string._
@@ -24,11 +22,10 @@ import nl.knaw.dans.pf.language.emd.types.EmdConstants.DateScheme
 import nl.knaw.dans.pf.language.emd.types._
 import nl.knaw.dans.pf.language.emd.{ EasyMetadataImpl, EmdRights }
 
+import java.net.URI
 import scala.collection.JavaConverters._
 import scala.util.Try
 import scala.xml._
-import java.time.format.DateTimeFormatter
-import java.time.{ DateTimeException, LocalDate }
 
 object DDM extends DebugEnhancedLogging {
   val schemaNameSpace: String = "http://easy.dans.knaw.nl/schemas/md/ddm/"
@@ -40,9 +37,9 @@ object DDM extends DebugEnhancedLogging {
     //    println(new EmdMarshaller(emd).getXmlString)
 
     val dateMap: Map[String, Iterable[Elem]] = getDateMap(emd)
-    val dateCreated = dateMap("created").map(d => parseDate(d.text))
+    val dateCreated = dateMap("created").map(_.text)
     val dateAvailable = {
-      val elems = dateMap("available").map(d => parseDate(d.text))
+      val elems = dateMap("available").map(_.text)
       if (elems.isEmpty) dateCreated
       else elems
     }
@@ -98,8 +95,6 @@ object DDM extends DebugEnhancedLogging {
      </ddm:dcmiMetadata>
    </ddm:DDM>
  }
-
-
 
   private def langType(bs: BasicString): String = bs.getSchemeId match {
     case "fra" | "fra/fre" | "deu" | "deu/ger" | "nld" | "nld/dut" | "dut/nld" | "eng" => "dct:ISO639-3"
@@ -286,9 +281,9 @@ object DDM extends DebugEnhancedLogging {
     </LinearRing>
   }
 
-  private def toXml(value: IsoDate): Elem = <label xsi:type={ orNull(value.getScheme) }>{ value.toString.replaceAll("[+]([0-9][0-9])([0-9][0-9])","+$1:$2") }</label>
+  private def toXml(value: IsoDate): Elem = <label xsi:type={ orNull(value.getScheme) }>{ fixDate(value) }</label>
 
-  private def toXml(value: BasicDate): Elem = <label xsi:type={ orNull(value.getScheme) }>{ value.toString.replaceAll("[+]([0-9][0-9])([0-9][0-9])","+$1:$2") }</label>
+  private def toXml(value: BasicDate): Elem = <label xsi:type={ orNull(value.getScheme) }>{ value }</label>
 
   def orNull(dateScheme: DateScheme): String = Option(dateScheme).map("dct:" + _.toString).orNull
 
@@ -298,9 +293,7 @@ object DDM extends DebugEnhancedLogging {
 
   private def isOtherDate(kv: (String, Iterable[Elem])): Boolean = !Seq("created", "available").contains(kv._1)
 
-  private def dateLabel(key: String): String = {
-    key.toOption.map("dct:" + _).getOrElse("dct:date")
-  }
+  private def dateLabel(key: String): String = key.toOption.map("dct:" + _).getOrElse("dct:date")
 
   private def getDateMap(emd: EasyMetadataImpl): Map[DatasetId, Seq[Elem]] = {
     val basicDates = emd.getEmdDate.getAllBasicDates.asScala.map { case (key, values) => key -> values.asScala.map(toXml) }
@@ -310,16 +303,19 @@ object DDM extends DebugEnhancedLogging {
       .mapValues(_.flatMap(_._2))
   }
 
-  private def parseDate(d: String): String = {
-    if(d.length > 13)
-      try {
-        LocalDate.parse(d.substring(0,8), DateTimeFormatter.BASIC_ISO_DATE).toString
-      } catch {
-        case _: DateTimeException => d
-      }
-    else
-      d
-  }.replaceAll("[+]([0-9][0-9])([0-9][0-9])","+$1:$2")
+  private def fixDate(date: IsoDate) = {
+    val year = date.getValue.getYear
+    if (year <= 9999) date
+    else {
+      // some dates where stored as yyyymmdd-01-01
+      val dateTime = date.getValue
+        .withYear(year / 10000)
+        .withMonthOfYear(year % 10000 / 100)
+        .withDayOfMonth(year % 100)
+      date.setValue(dateTime)
+      date
+    }
+  }.toString.replaceAll("[+]([0-9][0-9])([0-9][0-9])", "+$1:$2") // fix time zone
 
   private def toRelationXml(key: String, rel: Relation): Elem = Try {
     {

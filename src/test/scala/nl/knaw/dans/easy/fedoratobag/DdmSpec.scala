@@ -1186,7 +1186,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <dc:title>XXX</dc:title>
           <dct:description>YYY</dct:description>
           { ddmCreator }
-          <ddm:created>2018-02-23</ddm:created>
+          <ddm:created>2018-02-23T00:10:34.000+01:00</ddm:created>
           <ddm:available>2017-09-30</ddm:available>
           <ddm:audience>D35400</ddm:audience>
           <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>

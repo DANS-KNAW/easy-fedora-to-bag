@@ -286,9 +286,9 @@ object DDM extends DebugEnhancedLogging {
     </LinearRing>
   }
 
-  private def toXml(value: IsoDate): Elem = <label xsi:type={ orNull(value.getScheme) }>{ value }</label>
+  private def toXml(value: IsoDate): Elem = <label xsi:type={ orNull(value.getScheme) }>{ value.toString.replaceAll("[+]([0-9][0-9])([0-9][0-9])","+$1:$2") }</label>
 
-  private def toXml(value: BasicDate): Elem = <label xsi:type={ orNull(value.getScheme) }>{ value }</label>
+  private def toXml(value: BasicDate): Elem = <label xsi:type={ orNull(value.getScheme) }>{ value.toString.replaceAll("[+]([0-9][0-9])([0-9][0-9])","+$1:$2") }</label>
 
   def orNull(dateScheme: DateScheme): String = Option(dateScheme).map("dct:" + _.toString).orNull
 

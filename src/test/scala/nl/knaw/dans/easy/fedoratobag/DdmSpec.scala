@@ -1291,7 +1291,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
               <eas:date eas:scheme="W3CDTF" eas:format="MONTH">1910-04-01T00:00:00.000+00:19:32</eas:date>
               <eas:valid eas:scheme="W3CDTF" eas:format="MILLISECOND">1904-04-01T00:00:00.000+00:19:32</eas:valid>
               <eas:issued eas:scheme="W3CDTF" eas:format="MONTH">1905-04-01T00:00:00.000+00:19:32</eas:issued>
-              <eas:modified eas:scheme="W3CDTF" eas:format="MONTH">1906-04-01T00:00:00.000+00:19:32</eas:modified>
+              <eas:modified eas:scheme="W3CDTF" eas:format="MONTH">19060401-01-01T00:00:00.000+00:19:32</eas:modified>
               <eas:dateAccepted eas:scheme="W3CDTF" eas:format="MONTH">1903-04-01T00:00:00.000+00:19:32</eas:dateAccepted>
               <eas:dateCopyrighted eas:scheme="W3CDTF" eas:format="MONTH">1907-04-01T00:00:00.000+00:19:32</eas:dateCopyrighted>
               <eas:dateSubmitted eas:scheme="W3CDTF" eas:format="MONTH">1908-04-01T00:00:00.000+00:19:32</eas:dateSubmitted>
@@ -1327,7 +1327,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <dct:dateAccepted>05-2013</dct:dateAccepted>
           <dct:dateAccepted xsi:type="dct:W3CDTF">1903-04</dct:dateAccepted>
           <dct:valid>06-2013</dct:valid>
-          <dct:valid xsi:type="dct:W3CDTF">1904-04-01T00:00:00.000+0019</dct:valid>
+          <dct:valid xsi:type="dct:W3CDTF">1904-04-01T00:00:00.000+00:19</dct:valid>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>

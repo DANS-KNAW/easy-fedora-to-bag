@@ -479,6 +479,37 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     triedDDM.flatMap(validate) shouldBe Success(())
   }
 
+  it should "fix mixed up RD values" in {
+    val emd = parseEmdContent(Seq(
+      emdTitle, emdCreator, emdDescription, emdDates,
+        <emd:coverage>
+          <eas:spatial><eas:point eas:scheme="RD"><eas:x>133028</eas:x><eas:y>517159</eas:y></eas:point></eas:spatial>
+          <eas:spatial><eas:point eas:scheme="RD"><eas:x>517159</eas:x><eas:y>133028</eas:y></eas:point></eas:spatial>
+        </emd:coverage>,
+      emdRights,
+    ))
+    val triedDDM = DDM(emd, Seq("D35400"), abrMapping)
+    // logs: WARN  Empty point: scheme=RD x=null y=null
+    // note that a missing x or y defaults to zero
+    triedDDM.map(normalized) shouldBe Success(normalized(
+      <ddm:DDM xsi:schemaLocation={ schemaLocation }>
+        { ddmProfile("D35400") }
+        <ddm:dcmiMetadata>
+           <dcx-gml:spatial srsName="http://www.opengis.net/def/crs/EPSG/0/28992">
+             <Point xmlns="http://www.opengis.net/gml"><pos>133028 517159</pos></Point>
+           </dcx-gml:spatial>
+           <dcx-gml:spatial srsName="http://www.opengis.net/def/crs/EPSG/0/28992">
+             <Point xmlns="http://www.opengis.net/gml"><pos>133028 517159</pos></Point>
+           </dcx-gml:spatial>
+           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
+        </ddm:dcmiMetadata>
+      </ddm:DDM>
+      )
+    )
+    assume(schemaIsAvailable)
+    triedDDM.flatMap(validate) shouldBe Success(())
+  }
+
   it should "render a polygon" in {
     val emd = parseEmdContent(Seq(
       emdTitle, emdCreator, emdDescription, emdDates,

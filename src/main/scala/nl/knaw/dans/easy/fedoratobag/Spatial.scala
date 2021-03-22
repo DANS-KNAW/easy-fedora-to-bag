@@ -15,6 +15,9 @@
  */
 package nl.knaw.dans.easy.fedoratobag
 
+import nl.knaw.dans.lib.logging.DebugEnhancedLogging
+
+import scala.util.Try
 import scala.xml.Elem
 
 // TODO copied from easy-deposit-api
@@ -45,13 +48,12 @@ trait SchemedSpatial {
     }
   }
 
-  def determineSrsName(seq: Seq[String]) = srsName match {
-    case null => {
+  def determineSrsName(seq: Seq[String]): String = srsName match {
+    case null =>
       if (seq.map(p => p.toDouble).max > 289000)
         SpatialNames.RD_SRS_NAME
       else
         SpatialNames.DEGREES_SRS_NAME
-  }
     case s => s
   }
 }
@@ -59,11 +61,21 @@ trait SchemedSpatial {
 case class SpatialPoint(scheme: Option[String],
                         x: Option[String],
                         y: Option[String],
-                       ) extends SchemedSpatial {
+                       ) extends SchemedSpatial with DebugEnhancedLogging {
   private lazy val sx: String = x.getOrElse("0")
   private lazy val sy: String = y.getOrElse("0")
   lazy val pos: String = srsName match {
-    case SpatialNames.RD_SRS_NAME => s"$sx $sy"
+    case SpatialNames.RD_SRS_NAME =>
+      Try {
+        val x = sx.toDouble
+        val y = sy.toDouble
+        if (x > y) s"$sy $sx"
+        else s"$sx $sy"
+      }.getOrElse {
+        logger.warn(s"not numerical RD SpatialPoint: x=$sx, y=$sy")
+        // schema validation will complain about just one of the values
+        s"$sy $sx"
+      }
     case SpatialNames.DEGREES_SRS_NAME => s"$sy $sx"
     case _ => s"$sy $sx"
   }

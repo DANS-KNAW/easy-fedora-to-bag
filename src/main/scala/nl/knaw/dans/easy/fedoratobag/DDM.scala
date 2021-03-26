@@ -16,9 +16,9 @@
 package nl.knaw.dans.easy.fedoratobag
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory._
+import nl.knaw.dans.easy.fedoratobag.DateMap.{ dateLabel, isOtherDate }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import nl.knaw.dans.lib.string._
-import nl.knaw.dans.pf.language.emd.types.EmdConstants.DateScheme
 import nl.knaw.dans.pf.language.emd.types._
 import nl.knaw.dans.pf.language.emd.{ EasyMetadataImpl, EmdRights }
 
@@ -36,7 +36,7 @@ object DDM extends DebugEnhancedLogging {
   def apply(emd: EasyMetadataImpl, audiences: Seq[String], abrMapping: AbrMappings): Try[Elem] = Try {
     //    println(new EmdMarshaller(emd).getXmlString)
 
-    val dateMap: Map[String, Iterable[Elem]] = getDateMap(emd)
+    val dateMap: Map[String, Iterable[Elem]] = DateMap(emd)
     val dateCreated = dateMap("created").map(_.text)
     val dateAvailable = {
       val elems = dateMap("available").map(_.text)
@@ -281,41 +281,9 @@ object DDM extends DebugEnhancedLogging {
     </LinearRing>
   }
 
-  private def toXml(value: IsoDate): Elem = <label xsi:type={ orNull(value.getScheme) }>{ fixDate(value) }</label>
-
-  private def toXml(value: BasicDate): Elem = <label xsi:type={ orNull(value.getScheme) }>{ value }</label>
-
-  def orNull(dateScheme: DateScheme): String = Option(dateScheme).map("dct:" + _.toString).orNull
-
   private def optional(s: String) = Option(s).filterNot(_.trim.isEmpty)
 
   def orNull(s: String): String = optional(s).orNull
-
-  private def isOtherDate(kv: (String, Iterable[Elem])): Boolean = !Seq("created", "available").contains(kv._1)
-
-  private def dateLabel(key: String): String = key.toOption.map("dct:" + _).getOrElse("dct:date")
-
-  private def getDateMap(emd: EasyMetadataImpl): Map[DatasetId, Seq[Elem]] = {
-    val basicDates = emd.getEmdDate.getAllBasicDates.asScala.map { case (key, values) => key -> values.asScala.map(toXml) }
-    val isoDates = emd.getEmdDate.getAllIsoDates.asScala.map { case (key, values) => key -> values.asScala.map(toXml) }
-    (basicDates.toSeq ++ isoDates.toSeq)
-      .groupBy(_._1)
-      .mapValues(_.flatMap(_._2))
-  }
-
-  private def fixDate(date: IsoDate) = {
-    val year = date.getValue.getYear
-    if (year <= 9999) date
-    else {
-      // some dates where stored as yyyymmdd-01-01
-      val dateTime = date.getValue
-        .withYear(year / 10000)
-        .withMonthOfYear(year % 10000 / 100)
-        .withDayOfMonth(year % 100)
-      date.setValue(dateTime)
-      date
-    }
-  }.toString.replaceAll("[+]([0-9][0-9])([0-9][0-9])", "+$1:$2") // fix time zone
 
   private def toRelationXml(key: String, rel: Relation): Elem = Try {
     {

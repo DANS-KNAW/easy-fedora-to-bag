@@ -1367,6 +1367,45 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     triedDDM.flatMap(validate) shouldBe Success(())
   }
 
+  it should "convert periods" in {
+    val emd = parseEmdContent(Seq(
+      emdTitle, emdCreator, emdDescription,
+          <emd:date>
+              <dc:date>gisteren tot vandaag</dc:date>
+              <dc:date>11-2013 - 11-2014</dc:date>
+              <dc:date>2013 - 2014</dc:date>
+              <dct:created>2013-03-01 to 2014-03</dct:created>
+              <dct:available>2013-03 through 2014-03-01</dct:available>
+          </emd:date>,
+      emdRights,
+    ))
+    val triedDDM = DDM(emd, Seq("D35400"), abrMapping)
+    triedDDM.map(normalized) shouldBe Success(normalized(
+      <ddm:DDM xsi:schemaLocation={ schemaLocation }>
+        <ddm:profile>
+          <dc:title>XXX</dc:title>
+          <dct:description>YYY</dct:description>
+          { ddmCreator }
+          <ddm:created>2014-03</ddm:created>
+          <ddm:available>2014-03-01</ddm:available>
+          <ddm:audience>D35400</ddm:audience>
+          <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
+        </ddm:profile>
+        <ddm:dcmiMetadata>
+          <dct:date>gisteren tot vandaag</dct:date>
+          <dct:date>11-2013 - 11-2014</dct:date>
+          <dct:date>2014</dct:date>
+          <ddm:datesOfCollection>2013/2014</ddm:datesOfCollection>
+          <ddm:datesOfCollection>2013-03/2014-03-01</ddm:datesOfCollection>
+          <ddm:datesOfCollection>2013-03-01/2014-03</ddm:datesOfCollection>
+          <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
+        </ddm:dcmiMetadata>
+      </ddm:DDM>
+    ))
+    assume(schemaIsAvailable)
+    triedDDM.flatMap(validate) shouldBe Success(())
+  }
+
   private def normalized(elem: Node) = printer
     .format(Utility.trim(elem)) // this trim normalizes <a/> and <a></a>
     .replaceAll(nameSpaceRegExp, "") // the random order would cause differences in actual and expected

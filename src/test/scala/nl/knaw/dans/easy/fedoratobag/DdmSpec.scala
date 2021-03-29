@@ -148,7 +148,6 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     triedDDM.flatMap(validate) shouldBe Success(())
   }
 
-
   "titles" should "have an overflow in dcmiMetadata titles" in {
     val emd = parseEmdContent(Seq(
       <emd:title>
@@ -1329,8 +1328,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           </emd:date>,
       emdRights,
     ))
-    val triedDDM = DDM(emd, Seq("D35400"), abrMapping)
-    triedDDM.map(normalized) shouldBe Success(normalized(
+    val expected = {
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         <ddm:profile>
           <dc:title>XXX</dc:title>
@@ -1362,7 +1360,11 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>
-    ))
+    }
+    val triedDDM = DDM(emd, Seq("D35400"), abrMapping)
+    triedDDM shouldBe a[Success[_]]
+    triedDDM.map(normalized(_).split("\n")).getOrElse(fail("not expecting a failure")) should
+      contain theSameElementsAs normalized(expected).split("\n")
     assume(schemaIsAvailable)
     triedDDM.flatMap(validate) shouldBe Success(())
   }
@@ -1379,8 +1381,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           </emd:date>,
       emdRights,
     ))
-    val triedDDM = DDM(emd, Seq("D35400"), abrMapping)
-    triedDDM.map(normalized) shouldBe Success(normalized(
+    val expected = {
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         <ddm:profile>
           <dc:title>XXX</dc:title>
@@ -1401,7 +1402,11 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>
-    ))
+    }
+    val triedDDM = DDM(emd, Seq("D35400"), abrMapping)
+    triedDDM shouldBe a[Success[_]]
+    triedDDM.map(normalized(_).split("\n")).getOrElse(fail("not expecting a failure")) should
+      contain theSameElementsAs normalized(expected).split("\n")
     assume(schemaIsAvailable)
     triedDDM.flatMap(validate) shouldBe Success(())
   }

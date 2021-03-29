@@ -37,9 +37,9 @@ object DDM extends DebugEnhancedLogging {
     //    println(new EmdMarshaller(emd).getXmlString)
 
     val dateMap: Map[String, Iterable[Elem]] = DateMap(emd)
-    val dateCreated = dateMap("created").map(_.text)
+    val dateCreated = dateMap("dct:created").map(_.text)
     val dateAvailable = {
-      val elems = dateMap("available").map(_.text)
+      val elems = dateMap("dct:available").map(_.text)
       if (elems.isEmpty) dateCreated
       else elems
     }
@@ -87,7 +87,7 @@ object DDM extends DebugEnhancedLogging {
        { emd.getEmdCoverage.getDcCoverage.asScala.map(bs => <dct:coverage xml:lang={ lang(bs) }>{ bs.getValue.trim }</dct:coverage>) }
        { emd.getEmdCoverage.getTermsSpatial.asScala.map(bs => <dct:spatial xml:lang={ lang(bs) } xsi:type={ xsiType(bs) }>{ bs.getValue.trim }</dct:spatial>) }
        { emd.getEmdCoverage.getTermsTemporal.asScala.map(toXml("temporal", abrMapping.temporal)) }
-       { dateMap.filter(isOtherDate).map { case (key, values) => values.map(_.withLabel(dateLabel(key))) } }
+       { dateMap.filter(isOtherDate).map { case (key, values) => values.map(_.withLabel(key)) } }
        { emd.getEmdCoverage.getEasSpatial.asScala.map(toXml) }
        <dct:license xsi:type="dct:URI">{ toLicenseUrl(emd.getEmdRights) }</dct:license>
        { emd.getEmdLanguage.getDcLanguage.asScala.map(bs => <dct:language xsi:type={langType(bs)}>{ langValue(bs) }</dct:language>) }

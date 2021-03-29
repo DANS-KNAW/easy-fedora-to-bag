@@ -9,15 +9,15 @@ import scala.collection.JavaConverters._
 import scala.xml.{ Elem, Text }
 
 object DateMap {
-  def isOtherDate(kv: (String, Iterable[Elem])): Boolean = !Seq("created", "available").contains(kv._1)
+  def isOtherDate(kv: (String, Iterable[Elem])): Boolean = !Seq("dct:created", "dct:available").contains(kv._1)
 
-  def dateLabel(key: String): String = key.toOption.map("dct:" + _).getOrElse("dct:date")
+  private def dateLabel(key: String): String = key.toOption.map("dct:" + _).getOrElse("dct:date")
 
   def apply(emd: EasyMetadataImpl): Map[DatasetId, Seq[Elem]] = {
-    val basicDates = emd.getEmdDate.getAllBasicDates.asScala.map { case (key, values) => key -> values.asScala.map(toXml) }
-    val isoDates = emd.getEmdDate.getAllIsoDates.asScala.map { case (key, values) => key -> values.asScala.map(toXml) }
+    val basicDates = emd.getEmdDate.getAllBasicDates.asScala.mapValues(_.asScala.map(toXml))
+    val isoDates = emd.getEmdDate.getAllIsoDates.asScala.mapValues(_.asScala.map(toXml))
     val stringToElems = (basicDates.toSeq ++ isoDates.toSeq)
-      .groupBy(_._1)
+      .groupBy(kv => dateLabel(kv._1))
       .mapValues(_.flatMap(_._2))
 
     val date = "([0-9]{4}-[0-9]+-[0-9]+|[0-9]{4}-[0-9]+|[0-9]{4})"
@@ -26,12 +26,11 @@ object DateMap {
     val periods = stringToElems.values.flatten
       .withFilter(_.text.matches(regexp))
       .map(elem => elem.copy(
-        prefix = "ddm",
         child = new Text(elem.text.replaceAll(regexp, "$1/$3")),
       )).toSeq
     stringToElems.mapValues(_.map(elem => elem.copy(
       child = new Text(elem.text.replaceAll(regexp, "$3")),
-    ))) + ("datesOfCollection" -> periods)
+    ))) + ("ddm:datesOfCollection" -> periods)
   }
 
   private def toXml(value: IsoDate): Elem = <label xsi:type={ orNull(value.getScheme) }>{ fixDate(value) }</label>

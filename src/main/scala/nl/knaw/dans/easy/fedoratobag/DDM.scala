@@ -16,7 +16,7 @@
 package nl.knaw.dans.easy.fedoratobag
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory._
-import nl.knaw.dans.easy.fedoratobag.DateMap.{ dateLabel, isOtherDate }
+import nl.knaw.dans.easy.fedoratobag.DateMap.isOtherDate
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import nl.knaw.dans.lib.string._
 import nl.knaw.dans.pf.language.emd.types._
@@ -36,11 +36,11 @@ object DDM extends DebugEnhancedLogging {
   def apply(emd: EasyMetadataImpl, audiences: Seq[String], abrMapping: AbrMappings): Try[Elem] = Try {
     //    println(new EmdMarshaller(emd).getXmlString)
 
-    val dateMap: Map[String, Iterable[Elem]] = DateMap(emd)
+    val dateMap: Map[String, Seq[Elem]] = DateMap(emd)
     val dateCreated = dateMap("dct:created").map(_.text)
     val dateAvailable = {
       val elems = dateMap("dct:available").map(_.text)
-      if (elems.isEmpty) dateCreated
+      if (elems.isEmpty) dateCreated.headOption.toSeq
       else elems
     }
    <ddm:DDM
@@ -61,7 +61,7 @@ object DDM extends DebugEnhancedLogging {
        { /* instructions for reuse not specified as such in EMD */ }
        { emd.getEmdCreator.getDcCreator.asScala.map(bs => <dc:creator>{ bs.getValue.trim }</dc:creator>) }
        { emd.getEmdCreator.getEasCreator.asScala.map(author => <dcx-dai:creatorDetails>{ toXml(author)} </dcx-dai:creatorDetails>) }
-       { if (dateCreated.nonEmpty)  <ddm:created>{ dateCreated.toSeq.head }</ddm:created> }
+       { dateCreated.headOption.toSeq.map(str => <ddm:created>{ str }</ddm:created>) }
        { dateAvailable.map(date =>  <ddm:available>{ date }</ddm:available>) }
        { audiences.map(code => <ddm:audience>{ code }</ddm:audience>) }
        <ddm:accessRights>{ emd.getEmdRights.getAccessCategory }</ddm:accessRights>
@@ -91,7 +91,7 @@ object DDM extends DebugEnhancedLogging {
        { emd.getEmdCoverage.getEasSpatial.asScala.map(toXml) }
        <dct:license xsi:type="dct:URI">{ toLicenseUrl(emd.getEmdRights) }</dct:license>
        { emd.getEmdLanguage.getDcLanguage.asScala.map(bs => <dct:language xsi:type={langType(bs)}>{ langValue(bs) }</dct:language>) }
-       { dateCreated.toSeq.drop(1).map(date => <dct:created>{ date }</dct:created>) }
+       { dateCreated.drop(1).map(date => <dct:created>{ date }</dct:created>) }
      </ddm:dcmiMetadata>
    </ddm:DDM>
  }

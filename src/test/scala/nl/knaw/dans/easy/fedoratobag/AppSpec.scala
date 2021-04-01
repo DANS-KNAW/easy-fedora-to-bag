@@ -109,6 +109,49 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     }
   }
 
+  it should "skip the identical second bag" in {
+    val app = new AppWithMockedServices() {
+      Map(
+        "easy-discipline:77" -> audienceFoXML("easy-discipline:77", "D13200"),
+        "easy-dataset:17" -> XML.loadFile((sampleFoXML / "DepositApi.xml").toJava),
+        "easy-file:36" -> fileFoXml(id = 36, location = "original/x", visibleTo = "NONE", accessibleTo = "NONE", name = "b.txt", digest = digests("barbapappa")),
+        "easy-file:37" -> fileFoXml(id = 37, location = "x", accessibleTo = "ANONYMOUS", name = "b.txt", digest = digests("barbapappa")),
+      ).foreach { case (id, xml) =>
+        (fedoraProvider.loadFoXml(_: String)) expects id once() returning Success(xml)
+      }
+      Seq(
+        (1, "easy-dataset:17", "ADDITIONAL_LICENSE", "lalala"),
+        (1, "easy-dataset:17", "DATASET_LICENSE", "blablabla"),
+        (1, "easy-file:36", "EASY_FILE", "barbapappa"),
+      ).foreach { case (n, objectId, streamId, content) =>
+        (fedoraProvider.disseminateDatastream(_: String, _: String)) expects(objectId, streamId
+        ) returning managed(content.inputStream) repeat n
+      }
+      (fedoraProvider.getSubordinates(_: String)) expects "easy-dataset:17" once() returning
+        Success(Seq("easy-file:36", "easy-file:37"))
+    }
+    // end of mocking
+
+    val sw = new StringWriter()
+    app.createOriginalVersionedExport(
+      Iterator("easy-dataset:17"),
+      (testDir / "output").createDirectories,
+      Options(SimpleDatasetFilter(allowOriginalAndOthers = true), ORIGINAL_VERSIONED),
+      SIP
+    )(CsvRecord.csvFormat.print(sw)) shouldBe Success("no fedora/IO errors")
+
+    // post condition
+
+    sw.toString should fullyMatch regex
+      """easyDatasetId,uuid1,uuid2,doi,depositor,transformationType,comment
+        |easy-dataset:17,.+,,10.17026/test-Iiib-z9p-4ywa,user001,original-versioned without second bag,OK
+        |""".stripMargin
+
+    // post condition: just one bag
+
+    (testDir / "output").list should have size 1
+  }
+
   it should "produce a single bag" in {
     val app = new AppWithMockedServices() {
       Map(

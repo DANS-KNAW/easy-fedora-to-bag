@@ -222,7 +222,8 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       isOriginalVersioned = options.transformationType == ORIGINAL_VERSIONED
       fileInfosForSecondBag = allFileInfos.selectForSecondBag(isOriginalVersioned)
       fileInfosForFirstBag <- allFileInfos.selectForFirstBag(emdXml, fileInfosForSecondBag.nonEmpty, options.europeana)
-      _ <- checkDuplicateFiles(fileInfosForFirstBag, fileInfosForSecondBag, isOriginalVersioned)
+      forSecondBag = FileInfo.forSecondBag(fileInfosForFirstBag, fileInfosForSecondBag)
+      _ <- checkDuplicateFiles(fileInfosForFirstBag, forSecondBag, isOriginalVersioned)
       _ = logger.debug(s"nextFileInfos = ${ fileInfosForSecondBag.map(_.path) }")
       fileItemsForFirstBag <- fileInfosForFirstBag.traverse(addPayloadFileTo(bag, isOriginalVersioned))
       _ <- checkNotImplementedFileMetadata(fileItemsForFirstBag, logger)
@@ -230,7 +231,8 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       _ <- bag.save
       doi = emd.getEmdIdentifier.getDansManagedDoi
       urn = getUrn(datasetId, emd)
-    } yield DatasetInfo(maybeFilterViolations, doi, urn, depositor, fileInfosForSecondBag)
+      _ = logger.debug(s"${fileInfosForSecondBag.map(_.path)} --- ${forSecondBag.map(_.path)}")
+    } yield DatasetInfo(maybeFilterViolations, doi, urn, depositor, forSecondBag)
   }
 
   private def getUrn(datasetId: DatasetId, emd: EasyMetadataImpl) = {
@@ -268,8 +270,8 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       }
   }
 
-  private def checkDuplicateFiles(fileInfosForFirstBag: List[FileInfo], fileInfosForSecondBag: List[FileInfo], isOriginalVersioned: Boolean) = {
-    def findDuplicates(fileInfos: List[FileInfo]) = fileInfos
+  private def checkDuplicateFiles(fileInfosForFirstBag: Seq[FileInfo], fileInfosForSecondBag: Seq[FileInfo], isOriginalVersioned: Boolean) = {
+    def findDuplicates(fileInfos: Seq[FileInfo]) = fileInfos
       .groupBy(_.bagPath(isOriginalVersioned))
       .filter(_._2.size > 1)
       .mapValues(infos =>

@@ -43,6 +43,7 @@ class FileInfosSpec extends TestSupportFixture {
     val for1st = fileInfos.selectForFirstBag(<emd/>, for2nd.nonEmpty, europeana = false)
     for2nd shouldBe fileInfos.slice(1, 2)
     for1st shouldBe Success(fileInfos.slice(0, 1))
+    // identical files are filtered
   }
   it should "return files for one bag" in {
     val fileInfos = List(

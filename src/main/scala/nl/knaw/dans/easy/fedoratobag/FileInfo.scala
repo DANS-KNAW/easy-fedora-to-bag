@@ -16,7 +16,6 @@
 package nl.knaw.dans.easy.fedoratobag
 
 import java.nio.file.{ Path, Paths }
-
 import scala.util.Try
 import scala.xml.Node
 
@@ -39,6 +38,13 @@ case class FileInfo(fedoraFileId: String,
   def bagPath(isOriginalVersioned: Boolean): Path =
     if (isOriginalVersioned && isOriginal) path.subpath(1, path.getNameCount)
     else path
+
+  private def versionedInfo: FileInfo = this.copy(
+    path = this.bagPath(true),
+    fedoraFileId = "",
+    accessibleTo = "",
+    visibleTo = "",
+  )
 }
 
 object FileInfo {
@@ -47,6 +53,13 @@ object FileInfo {
   def replaceNonAllowedCharacters(s: String): String = {
     s.map(char => if (nonAllowedCharacters.contains(char)) '_'
                   else char)
+  }
+
+  def forSecondBag(first: Seq[FileInfo], second: Seq[FileInfo]): Seq[FileInfo] = {
+    val a = first.map(_.versionedInfo)
+    val b = second.map(_.versionedInfo)
+    if (a == b) Seq.empty
+    else second
   }
 
   def apply(foXml: Node): Try[FileInfo] = {

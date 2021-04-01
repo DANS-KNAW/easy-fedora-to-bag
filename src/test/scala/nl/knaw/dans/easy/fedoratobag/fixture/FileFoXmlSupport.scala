@@ -31,6 +31,7 @@ trait FileFoXmlSupport {
                 name: String = "something.txt",
                 mimeType: String = "text/plain",
                 size: Long = 30,
+                visibleTo: String = "ANONYMOUS",
                 accessibleTo: String = "RESTRICTED_REQUEST",
                 digest: String = "dd466d19481a28ba8577e7b3f029e496027a3309"
                ): Elem = {
@@ -60,7 +61,7 @@ trait FileFoXmlSupport {
                       <mimeType>{ mimeType }</mimeType>
                       <size>{ size }</size>
                       <creatorRole>DEPOSITOR</creatorRole>
-                      <visibleTo>ANONYMOUS</visibleTo>
+                      <visibleTo>{visibleTo}</visibleTo>
                       <accessibleTo>{accessibleTo}</accessibleTo>
                   </fimd:file-item-md>
               </foxml:xmlContent>

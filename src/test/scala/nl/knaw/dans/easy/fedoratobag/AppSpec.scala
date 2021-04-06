@@ -142,6 +142,10 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
       """easyDatasetId,uuid1,uuid2,doi,depositor,transformationType,comment
         |easy-dataset:17,.+,,10.17026/test-Iiib-z9p-4ywa,user001,original-versioned without second bag,OK
         |""".stripMargin
+    val Array(_,line) = sw.toString.split("\n")
+    testDir.listRecursively.filter(_.name == "dataset.xml").toSeq.head.contentAsString should
+      include ("""<dc:title xml:lang="nld">as
+                 |                        with another line</dc:title>""".stripMargin)
   }
 
   it should "report a checksum mismatch" in {
@@ -312,9 +316,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
   it should "report invalid file metadata" in {
     val invalidFileFoXml = XML.load(
       fileFoXml().serialize
-        .split("\n")
-        .filterNot(_.contains("<visibleTo>"))
-        .mkString("\n")
+        .replace("<visibleTo>ANONYMOUS</visibleTo>", "")
         .inputStream
     )
 

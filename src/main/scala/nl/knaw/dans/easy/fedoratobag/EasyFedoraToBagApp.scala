@@ -185,7 +185,8 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       foXml <- fedoraProvider.loadFoXml(datasetId)
       depositor <- getOwner(foXml)
       emdXml <- getEmd(foXml)
-      emd <- Try(emdUnmarshaller.unmarshal(emdXml.serialize))
+      emdString = emdXml.serialize.split("\n").tail.mkString("\n").trim //drop prologue
+      emd <- Try(emdUnmarshaller.unmarshal(emdString))
       amd <- getAmd(foXml)
       audiences <- emd.getEmdAudience.getDisciplines.asScala
         .map(id => getAudience(id.getValue)).collectResults

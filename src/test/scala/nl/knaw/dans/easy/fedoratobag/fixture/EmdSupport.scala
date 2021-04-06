@@ -23,20 +23,22 @@ import nl.knaw.dans.pf.language.emd.binding.EmdUnmarshaller
 import org.scalatest.Assertions._
 
 import scala.util.Try
-import scala.xml.{ Elem, NodeSeq }
+import scala.xml.{ Elem, NodeSeq, Utility }
 
 trait EmdSupport {
   private val emdUnmarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
   val abrMapping: AbrMappings = AbrMappings(File("src/main/assembly/dist/cfg/EMD_acdm.xsl"))
 
+
   def parseEmdContent(xml: NodeSeq): EasyMetadataImpl = {
-    val emd = <emd:easymetadata xmlns:emd="http://easy.dans.knaw.nl/easy/easymetadata/"
+    val emdXml = <emd:easymetadata xmlns:emd="http://easy.dans.knaw.nl/easy/easymetadata/"
                           xmlns:eas="http://easy.dans.knaw.nl/easy/easymetadata/eas/"
                           xmlns:dct="http://purl.org/dc/terms/"
                           xmlns:dc="http://purl.org/dc/elements/1.1/"
                           emd:version="0.1"
-        >{ xml }</emd:easymetadata>.serialize
-    Try(emdUnmarshaller.unmarshal(emd))
+        >{ xml }</emd:easymetadata>
+    val emdString = emdXml.serialize.split("\n").tail.mkString("\n").trim //drop prologue
+    Try(emdUnmarshaller.unmarshal(emdString))
       .getOrRecover(e => fail("could not load test EMD", e))
   }
 

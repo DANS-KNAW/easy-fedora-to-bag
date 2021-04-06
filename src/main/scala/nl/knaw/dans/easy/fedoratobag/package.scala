@@ -45,7 +45,7 @@ package object fedoratobag {
   implicit class XmlExtensions(val elem: Node) extends AnyVal {
 
     def serialize: String = {
-      prologue + "\n" + printer.format(Utility.trim(elem))
+      prologue + "\n" + Utility.serialize(elem, preserveWhitespace = true)
     }
 
     def toOneLiner: String = {

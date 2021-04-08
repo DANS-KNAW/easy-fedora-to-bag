@@ -40,7 +40,6 @@ package object fedoratobag {
 
   private val prologue = """<?xml version='1.0' encoding='UTF-8'?>"""
   private val logPrinter = new PrettyPrinter(-1, 0)
-  val printer = new PrettyPrinter(160, 2)
 
   implicit class XmlExtensions(val elem: Node) extends AnyVal {
 

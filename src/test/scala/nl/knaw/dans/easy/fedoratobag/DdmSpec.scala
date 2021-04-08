@@ -25,6 +25,7 @@ import scala.xml._
 
 class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport with SchemaSupport {
   System.setProperty("http.agent", "Test")
+  private val printer = new PrettyPrinter(160, 2)
 
   override val schema = "https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd"
 

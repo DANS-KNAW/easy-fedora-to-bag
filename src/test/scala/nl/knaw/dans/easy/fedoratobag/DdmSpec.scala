@@ -966,8 +966,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           </eas:isPartOf>
           <eas:isPartOf>
               <eas:subject-title>2005-09/11</eas:subject-title>
-              <eas:subject-link>
-              </eas:subject-link>
+              <eas:subject-link/>
           </eas:isPartOf>
           <eas:isPartOf>
               <eas:subject-title>blabla</eas:subject-title>

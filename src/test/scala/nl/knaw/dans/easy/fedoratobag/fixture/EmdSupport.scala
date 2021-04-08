@@ -37,9 +37,8 @@ trait EmdSupport {
                           xmlns:dc="http://purl.org/dc/elements/1.1/"
                           emd:version="0.1"
         >{ xml }</emd:easymetadata>
-    // TODO implement like https://github.com/DANS-KNAW/easy-fedora-to-bag/blob/4a4b7689e44aa0bb9c4c45dee8123899bfcd3de5/src/main/scala/nl/knaw/dans/easy/fedoratobag/EasyFedoraToBagApp.scala#L188
-    //   but that breaks https://github.com/DANS-KNAW/easy-fedora-to-bag/blob/2a47e60e8a267c00e1863f3e6e72172d4abd2e8f/src/test/scala/nl/knaw/dans/easy/fedoratobag/DdmSpec.scala#L952
-    Try(emdUnmarshaller.unmarshal( printer.format(Utility.trim(emdXml))))
+    val emdString = emdXml.serialize.split("\n").tail.mkString("\n").trim //drop prologue
+    Try(emdUnmarshaller.unmarshal(emdString))
       .getOrRecover(e => fail("could not load test EMD", e))
   }
 

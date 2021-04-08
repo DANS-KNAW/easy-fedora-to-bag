@@ -949,8 +949,13 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
   }
 
   "relation" should "not throw exceptions" in {
-    val emd = parseEmdContent(Seq(
-      emdTitle, emdCreator, emdDescription, emdDates,
+    val emdXML = <emd:easymetadata xmlns:emd="http://easy.dans.knaw.nl/easy/easymetadata/"
+                          xmlns:eas="http://easy.dans.knaw.nl/easy/easymetadata/eas/"
+                          xmlns:dct="http://purl.org/dc/terms/"
+                          xmlns:dc="http://purl.org/dc/elements/1.1/"
+                          emd:version="0.1">{
+            Seq(
+              emdTitle, emdCreator, emdDescription, emdDates,
       <emd:relation>
           <eas:isPartOf>
               <eas:subject-title>Second Timothy: When and Where? Text and Traditions in the Subscriptions</eas:subject-title>
@@ -980,8 +985,12 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
               <eas:subject-link>doi:10.17026/dans-something-else</eas:subject-link>
           </eas:references>
       </emd:relation>,
-      emdRights,
-    ))
+              emdRights,
+            )
+      }</emd:easymetadata>
+    val emd = emdUnMarshaller.unmarshal(new PrettyPrinter(160, 2).format(emdXML))
+    // TODO fails with parseEmdContent
+
     val triedDDM = DDM(emd, Seq("D13200"), abrMapping)
     triedDDM.map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>

@@ -26,7 +26,7 @@ import scala.util.Try
 import scala.xml.{ Elem, NodeSeq, Utility }
 
 trait EmdSupport {
-  private val emdUnmarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
+  val emdUnmarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
   val abrMapping: AbrMappings = AbrMappings(File("src/main/assembly/dist/cfg/EMD_acdm.xsl"))
 
 

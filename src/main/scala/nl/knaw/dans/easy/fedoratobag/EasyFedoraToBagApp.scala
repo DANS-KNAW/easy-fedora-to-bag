@@ -208,9 +208,6 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       _ <- getMessageFromDepositor(foXml)
         .map(addXmlMetadataTo(bag, "depositor-info/message-from-depositor.txt"))
         .getOrElse(Success(()))
-      _ <- getFilesXml(foXml)
-        .map(addXmlMetadataTo(bag, "original/files.xml"))
-        .getOrElse(Success(()))
       _ <- getAgreementsXml(foXml)
         .map(addAgreementsTo(bag))
         .getOrElse(AgreementsXml(foXml, ldap)
@@ -218,6 +215,9 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       _ <- managedMetadataStream(foXml, "ADDITIONAL_LICENSE", bag, "license")
         .getOrElse(Success(()))
       _ <- managedMetadataStream(foXml, "DATASET_LICENSE", bag, "depositor-info/depositor-agreement")
+        .getOrElse(Success(()))
+      _ <- getFilesXml(foXml)
+        .map(addXmlMetadataTo(bag, "original/files.xml"))
         .getOrElse(Success(()))
       isOriginalVersioned = options.transformationType == ORIGINAL_VERSIONED
       fileInfosForSecondBag = allFileInfos.selectForSecondBag(isOriginalVersioned)
@@ -228,10 +228,10 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       fileItemsForFirstBag <- fileInfosForFirstBag.traverse(addPayloadFileTo(bag, isOriginalVersioned))
       _ <- checkNotImplementedFileMetadata(fileItemsForFirstBag, logger)
       _ <- addXmlMetadataTo(bag, "files.xml")(filesXml(fileItemsForFirstBag))
+      _ = logger.debug(s"${fileInfosForSecondBag.map(_.path)} --- ${forSecondBag.map(_.path)}")
       _ <- bag.save
       doi = emd.getEmdIdentifier.getDansManagedDoi
       urn = getUrn(datasetId, emd)
-      _ = logger.debug(s"${fileInfosForSecondBag.map(_.path)} --- ${forSecondBag.map(_.path)}")
     } yield DatasetInfo(maybeFilterViolations, doi, urn, depositor, forSecondBag)
   }
 

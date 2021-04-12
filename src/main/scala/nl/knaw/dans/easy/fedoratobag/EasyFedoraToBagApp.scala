@@ -223,7 +223,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       fileInfosForSecondBag = allFileInfos.selectForSecondBag(isOriginalVersioned)
       fileInfosForFirstBag <- allFileInfos.selectForFirstBag(emdXml, fileInfosForSecondBag.nonEmpty, options.europeana)
       forSecondBag = FileInfo.forSecondBag(fileInfosForFirstBag, fileInfosForSecondBag)
-      _ <- checkDuplicateFiles(fileInfosForFirstBag, forSecondBag, isOriginalVersioned)
+      _ <- FileInfo.checkDuplicateFiles(fileInfosForFirstBag, forSecondBag, isOriginalVersioned)
       _ = logger.debug(s"nextFileInfos = ${ fileInfosForSecondBag.map(_.path) }")
       fileItemsForFirstBag <- fileInfosForFirstBag.traverse(addPayloadFileTo(bag, isOriginalVersioned))
       _ <- checkNotImplementedFileMetadata(fileItemsForFirstBag, logger)
@@ -268,35 +268,6 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       .recoverWith {
         case t: Throwable => Failure(new Exception(s"$fedoraFileId ${ t.getMessage }"))
       }
-  }
-
-  private def checkDuplicateFiles(fileInfosForFirstBag: Seq[FileInfo], fileInfosForSecondBag: Seq[FileInfo], isOriginalVersioned: Boolean) = {
-    def findDuplicates(fileInfos: Seq[FileInfo]) = fileInfos
-      .groupBy(_.bagPath(isOriginalVersioned))
-      .filter(_._2.size > 1)
-      .mapValues(infos =>
-        infos.map(info =>
-          s"${ info.path }[${ info.fedoraFileId },${ info.maybeDigestValue.getOrElse("") }]"
-        ).mkString("[", ",", "]")
-      )
-
-    val duplicatesForFirstBag = findDuplicates(fileInfosForFirstBag)
-    val duplicatesForSecondBag = findDuplicates(fileInfosForSecondBag)
-    if (duplicatesForFirstBag.isEmpty && duplicatesForSecondBag.isEmpty) Success(())
-    else {
-      val prefix1 = "duplicates in first bag: "
-      val prefix2 = "duplicates in second bag: "
-      logDuplicates(prefix1, duplicatesForFirstBag)
-      logDuplicates(prefix2, duplicatesForSecondBag)
-      Failure(InvalidTransformationException(
-        s"$prefix1${ duplicatesForFirstBag.keys.mkString(", ") }; $prefix2${ duplicatesForSecondBag.keys.mkString(", ") } (isOriginalVersioned==$isOriginalVersioned)"
-      ))
-    }
-  }
-
-  private def logDuplicates(prefix: String, duplicates: Map[Path, String]): Unit = {
-    if (duplicates.nonEmpty)
-      logger.error(prefix + duplicates.values.mkString("; "))
   }
 
   private def addPayloadFileTo(bag: DansV0Bag, isOriginalVersioned: Boolean)(fileInfo: FileInfo): Try[Node] = {

@@ -106,9 +106,7 @@ object FileInfo extends DebugEnhancedLogging {
     val fileInfosForSecondBag = forSecondBag(fileInfosForFirstBag, selectedForSecondBag)
     val duplicatesForFirstBag = findDuplicates(fileInfosForFirstBag)
     val duplicatesForSecondBag = findDuplicates(fileInfosForSecondBag)
-    if (duplicatesForFirstBag.isEmpty && duplicatesForSecondBag.isEmpty)
-      Success((fileInfosForFirstBag, fileInfosForSecondBag))
-    else {
+    if (duplicatesForFirstBag.nonEmpty || duplicatesForSecondBag.nonEmpty) {
       val prefix1 = "duplicates in first bag: "
       val prefix2 = "duplicates in second bag: "
       logDuplicates(prefix1, duplicatesForFirstBag)
@@ -116,6 +114,9 @@ object FileInfo extends DebugEnhancedLogging {
       Failure(InvalidTransformationException(
         s"$prefix1${ duplicatesForFirstBag.keys.mkString(", ") }; $prefix2${ duplicatesForSecondBag.keys.mkString(", ") } (isOriginalVersioned==$isOriginalVersioned)"
       ))
+    }
+    else {
+      Success((fileInfosForFirstBag, fileInfosForSecondBag))
     }
   }
 

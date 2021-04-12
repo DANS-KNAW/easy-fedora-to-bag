@@ -93,7 +93,7 @@ object FileInfo extends DebugEnhancedLogging {
     else second
   }
 
-  def checkDuplicateFiles(fileInfosForFirstBag: Seq[FileInfo], fileInfosForSecondBag: Seq[FileInfo], isOriginalVersioned: Boolean): Try[Unit] = {
+  def checkDuplicateFiles(fileInfosForFirstBag: Seq[FileInfo], fileInfosForSecondBag: Seq[FileInfo], isOriginalVersioned: Boolean): Try[(Seq[FileInfo], Seq[FileInfo])] = {
     def findDuplicates(fileInfos: Seq[FileInfo]) = fileInfos
       .groupBy(_.bagPath(isOriginalVersioned))
       .filter(_._2.size > 1)
@@ -105,7 +105,8 @@ object FileInfo extends DebugEnhancedLogging {
 
     val duplicatesForFirstBag = findDuplicates(fileInfosForFirstBag)
     val duplicatesForSecondBag = findDuplicates(fileInfosForSecondBag)
-    if (duplicatesForFirstBag.isEmpty && duplicatesForSecondBag.isEmpty) Success(())
+    if (duplicatesForFirstBag.isEmpty && duplicatesForSecondBag.isEmpty)
+      Success((fileInfosForFirstBag, fileInfosForSecondBag))
     else {
       val prefix1 = "duplicates in first bag: "
       val prefix2 = "duplicates in second bag: "

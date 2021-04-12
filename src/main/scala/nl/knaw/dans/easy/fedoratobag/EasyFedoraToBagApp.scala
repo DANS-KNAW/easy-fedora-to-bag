@@ -37,7 +37,7 @@ import org.apache.commons.csv.CSVPrinter
 import org.joda.time.DateTime
 
 import java.io.{ IOException, InputStream }
-import java.nio.file.{ Path, Paths }
+import java.nio.file.Paths
 import java.util.UUID
 import javax.naming.ldap.InitialLdapContext
 import scala.collection.JavaConverters._
@@ -222,14 +222,12 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       isOriginalVersioned = options.transformationType == ORIGINAL_VERSIONED
       fileInfosForSecondBag = allFileInfos.selectForSecondBag(isOriginalVersioned)
       fileInfosForFirstBag <- allFileInfos.selectForFirstBag(emdXml, fileInfosForSecondBag.nonEmpty, options.europeana)
-      (forFirstBag, forSecondBag) <- FileInfo.checkDuplicateFiles(
-        fileInfosForFirstBag, FileInfo.forSecondBag(fileInfosForFirstBag, fileInfosForSecondBag), isOriginalVersioned
-      )
+      (forFirstBag, forSecondBag) <- FileInfo.checkDuplicateFiles(fileInfosForFirstBag, fileInfosForSecondBag, isOriginalVersioned)
       _ = logger.debug(s"nextFileInfos = ${ fileInfosForSecondBag.map(_.path) }")
       fileItemsForFirstBag <- forFirstBag.toList.traverse(addPayloadFileTo(bag, isOriginalVersioned))
       _ <- checkNotImplementedFileMetadata(fileItemsForFirstBag, logger)
       _ <- addXmlMetadataTo(bag, "files.xml")(filesXml(fileItemsForFirstBag))
-      _ = logger.debug(s"${fileInfosForSecondBag.map(_.path)} --- ${forSecondBag.map(_.path)}")
+      _ = logger.debug(s"${ fileInfosForSecondBag.map(_.path) } --- ${ forSecondBag.map(_.path) }")
       _ <- bag.save
       doi = emd.getEmdIdentifier.getDansManagedDoi
       urn = getUrn(datasetId, emd)

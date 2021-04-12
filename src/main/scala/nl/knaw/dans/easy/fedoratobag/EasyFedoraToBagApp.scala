@@ -24,6 +24,7 @@ import com.yourmediashelf.fedora.client.{ FedoraClient, FedoraClientException }
 import nl.knaw.dans.bag.ChecksumAlgorithm
 import nl.knaw.dans.bag.v0.DansV0Bag
 import nl.knaw.dans.easy.fedoratobag.Command.FeedBackMessage
+import nl.knaw.dans.easy.fedoratobag.FileInfo.checkDuplicates
 import nl.knaw.dans.easy.fedoratobag.FileItem.{ checkNotImplementedFileMetadata, filesXml }
 import nl.knaw.dans.easy.fedoratobag.FoXml.{ getEmd, _ }
 import nl.knaw.dans.easy.fedoratobag.OutputFormat.OutputFormat
@@ -220,14 +221,12 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
         .map(addXmlMetadataTo(bag, "original/files.xml"))
         .getOrElse(Success(()))
       isOriginalVersioned = options.transformationType == ORIGINAL_VERSIONED
-      fileInfosForSecondBag = allFileInfos.selectForSecondBag(isOriginalVersioned)
-      fileInfosForFirstBag <- allFileInfos.selectForFirstBag(emdXml, fileInfosForSecondBag.nonEmpty, options.europeana)
-      (forFirstBag, forSecondBag) <- FileInfo.checkDuplicateFiles(fileInfosForFirstBag, fileInfosForSecondBag, isOriginalVersioned)
-      _ = logger.debug(s"nextFileInfos = ${ fileInfosForSecondBag.map(_.path) }")
+      selectedForSecondBag = allFileInfos.selectForSecondBag(isOriginalVersioned)
+      selectedForFirstBag <- allFileInfos.selectForFirstBag(emdXml, selectedForSecondBag.nonEmpty, options.europeana)
+      (forFirstBag, forSecondBag) <- checkDuplicates(selectedForFirstBag, selectedForSecondBag, isOriginalVersioned)
       fileItemsForFirstBag <- forFirstBag.toList.traverse(addPayloadFileTo(bag, isOriginalVersioned))
       _ <- checkNotImplementedFileMetadata(fileItemsForFirstBag, logger)
       _ <- addXmlMetadataTo(bag, "files.xml")(filesXml(fileItemsForFirstBag))
-      _ = logger.debug(s"${ fileInfosForSecondBag.map(_.path) } --- ${ forSecondBag.map(_.path) }")
       _ <- bag.save
       doi = emd.getEmdIdentifier.getDansManagedDoi
       urn = getUrn(datasetId, emd)

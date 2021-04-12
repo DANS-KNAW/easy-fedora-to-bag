@@ -109,7 +109,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     }
   }
 
-  it should "skip the identical second bag" in {
+  it should "produce the second bag as first and only" in {
     val app = new AppWithMockedServices() {
       Map(
         "easy-discipline:77" -> audienceFoXML("easy-discipline:77", "D13200"),
@@ -122,7 +122,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
       Seq(
         (1, "easy-dataset:17", "ADDITIONAL_LICENSE", "lalala"),
         (1, "easy-dataset:17", "DATASET_LICENSE", "blablabla"),
-        (1, "easy-file:36", "EASY_FILE", "barbapappa"),
+        (1, "easy-file:37", "EASY_FILE", "barbapappa"),
       ).foreach { case (n, objectId, streamId, content) =>
         (fedoraProvider.disseminateDatastream(_: String, _: String)) expects(objectId, streamId
         ) returning managed(content.inputStream) repeat n

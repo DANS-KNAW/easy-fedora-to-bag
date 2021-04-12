@@ -41,13 +41,6 @@ case class FileInfo(fedoraFileId: String,
   def bagPath(isOriginalVersioned: Boolean): Path =
     if (isOriginalVersioned && isOriginal) path.subpath(1, path.getNameCount)
     else path
-
-  private def versionedInfo: FileInfo = this.copy(
-    path = this.bagPath(true),
-    fedoraFileId = "",
-    accessibleTo = "",
-    visibleTo = "",
-  )
 }
 
 object FileInfo extends DebugEnhancedLogging {
@@ -85,8 +78,20 @@ object FileInfo extends DebugEnhancedLogging {
     }
   }
 
-  def checkDuplicateFiles(selectedForFirstBag: Seq[FileInfo], selectedForSecondBag: Seq[FileInfo], isOriginalVersioned: Boolean): Try[(Seq[FileInfo], Seq[FileInfo])] = {
-    def findDuplicates(fileInfos: Seq[FileInfo]) = fileInfos
+  /**
+   * @param selectedForSecondBag will be empty if isOriginalVersioned is false
+   *                             might be empty if isOriginalVersioned is true
+   * @param isOriginalVersioned  true: drop original level from bagPath
+   * @return Failure if at least one of the bags has files with the same bagPath
+   *         otherwise fileInfosForSecondBag as first and only list if both lists have the same files
+   */
+  def checkDuplicates(selectedForFirstBag: Seq[FileInfo],
+                      selectedForSecondBag: Seq[FileInfo],
+                      isOriginalVersioned: Boolean,
+                     ): Try[(Seq[FileInfo], Seq[FileInfo])] = {
+
+    /** @return bagPath -> digestValues */
+    def findDuplicateFiles(fileInfos: Seq[FileInfo]) = fileInfos
       .groupBy(_.bagPath(isOriginalVersioned))
       .filter(_._2.size > 1)
       .mapValues(infos =>
@@ -95,8 +100,8 @@ object FileInfo extends DebugEnhancedLogging {
         ).mkString("[", ",", "]")
       )
 
-    val duplicatesForFirstBag = findDuplicates(selectedForFirstBag)
-    val duplicatesForSecondBag = findDuplicates(selectedForSecondBag)
+    val duplicatesForFirstBag = findDuplicateFiles(selectedForFirstBag)
+    val duplicatesForSecondBag = findDuplicateFiles(selectedForSecondBag)
     if (duplicatesForFirstBag.nonEmpty || duplicatesForSecondBag.nonEmpty) {
       val prefix1 = "duplicates in first bag: "
       val prefix2 = "duplicates in second bag: "
@@ -107,11 +112,18 @@ object FileInfo extends DebugEnhancedLogging {
       ))
     }
     else {
-      if (selectedForFirstBag.map(_.versionedInfo) == selectedForSecondBag.map(_.versionedInfo))
-        Success((selectedForFirstBag, Seq.empty))
+      if (selectedForFirstBag.map(versionedInfo) == selectedForSecondBag.map(versionedInfo))
+        Success((selectedForSecondBag, Seq.empty))
       else Success((selectedForFirstBag, selectedForSecondBag))
     }
   }
+
+  private def versionedInfo(fileInfo: FileInfo): FileInfo = fileInfo.copy(
+    path = fileInfo.bagPath(isOriginalVersioned = true),
+    fedoraFileId = "",
+    accessibleTo = "",
+    visibleTo = "",
+  )
 
   private def logDuplicates(prefix: String, duplicates: Map[Path, String]): Unit = {
     if (duplicates.nonEmpty)

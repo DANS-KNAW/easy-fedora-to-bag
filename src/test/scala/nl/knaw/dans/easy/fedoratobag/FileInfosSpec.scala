@@ -55,6 +55,18 @@ class FileInfosSpec extends TestSupportFixture {
     for2nd shouldBe empty
     for1st shouldBe Success(fileInfos)
   }
+  it should "return no files" in {
+    val fileInfos = List(
+      fileInfo.copy(fedoraFileId = "easy-file:1", path = Paths.get("rabarbera/x.txt")),
+      fileInfo.copy(fedoraFileId = "easy-file:2"),
+    )
+    // though commandline does not allow isOriginalVersioned nor europeana
+    // together with noPayload, the latter gets highest priority
+    val for2nd = fileInfos.selectForSecondBag(isOriginalVersioned = true, noPayload = true)
+    val for1st = fileInfos.selectForFirstBag(<emd/>, for2nd.nonEmpty, europeana = true, noPayload = true)
+    for2nd shouldBe empty
+    for1st shouldBe Success(Seq.empty)
+  }
   "Fileinfo" should "replace non allowed characters in name and filepath with '_'" in {
     val fileMetadata = {
       <name>a:c*e?g>i|k;m#o".txt</name>

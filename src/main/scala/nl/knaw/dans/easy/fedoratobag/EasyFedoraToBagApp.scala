@@ -221,8 +221,8 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
         .map(addXmlMetadataTo(bag, "original/files.xml"))
         .getOrElse(Success(()))
       isOriginalVersioned = options.transformationType == ORIGINAL_VERSIONED
-      selectedForSecondBag = allFileInfos.selectForSecondBag(isOriginalVersioned)
-      selectedForFirstBag <- allFileInfos.selectForFirstBag(emdXml, selectedForSecondBag.nonEmpty, options.europeana)
+      selectedForSecondBag = allFileInfos.selectForSecondBag(isOriginalVersioned, options.noPayload)
+      selectedForFirstBag <- allFileInfos.selectForFirstBag(emdXml, selectedForSecondBag.nonEmpty, options.europeana, options.noPayload)
       (forFirstBag, forSecondBag) <- checkDuplicates(selectedForFirstBag, selectedForSecondBag, isOriginalVersioned)
       fileItemsForFirstBag <- forFirstBag.toList.traverse(addPayloadFileTo(bag, isOriginalVersioned))
       _ <- checkNotImplementedFileMetadata(fileItemsForFirstBag, logger)

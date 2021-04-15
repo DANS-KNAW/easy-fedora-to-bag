@@ -16,10 +16,9 @@
 package nl.knaw.dans.easy.fedoratobag
 
 import java.nio.file.Paths
-
 import better.files.File
 import nl.knaw.dans.easy.fedoratobag.OutputFormat.OutputFormat
-import nl.knaw.dans.easy.fedoratobag.TransformationType.{ FEDORA_VERSIONED, TransformationType }
+import nl.knaw.dans.easy.fedoratobag.TransformationType.{ FEDORA_VERSIONED, ORIGINAL_VERSIONED, TransformationType }
 import org.rogach.scallop.{ ScallopConf, ScallopOption, ValueConverter, singleArgConverter }
 
 import scala.xml.Properties
@@ -32,7 +31,7 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   val description: String = s"""Tool for exporting datasets from Fedora and constructing Archival/Submission Information Packages."""
   val synopsis: String =
     s"""
-       |  easy-fedora-to-bag {-d <dataset-id> | -i <dataset-ids-file>} -o <output-dir> [-s] [-l <log-file>] [-e] -f { AIP | SIP } <transformation>
+       |  easy-fedora-to-bag {-d <dataset-id> | -i <dataset-ids-file>} -o <output-dir> [-s] [-l <log-file>] [-e | -p] -f { AIP | SIP } <transformation>
      """.stripMargin
 
   version(s"$printedName v${ configuration.version }")
@@ -66,10 +65,13 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
     descr = "If provided, the transformation will check whether the datasets adhere to the requirements of the chosen transformation.")
   val europeana: ScallopOption[Boolean] = opt(name = "europeana", short = 'e',
     descr = "If provided, only the largest pdf/image will selected as payload.")
+  val noPayload: ScallopOption[Boolean] = opt(name = "no-payload", short = 'p',
+    descr = "If provided, only the largest pdf/image will selected as payload.")
   val transformation: ScallopOption[TransformationType] = trailArg(name = "transformation", required = true,
     descr = TransformationType.values.mkString("The type of transformation used: ", ", ", "."))
 
   conflicts(datasetId, List(inputFile))
+  conflicts(noPayload, List(europeana))
   validateOpt(inputFile) {
     case Some(f) if !f.toJava.isFile => Left(s"$f does not exist or is not a file")
     case _ => Right(())
@@ -83,6 +85,7 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
     case (None, _) => Left(s"trailing argument 'transformation' is mandatory") // required so won't happen
     case (Some(FEDORA_VERSIONED), _) if inputFile.isEmpty => Left(s"argument 'input-file' is mandatory for $FEDORA_VERSIONED")
     case (Some(FEDORA_VERSIONED), _) => Right(())
+    case (Some(ORIGINAL_VERSIONED), _) if noPayload.isDefined => Left(s"no-payload conflicts with fedora-versioned")
     case (Some(t), None) => Left(s"argument 'output-dir' is mandatory for $t")
     case (_, Some(dir)) =>
       if (dir.exists) {

@@ -7,7 +7,7 @@ Retrieves a dataset from Fedora and transforms it to an AIP bag conforming to DA
 SYNOPSIS
 --------
 
-    easy-fedora-to-bag {-d <dataset-id> | -i <dataset-ids-file>} -o <output-dir> [-s] [-l <log-file>] [-e] -f { AIP | SIP } <transformation>
+    easy-fedora-to-bag {-d <dataset-id> | -i <dataset-ids-file>} -o <output-dir> [-s] [-l <log-file>] [-e | -p] -f { AIP | SIP } <transformation>
 
 DESCRIPTION
 -----------
@@ -27,6 +27,7 @@ ARGUMENTS
      -l, --log-file  <arg>        The name of the logfile in csv format. If not provided a file
                                   easy-fedora-to-bag-<timestamp>.csv will be created in the home-dir of the user.
                                   (default = /home/vagrant/easy-fedora-to-bag-2020-02-02T20:20:02.000Z.csv)
+     -p, --no-payload             If provided, only the largest pdf/image will selected as payload.
      -o, --output-dir  <arg>      Empty directory that will be created if it doesn't exist. Successful bags (or 
                                   packages) will be moved to this directory.
      -f, --output-format  <arg>   Output format: AIP, SIP. 'SIP' is only implemented for simple, it creates the

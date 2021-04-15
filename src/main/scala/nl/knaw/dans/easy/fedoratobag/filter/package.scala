@@ -22,9 +22,9 @@ import scala.xml.Node
 
 package object filter {
   implicit class FileInfos(val fileInfos: List[FileInfo]) extends AnyVal {
-    def selectForSecondBag(isOriginalVersioned: Boolean): List[FileInfo] = {
+    def selectForSecondBag(isOriginalVersioned: Boolean, noPayload: Boolean = false): List[FileInfo] = {
       lazy val originals = fileInfos.filter(_.isOriginal)
-      if (!isOriginalVersioned || originals.isEmpty) List.empty
+      if (!isOriginalVersioned || originals.isEmpty || noPayload) List.empty
       else {
         val accessibleOriginals = originals.filter(_.isAccessibleOriginal)
         if (fileInfos.size == accessibleOriginals.size) List.empty
@@ -36,7 +36,7 @@ package object filter {
       fileInfos.exists(_.isOriginal) && fileInfos.exists(!_.isOriginal)
     }
 
-    def selectForFirstBag(emd: Node, hasSecondBag: Boolean, europeana: Boolean): Try[List[FileInfo]] = {
+    def selectForFirstBag(emd: Node, hasSecondBag: Boolean, europeana: Boolean, noPayload: Boolean = false): Try[List[FileInfo]] = {
 
       def largest(preferred: FileType, alternative: FileType): Try[List[FileInfo]] = {
         val infosByType = fileInfos
@@ -59,11 +59,12 @@ package object filter {
         else Success(fileInfos)
       }
 
-      if (hasSecondBag) successUnlessEmpty(fileInfos.filter(_.isOriginal))
-      else if (!europeana) successUnlessEmpty(fileInfos) // all files
-           else if (dcmiType(emd) == "text")
-                  largest(PDF, IMAGE)
-                else largest(IMAGE, PDF)
+      if (noPayload) Success(List.empty)
+      else if (hasSecondBag) successUnlessEmpty(fileInfos.filter(_.isOriginal))
+           else if (!europeana) successUnlessEmpty(fileInfos) // all files
+                else if (dcmiType(emd) == "text")
+                       largest(PDF, IMAGE)
+                     else largest(IMAGE, PDF)
     }
   }
 

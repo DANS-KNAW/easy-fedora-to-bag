@@ -70,7 +70,7 @@ object Command extends App with DebugEnhancedLogging {
   }
 
   private def runExport(app: EasyFedoraToBagApp, datasetFilter: SimpleDatasetFilter) = {
-    val options = Options(datasetFilter, transformationType, commandLine.strictMode(), europeana)
+    val options = Options(datasetFilter, transformationType, commandLine.strictMode(), europeana, commandLine.noPayload())
     val printer = CsvRecord.printer(csvLogFile)
     if (transformationType == FEDORA_VERSIONED)
       printer.apply(app.createSequences(datasetIds, commandLine.outputDir(), options))

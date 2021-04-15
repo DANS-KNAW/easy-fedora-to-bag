@@ -28,4 +28,5 @@ case class Options(datasetFilter: DatasetFilter,
                    transformationType: TransformationType = SIMPLE,
                    strict: Boolean = true,
                    europeana: Boolean = false,
+                   noPayload: Boolean = false,
                   )

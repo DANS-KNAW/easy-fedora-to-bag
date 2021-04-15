@@ -66,7 +66,7 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   val europeana: ScallopOption[Boolean] = opt(name = "europeana", short = 'e',
     descr = "If provided, only the largest pdf/image will selected as payload.")
   val noPayload: ScallopOption[Boolean] = opt(name = "no-payload", short = 'p',
-    descr = "If provided, only the largest pdf/image will selected as payload.")
+    descr = "If provided, no payload files will be exported, i.e. only the metadata is present in the bag.")
   val transformation: ScallopOption[TransformationType] = trailArg(name = "transformation", required = true,
     descr = TransformationType.values.mkString("The type of transformation used: ", ", ", "."))
 

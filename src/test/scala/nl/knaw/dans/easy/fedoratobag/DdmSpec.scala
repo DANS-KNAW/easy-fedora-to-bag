@@ -141,6 +141,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
         <ddm:dcmiMetadata>
           <ddm:description descriptionType="Abstract">blabl</ddm:description>
           <ddm:description descriptionType="TableOfContents">rabar</ddm:description>
+          <dct:rightsHolder>Unknown</dct:rightsHolder>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
        </ddm:DDM>
@@ -173,6 +174,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
         <ddm:dcmiMetadata>
           <dc:title>DEF</dc:title>
           <dc:title>GHI</dc:title>
+          <dct:rightsHolder>Unknown</dct:rightsHolder>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
        </ddm:DDM>
@@ -240,6 +242,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <ddm:replaces scheme="id-type:URN" href="http://persistent-identifier.nl/urn:nbn:nl:ui:test-urn-related-identifier">
             urn:nbn:nl:ui:test-urn-related-identifier
           </ddm:replaces>
+          <dct:rightsHolder>Unknown</dct:rightsHolder>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>
@@ -266,6 +269,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <ddm:replaces href="www.persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-mp3-pb2">
             Vlaardingen
           </ddm:replaces>
+          <dct:rightsHolder>Unknown</dct:rightsHolder>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>
@@ -292,6 +296,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
         { ddmProfile("D35400") }
         <ddm:dcmiMetadata>
           <dct:identifier xsi:type="id-type:ARCHIS-ZAAK-IDENTIFICATIE">4763492100</dct:identifier>
+          <dct:rightsHolder>Unknown</dct:rightsHolder>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>
@@ -337,6 +342,38 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
         </ddm:profile>
         <ddm:dcmiMetadata>
+          <dct:rightsHolder>Unknown</dct:rightsHolder>
+          <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
+        </ddm:dcmiMetadata>
+      </ddm:DDM>
+    ))
+    assume(schemaIsAvailable)
+    triedDDM.flatMap(validate) shouldBe Success(())
+  }
+
+  "contributor with rights holder role" should "prevent unknown rights holder" in {
+    val emd = parseEmdContent(Seq(
+      emdTitle, emdCreator, emdDescription,
+      <emd:contributor>
+          <eas:contributor>
+              <eas:organization>c</eas:organization>
+              <eas:role eas:scheme="DATACITE">RightsHolder</eas:role>
+          </eas:contributor>
+      </emd:contributor>,
+      emdDates,
+      emdRights,
+    ))
+    val triedDDM = DDM(emd, Seq("D35400"), abrMapping)
+    triedDDM.map(normalized) shouldBe Success(normalized(
+      <ddm:DDM xsi:schemaLocation={ schemaLocation }>
+        { ddmProfile("D35400", ddmCreator) }
+        <ddm:dcmiMetadata>
+          <dcx-dai:contributorDetails>
+            <dcx-dai:organization>
+              <dcx-dai:name>c</dcx-dai:name>
+              <dcx-dai:role>RightsHolder</dcx-dai:role>
+            </dcx-dai:organization>
+          </dcx-dai:contributorDetails>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>
@@ -367,6 +404,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <ddm:accessRights>ACCESS_ELSEWHERE</ddm:accessRights>
         </ddm:profile>
         <ddm:dcmiMetadata>
+          <dct:rightsHolder>Unknown</dct:rightsHolder>
           <dct:license xsi:type="dct:URI">{ DDM.dansLicense }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>
@@ -397,6 +435,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
         </ddm:profile>
         <ddm:dcmiMetadata>
+          <dct:rightsHolder>Unknown</dct:rightsHolder>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>
@@ -426,6 +465,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <ddm:accessRights>REQUEST_PERMISSION</ddm:accessRights>
         </ddm:profile>
         <ddm:dcmiMetadata>
+          <dct:rightsHolder>Unknown</dct:rightsHolder>
           <dct:license xsi:type="dct:URI">{ DDM.dansLicense }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>
@@ -458,6 +498,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }
         <ddm:dcmiMetadata>
+           <dct:rightsHolder>Unknown</dct:rightsHolder>
            <dcx-gml:spatial srsName="http://www.opengis.net/def/crs/EPSG/0/28992">
              <Point xmlns="http://www.opengis.net/gml"><pos>187267 433455</pos></Point>
            </dcx-gml:spatial>
@@ -495,6 +536,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }
         <ddm:dcmiMetadata>
+           <dct:rightsHolder>Unknown</dct:rightsHolder>
            <dcx-gml:spatial srsName="http://www.opengis.net/def/crs/EPSG/0/28992">
              <Point xmlns="http://www.opengis.net/gml"><pos>133028 517159</pos></Point>
            </dcx-gml:spatial>
@@ -573,6 +615,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }
         <ddm:dcmiMetadata>
+           <dct:rightsHolder>Unknown</dct:rightsHolder>
            <dcx-gml:spatial>
              <Polygon srsName="http://www.opengis.net/def/crs/EPSG/0/28992" xmlns="http://www.opengis.net/gml">
                <name>Some kind of description, without an actual polygon attached to it</name>
@@ -647,6 +690,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }
         <ddm:dcmiMetadata>
+           <dct:rightsHolder>Unknown</dct:rightsHolder>
            <dcx-gml:spatial>
              <boundedBy xmlns="http://www.opengis.net/gml">
                <Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/28992">
@@ -728,6 +772,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }
         <ddm:dcmiMetadata>
+           <dct:rightsHolder>Unknown</dct:rightsHolder>
            <dcx-gml:spatial>
              <boundedBy xmlns="http://www.opengis.net/gml">
                <Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/28992">
@@ -793,6 +838,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }
         <ddm:dcmiMetadata>
+          <dct:rightsHolder>Unknown</dct:rightsHolder>
           <not:implemented/>
           <not:implemented/>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
@@ -834,6 +880,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }
         <ddm:dcmiMetadata>
+          <dct:rightsHolder>Unknown</dct:rightsHolder>
           <not:implemented/>
           <not:implemented/>
           <not:implemented/>
@@ -876,6 +923,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }
         <ddm:dcmiMetadata>
+          <dct:rightsHolder>Unknown</dct:rightsHolder>
           <dct:format>format0</dct:format>
           <dct:format>format1</dct:format>
           <dct:extent>extent0</dct:extent>
@@ -913,6 +961,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }
         <ddm:dcmiMetadata>
+          <dct:rightsHolder>Unknown</dct:rightsHolder>
           <dct:subject xsi:type="-">DEPO</dct:subject>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
@@ -936,6 +985,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }
         <ddm:dcmiMetadata>
+          <dct:rightsHolder>Unknown</dct:rightsHolder>
           <ddm:subject xml:lang="nl"
                        valueURI="http://www.rnaproject.org/data/85ae2aa0-caae-4745-aecb-6cc765a8782f"
                        subjectScheme="Archeologisch Basis Register"
@@ -1003,6 +1053,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <ddm:isPartOf>Briefrapport</ddm:isPartOf>
           <ddm:isPartOf>2005-09/11</ddm:isPartOf>
           <ddm:isPartOf>blabla</ddm:isPartOf>
+          <dct:rightsHolder>Unknown</dct:rightsHolder>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>
@@ -1037,6 +1088,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <ddm:references href="https://www.laaglandarcheologie.nl">https://www.laaglandarcheologie.nl</ddm:references>
           <ddm:replaces href="https://www.laaglandarcheologie.nl">https://www.laaglandarcheologie.nl</ddm:replaces>
           <ddm:isPartOf href="https://www.laaglandarcheologie.nl">https://www.laaglandarcheologie.nl</ddm:isPartOf>
+          <dct:rightsHolder>Unknown</dct:rightsHolder>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>
@@ -1060,6 +1112,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
         { ddmProfile("D13200") }
         <ddm:dcmiMetadata>
           <not:implemented/>
+          <dct:rightsHolder>Unknown</dct:rightsHolder>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>
@@ -1080,6 +1133,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }
         <ddm:dcmiMetadata>
+          <dct:rightsHolder>Unknown</dct:rightsHolder>
           <ddm:temporal xml:lang="en"
                         valueURI="http://www.rnaproject.org/data/000c6eeb-83ac-47d5-b18f-c9e5d5f08b69"
                         subjectScheme="Archeologisch Basis Register"
@@ -1169,6 +1223,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
         </ddm:profile>
         <ddm:dcmiMetadata>
+          <dct:rightsHolder>Unknown</dct:rightsHolder>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>
@@ -1198,6 +1253,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
         </ddm:profile>
         <ddm:dcmiMetadata>
+          <dct:rightsHolder>Unknown</dct:rightsHolder>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>
@@ -1231,6 +1287,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
         </ddm:profile>
         <ddm:dcmiMetadata>
+          <dct:rightsHolder>Unknown</dct:rightsHolder>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>
@@ -1262,6 +1319,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
         </ddm:profile>
         <ddm:dcmiMetadata>
+          <dct:rightsHolder>Unknown</dct:rightsHolder>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
           <dct:created>2017-09-30</dct:created>
           <dct:created>1901-04</dct:created>
@@ -1292,6 +1350,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
         </ddm:profile>
         <ddm:dcmiMetadata>
+          <dct:rightsHolder>Unknown</dct:rightsHolder>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>
@@ -1330,6 +1389,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
         </ddm:profile>
         <ddm:dcmiMetadata>
+          <dct:rightsHolder>Unknown</dct:rightsHolder>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>
@@ -1397,6 +1457,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <dct:dateAccepted xsi:type="dct:W3CDTF">1903-04</dct:dateAccepted>
           <dct:valid>06-2013</dct:valid>
           <dct:valid xsi:type="dct:W3CDTF">1904-04-01T00:00:00.000+00:19</dct:valid>
+          <dct:rightsHolder>Unknown</dct:rightsHolder>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>
@@ -1439,6 +1500,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
           <ddm:datesOfCollection>2013/2014</ddm:datesOfCollection>
           <ddm:datesOfCollection>2013-03/2014-03-01</ddm:datesOfCollection>
           <ddm:datesOfCollection>2013-03-01/2014-03</ddm:datesOfCollection>
+          <dct:rightsHolder>Unknown</dct:rightsHolder>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>

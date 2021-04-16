@@ -17,6 +17,7 @@
         <dct:identifier xsi:type="id-type:EASY2">easy-dataset:13</dct:identifier>
         <dct:identifier xsi:type="id-type:DOI">10.17026/mocked-Iiib-z9p-4ywa</dct:identifier>
         <dct:relation/>
+        <dct:rightsHolder>Unknown</dct:rightsHolder>
         <dct:type xsi:type="dct:DCMIType">Dataset</dct:type>
         <dct:format>video/mpeg</dct:format>
         <dct:license xsi:type="dct:URI">http://creativecommons.org/publicdomain/zero/1.0</dct:license>

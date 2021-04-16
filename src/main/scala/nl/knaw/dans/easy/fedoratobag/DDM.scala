@@ -43,6 +43,17 @@ object DDM extends DebugEnhancedLogging {
       if (elems.isEmpty) dateCreated.headOption.toSeq
       else elems
     }
+    val rightsHolder = {
+      val rh1 = emd.getEmdRights.getTermsRightsHolder.asScala
+      if (rh1.nonEmpty) rh1
+      else {
+        if (emd.getEmdContributor.getEasContributor.asScala
+          .exists(_.getRole.getRole == "RightsHolder")
+        ) Seq.empty
+        else Seq(new BasicString("Unknown"))
+      }
+    }
+
    <ddm:DDM
      xmlns:dc="http://purl.org/dc/elements/1.1/"
      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -76,7 +87,7 @@ object DDM extends DebugEnhancedLogging {
        { emd.getEmdRelation.getRelationMap.asScala.map { case (key, values) => values.asScala.map(toRelationXml(key, _)) } }
        { emd.getEmdContributor.getDcContributor.asScala.map(bs => <dc:contributor>{ bs.getValue.trim }</dc:contributor>) }
        { emd.getEmdContributor.getEasContributor.asScala.map(author => <dcx-dai:contributorDetails>{ toXml(author)} </dcx-dai:contributorDetails>) }
-       { emd.getEmdRights.getTermsRightsHolder.asScala.map(bs => <dct:rightsHolder>{ bs.toString }</dct:rightsHolder>) }
+       { rightsHolder.map(bs => <dct:rightsHolder>{ bs.toString }</dct:rightsHolder>) }
        { emd.getEmdPublisher.getDcPublisher.asScala.map(bs => <dct:publisher xml:lang={ lang(bs) }>{ bs.getValue.trim }</dct:publisher>) }
        { emd.getEmdSource.getDcSource.asScala.map(bs => <dc:source xml:lang={ lang(bs) }>{ bs.getValue.trim }</dc:source>) }
        { emd.getEmdType.getDcType.asScala.map(bs => <dct:type xsi:type={ xsiType(bs) }>{ bs.getValue.trim }</dct:type>) }

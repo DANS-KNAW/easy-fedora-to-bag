@@ -263,6 +263,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
   }
 
   private def getFileInfo(fedoraFileId: String): Try[FileInfo] = {
+    trace(fedoraFileId)
     fedoraProvider
       .loadFoXml(fedoraFileId)
       .flatMap(FileInfo(_))
@@ -272,6 +273,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
   }
 
   private def addPayloadFileTo(bag: DansV0Bag, isOriginalVersioned: Boolean)(fileInfo: FileInfo): Try[Node] = {
+    trace(fileInfo)
     val target = fileInfo.bagPath(isOriginalVersioned)
     val file = bag.baseDir / "data" / target.toString
     for {
@@ -286,6 +288,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
   }
 
   private def verifyChecksums(file: File, fedoraValue: Option[String], bagValue: Option[String]) = {
+    trace(file, fedoraValue, bagValue)
     (bagValue, fedoraValue) match {
       case (Some(b), Some(f)) if f == b => Success(())
       case (Some(_), Some(_)) => Failure(new Exception(

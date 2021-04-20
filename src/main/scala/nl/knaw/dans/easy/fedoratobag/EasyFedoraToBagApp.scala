@@ -191,8 +191,11 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       amd <- getAmd(foXml)
       audiences <- emd.getEmdAudience.getDisciplines.asScala
         .map(id => getAudience(id.getValue)).collectResults
+      _ = trace("creating DDM from EMD")
       ddm <- DDM(emd, audiences, configuration.abrMapping)
-      fedoraIDs <- fedoraProvider.getSubordinates(datasetId)
+      _ = trace("created DDM from EMD")
+      fedoraIDs <- if (options.noPayload) Success(Seq.empty)
+                   else fedoraProvider.getSubordinates(datasetId)
       allFileInfos <- fedoraIDs.filter(_.startsWith("easy-file:")).toList.traverse(getFileInfo)
       maybeFilterViolations <- options.datasetFilter.violations(emd, ddm, amd, fedoraIDs, allFileInfos)
       _ = if (options.strict) maybeFilterViolations.foreach(msg => throw InvalidTransformationException(msg))

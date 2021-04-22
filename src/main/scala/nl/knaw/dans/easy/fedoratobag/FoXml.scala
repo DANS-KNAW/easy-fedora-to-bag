@@ -69,7 +69,6 @@ object FoXml extends DebugEnhancedLogging {
   def getMessageFromDepositor(foXml: Node): Option[Node] = getStreamRoot("message-from-depositor.txt", foXml)
 
   def managedStreamLabel(foXml: Node, id: String): Option[String] = {
-    trace(id)
     getStreamRoot(id, foXml)
       .withFilter(hasControlGroup("M"))
       .flatMap(getLabel)

@@ -62,13 +62,7 @@ class FedoraProvider(fedoraClient: FedoraClient) extends DebugEnhancedLogging {
       .flatMap(response => managed(response.getEntityInputStream))
   }
 
-  def datastream(objectId: String, streamId: String): ManagedResource[InputStream] = {
-    managed(FedoraClient.getDatastream(objectId, streamId).execute(fedoraClient))
-      .flatMap(response => managed(response.getEntityInputStream))
-  }
-
   def loadFoXml(objectId: String): Try[Elem] = {
-    trace(objectId)
     getObject(objectId).map(XML.load).tried
   }
 }

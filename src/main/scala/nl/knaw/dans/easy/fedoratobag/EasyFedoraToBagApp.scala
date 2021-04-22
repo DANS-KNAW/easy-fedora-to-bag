@@ -263,7 +263,6 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
   }
 
   private def getFileInfo(fedoraFileId: String): Try[FileInfo] = {
-    trace(fedoraFileId)
     fedoraProvider
       .loadFoXml(fedoraFileId)
       .flatMap(FileInfo(_))

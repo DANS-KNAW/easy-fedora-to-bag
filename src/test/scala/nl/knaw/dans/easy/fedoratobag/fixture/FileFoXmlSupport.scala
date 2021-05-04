@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.easy.fedoratobag.fixture
 
-import scala.xml.Elem
+import scala.xml.{ Elem, Text }
 
 trait FileFoXmlSupport {
 
@@ -33,7 +33,9 @@ trait FileFoXmlSupport {
                 size: Long = 30,
                 visibleTo: String = "ANONYMOUS",
                 accessibleTo: String = "RESTRICTED_REQUEST",
-                digest: String = "dd466d19481a28ba8577e7b3f029e496027a3309"
+                digest: String = "dd466d19481a28ba8577e7b3f029e496027a3309",
+                creatorRole: String = "DEPOSITOR",
+                derivedFrom: Option[Int] = None,
                ): Elem = {
     <foxml:digitalObject VERSION="1.1" PID={s"easy-file:$id"}
                      xmlns:foxml="info:fedora/fedora-system:def/foxml#"
@@ -60,10 +62,31 @@ trait FileFoXmlSupport {
                       <path>{s"$location/$name"}</path>
                       <mimeType>{ mimeType }</mimeType>
                       <size>{ size }</size>
-                      <creatorRole>DEPOSITOR</creatorRole>
+                      <creatorRole>{creatorRole}</creatorRole>
                       <visibleTo>{visibleTo}</visibleTo>
                       <accessibleTo>{accessibleTo}</accessibleTo>
                   </fimd:file-item-md>
+              </foxml:xmlContent>
+          </foxml:datastreamVersion>
+      </foxml:datastream>
+      <foxml:datastream ID="RELS-EXT" STATE="A" CONTROL_GROUP="X" VERSIONABLE="false">
+          <foxml:datastreamVersion ID="RELS-EXT.2" LABEL="rels-ext" CREATED="2019-04-29T08:51:00.905Z" MIMETYPE="text/xml" FORMAT_URI="info:fedora/fedora-system:FedoraRELSExt-1.0" SIZE="784">
+              <foxml:xmlContent>
+                  <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+
+                      <rdf:Description rdf:about="info:fedora/easy-file:2707296">
+                          <isSubordinateTo xmlns="http://dans.knaw.nl/ontologies/relations#" rdf:resource="info:fedora/easy-dataset:46287"></isSubordinateTo>
+                          <isMemberOf xmlns="http://dans.knaw.nl/ontologies/relations#" rdf:resource="info:fedora/easy-folder:142970"></isMemberOf>
+                          <hasModel xmlns="info:fedora/fedora-system:def/model#" rdf:resource="info:fedora/easy-model:EDM1FILE"></hasModel>
+                          <hasModel xmlns="info:fedora/fedora-system:def/model#" rdf:resource="info:fedora/dans-container-item-v1"></hasModel>
+                        { derivedFrom.map(id =>
+
+                          <wasDerivedFrom xmlns="https://www.w3.org/TR/2012/CR-prov-o-20121211/#" rdf:resource={s"info:fedora/easy-file:$id"}></wasDerivedFrom>
+                      ).getOrElse(new Text(""))
+                        }
+                      </rdf:Description>
+
+                  </rdf:RDF>
               </foxml:xmlContent>
           </foxml:datastreamVersion>
       </foxml:datastream>

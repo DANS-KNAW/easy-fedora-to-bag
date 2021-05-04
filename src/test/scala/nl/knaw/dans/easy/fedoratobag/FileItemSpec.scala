@@ -16,18 +16,65 @@
 package nl.knaw.dans.easy.fedoratobag
 
 import com.typesafe.scalalogging.Logger
-import nl.knaw.dans.easy.fedoratobag.fixture.{ SchemaSupport, TestSupportFixture }
+import nl.knaw.dans.easy.fedoratobag.fixture.{ FileFoXmlSupport, SchemaSupport, TestSupportFixture }
 import org.scalamock.scalatest.MockFactory
 import org.slf4j.{ Logger => UnderlyingLogger }
 
 import scala.util.{ Failure, Success }
 import scala.xml.Utility.trim
-import scala.xml.{ Node, NodeBuffer }
+import scala.xml.{ Node, NodeBuffer, PrettyPrinter, Utility }
 
-class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSupport {
-  val schema = "https://easy.dans.knaw.nl/schemas/bag/metadata/files/files.xsd"
+class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSupport with FileFoXmlSupport {
+  val ns = "http://easy.dans.knaw.nl/schemas/bag/metadata/files/"
+  val schema: String = ns + "files.xsd"
+  val location = s"$ns $schema"
 
   private def validateItem(item: Node) = validate(FileItem.filesXml(Seq(item)))
+
+  "filesXml" should "" in {
+    val fileInfos = {
+      val fedoraProvider = mock[FedoraProvider]
+      val foXMLs = Map(
+        "easy-file:2" -> fileFoXml(id = 2, name = "some.xlsx"),
+        "easy-file:25" -> fileFoXml(id = 25, name = "some.csv", location = "curated", creatorRole = "ARCHIVIST", derivedFrom = Some(2)),
+      )
+      foXMLs.foreach { case (id, xml) =>
+        (fedoraProvider.loadFoXml(_: String)) expects id once() returning Success(xml)
+      }
+      val triedFileInfos = FileInfo(foXMLs.keys.toList, fedoraProvider)
+      triedFileInfos.getOrElse(fail("could not load file info's"))
+    }
+    val fileItems = fileInfos.toList.map(FileItem(_, isOriginalVersioned = true).get)
+
+    normalized(FileItem.filesXml(fileItems)) shouldBe normalized(
+      <files xsi:schemaLocation={ location } xmlns={ ns }>
+        <file filepath="data/some.xlsx">
+          <!--original/some.xlsx-->
+          <dct:identifier>easy-file:2</dct:identifier>
+          <dct:title>some.xlsx</dct:title>
+          <dct:format>text/plain</dct:format>
+          <dct:extent>0.0MB</dct:extent>
+          <accessibleToRights>RESTRICTED_REQUEST</accessibleToRights>
+          <visibleToRights>ANONYMOUS</visibleToRights>
+        </file><file filepath="data/curated/some.csv"><dct:identifier>easy-file:25</dct:identifier>
+          <dct:title>some.csv</dct:title>
+          <dct:format>text/plain</dct:format>
+          <dct:extent>0.0MB</dct:extent>
+          <accessibleToRights>RESTRICTED_REQUEST</accessibleToRights>
+          <visibleToRights>ANONYMOUS</visibleToRights>
+          <dcterms:source xmlns="http://purl.org/dc/terms/">original/some.xlsx</dcterms:source>
+        </file>
+      </files>
+    )
+  }
+
+  // TODO share with DdmSpec
+  private def normalized(elem: Node) = new PrettyPrinter(160, 2)
+    .format(Utility.trim(elem)) // this trim normalizes <a/> and <a></a>
+    .replaceAll(nameSpaceRegExp, "") // the random order would cause differences in actual and expected
+    .replaceAll(" +\n?", " ")
+    .replaceAll("\n +<", "\n<")
+    .trim
 
   "apply" should "copy both types of rights" in {
     val fileMetadata = <name>something.txt</name>

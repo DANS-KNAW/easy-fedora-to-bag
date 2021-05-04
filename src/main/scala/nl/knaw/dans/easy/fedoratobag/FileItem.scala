@@ -17,6 +17,7 @@ package nl.knaw.dans.easy.fedoratobag
 
 import com.typesafe.scalalogging.Logger
 
+import java.nio.file.Path
 import java.util.Locale
 import scala.util.{ Failure, Success, Try }
 import scala.xml._
@@ -52,17 +53,23 @@ object FileItem {
   }
 
   def apply(fileInfo: FileInfo, isOriginalVersioned: Boolean): Try[Node] = Try {
+    val src = fileInfo.wasDerivedForm.map(path =>
+        <dcterms:source xmlns="http://purl.org/dc/terms/">{ path.toString }</dcterms:source>
+    ).getOrElse(new Text(""))
     val bagPath = fileInfo.bagPath(isOriginalVersioned)
-      <file filepath={ "data/" + fileInfo.bagPath(isOriginalVersioned) }>{
-          if (bagPath != fileInfo.path) Comment(fileInfo.path.toString)
-          else Text("")
-        }<dct:identifier>{ fileInfo.fedoraFileId }</dct:identifier>
+    val comment = if (bagPath != fileInfo.path) Comment(fileInfo.path.toString)
+                  else Text("")
+
+      <file filepath={ "data/" + fileInfo.bagPath(isOriginalVersioned) }>
+        { comment }
+        <dct:identifier>{ fileInfo.fedoraFileId }</dct:identifier>
         <dct:title>{ fileInfo.name }</dct:title>
         <dct:format>{ fileInfo.mimeType }</dct:format>
         <dct:extent>{ "%.1fMB".formatLocal(Locale.US, fileInfo.size / 1024 / 1024) }</dct:extent>
         { fileInfo.additionalMetadata.map(convert).getOrElse(Seq[Node]()) }
         <accessibleToRights>{ fileInfo.accessibleTo }</accessibleToRights>
         <visibleToRights>{ fileInfo.visibleTo }</visibleToRights>
+        { src }
       </file>
   }
 

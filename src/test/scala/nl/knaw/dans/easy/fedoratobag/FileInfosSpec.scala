@@ -16,13 +16,13 @@
 package nl.knaw.dans.easy.fedoratobag
 
 import nl.knaw.dans.easy.fedoratobag.filter._
-import nl.knaw.dans.easy.fedoratobag.fixture.TestSupportFixture
+import nl.knaw.dans.easy.fedoratobag.fixture.{ FileFoXmlSupport, TestSupportFixture }
 
 import java.nio.file.Paths
 import scala.util.Success
 import scala.xml.NodeBuffer
 
-class FileInfosSpec extends TestSupportFixture {
+class FileInfosSpec extends TestSupportFixture with FileFoXmlSupport {
   private val fileInfo = new FileInfo("easy-file:1", Paths.get("x.txt"), "x.txt", size = 2, mimeType = "text/plain", accessibleTo = "ANONYMOUS", visibleTo = "ANONYMOUS", contentDigest = None, additionalMetadata = None)
   "selectForXxxBag" should "return files for two bags" in {
     val fileInfos = List(
@@ -68,32 +68,10 @@ class FileInfosSpec extends TestSupportFixture {
     for1st shouldBe Success(Seq.empty)
   }
   "Fileinfo" should "replace non allowed characters in name and filepath with '_'" in {
-    val fileMetadata = {
-      <name>a:c*e?g>i|k;m#o".txt</name>
-      <path>p:t*/t?/s>m|w;e#e/a:c*e?g>i|k;m#o".txt</path>
-      <mimeType>text/plain</mimeType>
-      <size>911988</size>
-      <creatorRole>ARCHIVIST</creatorRole>
-      <visibleTo>ANONYMOUS</visibleTo>
-      <accessibleTo>KNOWN</accessibleTo>
-    }
-    def fileFoXml(fileMetadata: NodeBuffer) = {
-      <foxml:digitalObject VERSION="1.1" PID="easy-file:35"
-             xmlns:foxml="info:fedora/fedora-system:def/foxml#"
-             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-             xsi:schemaLocation="info:fedora/fedora-system:def/foxml# http://www.fedora.info/definitions/1/0/foxml1-1.xsd">
-          <foxml:datastream ID="EASY_FILE_METADATA" STATE="A" CONTROL_GROUP="X" VERSIONABLE="false">
-              <foxml:datastreamVersion ID="EASY_FILE_METADATA.0" LABEL="" CREATED="2020-03-17T10:24:17.660Z" MIMETYPE="text/xml" SIZE="359">
-                  <foxml:xmlContent>
-                      <fimd:file-item-md xmlns:addmd="http://easy.dans.knaw.nl/easy/additional-metadata/" xmlns:fimd="http://easy.dans.knaw.nl/easy/file-item-md/" version="0.1">
-                          { fileMetadata }
-                      </fimd:file-item-md>
-                  </foxml:xmlContent>
-              </foxml:datastreamVersion>
-          </foxml:datastream>
-      </foxml:digitalObject>
-    }
-    val fileInfo = FileInfo(fileFoXml(fileMetadata)).get
+    val fileInfo = FileInfo(fileFoXml(
+      location="p:t*/t?/s>m|w;e#e",
+      name = "a:c*e?g>i|k;m#o\".txt",
+    )).get
     fileInfo.name shouldBe "a_c_e_g_i_k_m_o_.txt"
     fileInfo.path shouldBe Paths.get("p_t_/t_/s_m_w_e_e/a_c_e_g_i_k_m_o_.txt")
   }

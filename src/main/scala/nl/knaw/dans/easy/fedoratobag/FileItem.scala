@@ -54,8 +54,8 @@ object FileItem {
 
   def apply(fileInfo: FileInfo, isOriginalVersioned: Boolean): Try[Node] = Try {
     val src = fileInfo.wasDerivedForm.map(path =>
-        <dcterms:source xmlns="http://purl.org/dc/terms/">{ path.toString }</dcterms:source>
-    ).getOrElse(new Text(""))
+        <dct:source>{ path.toString }</dct:source>
+    ).getOrElse(Seq[Node]())
     val bagPath = fileInfo.bagPath(isOriginalVersioned)
     val comment = if (bagPath != fileInfo.path) Comment(fileInfo.path.toString)
                   else Text("")
@@ -66,7 +66,7 @@ object FileItem {
         <dct:title>{ fileInfo.name }</dct:title>
         <dct:format>{ fileInfo.mimeType }</dct:format>
         <dct:extent>{ "%.1fMB".formatLocal(Locale.US, fileInfo.size / 1024 / 1024) }</dct:extent>
-        { fileInfo.additionalMetadata.map(convert).getOrElse(Seq[Node]()) }
+        { fileInfo.additionalMetadata.map(convert).getOrElse( Seq[Node]()) }
         <accessibleToRights>{ fileInfo.accessibleTo }</accessibleToRights>
         <visibleToRights>{ fileInfo.visibleTo }</visibleToRights>
         { src }

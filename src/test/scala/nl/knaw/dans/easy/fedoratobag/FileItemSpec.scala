@@ -62,7 +62,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
           <dct:extent>0.0MB</dct:extent>
           <accessibleToRights>RESTRICTED_REQUEST</accessibleToRights>
           <visibleToRights>ANONYMOUS</visibleToRights>
-          <dcterms:source xmlns="http://purl.org/dc/terms/">original/some.xlsx</dcterms:source>
+          <dct:source>original/some.xlsx</dct:source>
         </file>
       </files>
     )

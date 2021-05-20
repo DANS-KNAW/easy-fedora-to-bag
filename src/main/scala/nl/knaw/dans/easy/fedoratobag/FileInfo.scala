@@ -83,7 +83,10 @@ object FileInfo extends DebugEnhancedLogging {
             .map(p => Paths.get(replaceNonAllowedCharacters(p)))
         } yield (fileId, derivedFromId, digest, fileMetadata, path)
       }.map { files =>
-      val pathMap = files.map { case (fileId, _, _, _, path) => fileId -> path }.toMap
+      val pathMap = files.map {
+        case (fileId, _, _, _, maybePath) =>
+          fileId -> maybePath.map(p => Paths.get("data/" + p))
+      }.toMap
       files.map {
         case (fileId, _, _, _, None) =>
           throw new Exception(s"<path> not found for $fileId")

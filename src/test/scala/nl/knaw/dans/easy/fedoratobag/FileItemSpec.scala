@@ -32,29 +32,30 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
   private def validateItem(item: Node) = validate(FileItem.filesXml(Seq(item)))
 
   private val derivedFiles = callFileInfo(Map(
-    "easy-file:2" -> fileFoXml(id = 2, location = "cu*rated", name = "so:me.xlsx"),
-    "easy-file:25" -> fileFoXml(id = 25, name = "so:me.csv", creatorRole = "ARCHIVIST", derivedFrom = Some(2)),
+    "easy-file:2" -> fileFoXml(id = 2, name = "so:me.xslx", creatorRole = "ARCHIVIST"),
+    "easy-file:25" -> fileFoXml(id = 25, location = "cu*rated", name = "so:me.csv", derivedFrom = Some(2)),
   )).getOrElse(fail("could not load test data"))
 
   "filesXml" should "drop original in <dct:source>" in {
     val fileItems = derivedFiles.map(FileItem(_, isOriginalVersioned = true).get)
     normalized(FileItem.filesXml(fileItems)) shouldBe normalized(
       <files xsi:schemaLocation={ location } xmlns={ ns }>
-        <file filepath="data/cu_rated/so_me.xlsx">
+        <file filepath="data/so_me.xslx">
+          <!--original/so_me.xslx-->
           <dct:identifier>easy-file:2</dct:identifier>
-          <dct:title>so_me.xlsx</dct:title>
+          <dct:title>so_me.xslx</dct:title>
           <dct:format>text/plain</dct:format>
           <dct:extent>0.0MB</dct:extent>
           <accessibleToRights>RESTRICTED_REQUEST</accessibleToRights>
           <visibleToRights>ANONYMOUS</visibleToRights>
-          <dct:source>data/so_me.xlsx</dct:source>
-        </file><file filepath="data/so_me.csv"><dct:identifier>easy-file:25</dct:identifier>
-          <!--original/so_me.csv-->
+        </file>
+        <file filepath="data/cu_rated/so_me.csv"><dct:identifier>easy-file:25</dct:identifier>
           <dct:title>so_me.csv</dct:title>
           <dct:format>text/plain</dct:format>
           <dct:extent>0.0MB</dct:extent>
           <accessibleToRights>RESTRICTED_REQUEST</accessibleToRights>
           <visibleToRights>ANONYMOUS</visibleToRights>
+          <dct:source>data/so_me.xslx</dct:source>
         </file>
       </files>
     )
@@ -63,21 +64,21 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
     val fileItems = derivedFiles.map(FileItem(_, isOriginalVersioned = false).get)
     normalized(FileItem.filesXml(fileItems)) shouldBe normalized(
       <files xsi:schemaLocation={ location } xmlns={ ns }>
-        <file filepath="data/cu_rated/so_me.xlsx">
+        <file filepath="data/original/so_me.xslx">
           <dct:identifier>easy-file:2</dct:identifier>
-          <dct:title>so_me.xlsx</dct:title>
+          <dct:title>so_me.xslx</dct:title>
           <dct:format>text/plain</dct:format>
           <dct:extent>0.0MB</dct:extent>
           <accessibleToRights>RESTRICTED_REQUEST</accessibleToRights>
           <visibleToRights>ANONYMOUS</visibleToRights>
-          <dct:source>data/original/so_me.xlsx</dct:source>
-        </file><file filepath="data/original/so_me.csv">
+        </file><file filepath="data/cu_rated/so_me.csv">
           <dct:identifier>easy-file:25</dct:identifier>
           <dct:title>so_me.csv</dct:title>
           <dct:format>text/plain</dct:format>
           <dct:extent>0.0MB</dct:extent>
           <accessibleToRights>RESTRICTED_REQUEST</accessibleToRights>
           <visibleToRights>ANONYMOUS</visibleToRights>
+          <dct:source>data/original/so_me.xslx</dct:source>
         </file>
       </files>
     )

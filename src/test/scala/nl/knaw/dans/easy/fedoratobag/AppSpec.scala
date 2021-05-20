@@ -378,7 +378,8 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     // end of mocking
 
     val bagDir = testDir / "bags" / UUID.randomUUID.toString
-    app.createBag("easy-dataset:13", bagDir, Options(app.filter)) should matchPattern {
+    val triedInfo = app.createBag("easy-dataset:13", bagDir, Options(app.filter))
+    triedInfo should matchPattern {
       case Failure(e) if e.getMessage == "easy-file:35 <visibleTo> not found" =>
     }
   }

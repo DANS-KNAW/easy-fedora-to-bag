@@ -104,7 +104,7 @@ object FileInfo extends DebugEnhancedLogging {
           def get(tag: String) = (fileMetadata \\ tag)
             .map(_.text)
             .headOption
-            .getOrElse(throw new Exception(s"<$tag> not found"))
+            .getOrElse(throw new Exception(s"$fileId <$tag> not found"))
 
           val visibleTo = get("visibleTo")
           val accessibleTo = if ("NONE" == visibleTo.toUpperCase) "NONE"

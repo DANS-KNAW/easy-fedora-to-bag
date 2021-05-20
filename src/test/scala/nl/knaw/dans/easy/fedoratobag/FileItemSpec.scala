@@ -150,7 +150,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
       "easy-file:35" -> fileFoXml(fileMetadata),
     )) should matchPattern {
       case Failure(e: Exception) if e.getMessage ==
-        "<accessibleTo> not found" =>
+        "easy-file:35 <accessibleTo> not found" =>
     }
   }
 

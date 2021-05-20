@@ -53,14 +53,14 @@ object FileItem {
   }
 
   def apply(fileInfo: FileInfo, isOriginalVersioned: Boolean): Try[Node] = Try {
-    val src = fileInfo.wasDerivedForm.map(path =>
-        <dct:source>{ path.toString }</dct:source>
+    val src = fileInfo.bagSource(isOriginalVersioned).map(path =>
+        <dct:source>{ "data/" + path }</dct:source>
     ).getOrElse(Seq[Node]())
     val bagPath = fileInfo.bagPath(isOriginalVersioned)
     val comment = if (bagPath != fileInfo.path) Comment(fileInfo.path.toString)
                   else Text("")
 
-      <file filepath={ "data/" + fileInfo.bagPath(isOriginalVersioned) }>
+      <file filepath={ "data/" + bagPath }>
         { comment }
         <dct:identifier>{ fileInfo.fedoraFileId }</dct:identifier>
         <dct:title>{ fileInfo.name }</dct:title>

@@ -17,12 +17,13 @@ package nl.knaw.dans.easy.fedoratobag
 
 import nl.knaw.dans.easy.fedoratobag.filter._
 import nl.knaw.dans.easy.fedoratobag.fixture.{ FileFoXmlSupport, TestSupportFixture }
+import org.scalamock.scalatest.MockFactory
 
 import java.nio.file.Paths
 import scala.util.Success
 import scala.xml.NodeBuffer
 
-class FileInfosSpec extends TestSupportFixture with FileFoXmlSupport {
+class FileInfosSpec extends TestSupportFixture with FileFoXmlSupport with MockFactory {
   private val fileInfo = new FileInfo("easy-file:1", Paths.get("x.txt"), "x.txt", size = 2, mimeType = "text/plain", accessibleTo = "ANONYMOUS", visibleTo = "ANONYMOUS", contentDigest = None, additionalMetadata = None)
   "selectForXxxBag" should "return files for two bags" in {
     val fileInfos = List(
@@ -67,11 +68,16 @@ class FileInfosSpec extends TestSupportFixture with FileFoXmlSupport {
     for2nd shouldBe empty
     for1st shouldBe Success(Seq.empty)
   }
-  "Fileinfo" should "replace non allowed characters in name and filepath with '_'" in {
-    val fileInfo = FileInfo(fileFoXml(
-      location="p:t*/t?/s>m|w;e#e",
+  "FileInfo" should "replace non allowed characters in name and filepath with '_'" in {
+    val foxml = fileFoXml(
+      location = "p:t*/t?/s>m|w;e#e",
       name = "a:c*e?g>i|k;m#o\".txt",
-    )).get
+    )
+    val fedoraProvider = mock[FedoraProvider]
+    (fedoraProvider.loadFoXml(_: String)) expects "easy-file:35" once() returning Success(foxml)
+
+    val fileInfo = FileInfo(List("easy-file:35"), fedoraProvider)
+      .getOrElse(fail("could not load test data")).head
     fileInfo.name shouldBe "a_c_e_g_i_k_m_o_.txt"
     fileInfo.path shouldBe Paths.get("p_t_/t_/s_m_w_e_e/a_c_e_g_i_k_m_o_.txt")
   }

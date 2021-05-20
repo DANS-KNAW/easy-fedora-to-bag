@@ -196,7 +196,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       _ = trace("created DDM from EMD")
       fedoraIDs <- if (options.noPayload) Success(Seq.empty)
                    else fedoraProvider.getSubordinates(datasetId)
-      allFileInfos <- fedoraIDs.filter(_.startsWith("easy-file:")).toList.traverse(getFileInfo)
+      allFileInfos <- FileInfo(fedoraIDs.filter(_.startsWith("easy-file:")).toList, fedoraProvider).map(_.toList)
       maybeFilterViolations <- options.datasetFilter.violations(emd, ddm, amd, fedoraIDs, allFileInfos)
       _ = if (options.strict) maybeFilterViolations.foreach(msg => throw InvalidTransformationException(msg))
       _ = logger.info(s"Creating $bagDir from $datasetId with owner $depositor")
@@ -260,15 +260,6 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
 
   private def addAgreementsTo(bag: DansV0Bag)(content: Node): Try[Any] = {
     bag.addTagFile(content.serialize.inputStream, Paths.get(s"metadata/depositor-info/agreements.xml"))
-  }
-
-  private def getFileInfo(fedoraFileId: String): Try[FileInfo] = {
-    fedoraProvider
-      .loadFoXml(fedoraFileId)
-      .flatMap(FileInfo(_))
-      .recoverWith {
-        case t: Throwable => Failure(new Exception(s"$fedoraFileId ${ t.getMessage }"))
-      }
   }
 
   private def addPayloadFileTo(bag: DansV0Bag, isOriginalVersioned: Boolean)(fileInfo: FileInfo): Try[Node] = {

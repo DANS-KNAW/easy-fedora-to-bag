@@ -42,15 +42,16 @@ case class FileInfo(fedoraFileId: String,
   val maybeDigestType: Option[String] = contentDigest.map(n => (n \\ "@TYPE").text)
   val maybeDigestValue: Option[String] = contentDigest.map(n => (n \\ "@DIGEST").text)
 
-  def bagPath(isOriginalVersioned: Boolean): Path =
+  def bagPath(isOriginalVersioned: Boolean): Path = {
     if (isOriginalVersioned && isOriginal) path.subpath(1, path.getNameCount)
     else path
+  }
 }
 
 object FileInfo extends DebugEnhancedLogging {
-  val nonAllowedCharacters = List(':', '*', '?', '"', '<', '>', '|', ';', '#')
+  private val nonAllowedCharacters = List(':', '*', '?', '"', '<', '>', '|', ';', '#')
 
-  def replaceNonAllowedCharacters(s: String): String = {
+  private def replaceNonAllowedCharacters(s: String): String = {
     s.map(char => if (nonAllowedCharacters.contains(char)) '_'
                   else char)
   }
@@ -64,7 +65,7 @@ object FileInfo extends DebugEnhancedLogging {
       foXmlStream
         .flatMap(n => (n \\ "wasDerivedFrom").headOption).toSeq
         .flatMap(node =>
-          node.attribute("http://www.w3.org/1999/02/22-rdf-syntax-ns#","resource")
+          node.attribute("http://www.w3.org/1999/02/22-rdf-syntax-ns#", "resource")
             .toSeq.flatten
             .map(_.text.replace("info:fedora/", ""))
         ).headOption
@@ -78,7 +79,8 @@ object FileInfo extends DebugEnhancedLogging {
           fileMetadata <- FoXml.getFileMD(foXml)
           derivedFromId = derivedFrom(FoXml.getStreamRoot("RELS-EXT", foXml))
           digest = digestValue(FoXml.getStreamRoot("EASY_FILE", foXml))
-          path = (fileMetadata \\ "path").map(_.text).headOption.map(Paths.get(_))
+          path = (fileMetadata \\ "path").map(_.text).headOption
+            .map(p => Paths.get(replaceNonAllowedCharacters(p)))
         } yield (fileId, derivedFromId, digest, fileMetadata, path)
       }.map { files =>
       val pathMap = files.map { case (fileId, _, _, _, path) => fileId -> path }.toMap
@@ -91,45 +93,21 @@ object FileInfo extends DebugEnhancedLogging {
             .headOption
             .getOrElse(throw new Exception(s"<$tag> not found"))
 
+          val visibleTo = get("visibleTo")
+          val accessibleTo = if ("NONE" == visibleTo.toUpperCase) "NONE"
+                             else get("accessibleTo")
           new FileInfo(
             fileId, path,
-            get("name"),
+            replaceNonAllowedCharacters(get("name")),
             get("size").toLong,
             get("mimeType"),
-            get("accessibleTo"),
-            get("visibleTo"),
+            accessibleTo,
+            visibleTo,
             digest,
             (fileMetadata \ "additional-metadata" \ "additional" \ "content").headOption,
             derivedFrom.flatMap(pathMap), // TODO error handling
           )
       }
-    }
-  }
-
-  def apply(foXml: Node): Try[FileInfo] = {
-    FoXml.getFileMD(foXml).map { fileMetadata =>
-      def get(tag: String) = (fileMetadata \\ tag)
-        .map(_.text)
-        .headOption
-        .getOrElse(throw new Exception(s"<$tag> not found"))
-
-      val visibleTo = get("visibleTo")
-      val accessibleTo = visibleTo.toUpperCase() match {
-        case "NONE" => "NONE"
-        case _ => get("accessibleTo")
-      }
-
-      new FileInfo(
-        foXml \@ "PID",
-        Paths.get(replaceNonAllowedCharacters(get("path"))),
-        replaceNonAllowedCharacters(get("name")),
-        get("size").toLong,
-        get("mimeType"),
-        accessibleTo,
-        visibleTo,
-        FoXml.getStreamRoot("EASY_FILE", foXml).map(_ \\ "contentDigest").flatMap(_.headOption),
-        (fileMetadata \ "additional-metadata" \ "additional" \ "content").headOption
-      )
     }
   }
 

@@ -22,7 +22,7 @@ import org.slf4j.{ Logger => UnderlyingLogger }
 
 import scala.util.{ Failure, Success }
 import scala.xml.Utility.trim
-import scala.xml.{ Node, NodeBuffer, PrettyPrinter, Utility }
+import scala.xml._
 
 class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSupport with FileFoXmlSupport {
   val ns = "http://easy.dans.knaw.nl/schemas/bag/metadata/files/"
@@ -32,20 +32,12 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
   private def validateItem(item: Node) = validate(FileItem.filesXml(Seq(item)))
 
   "filesXml" should "" in {
-    val fileInfos = {
-      val fedoraProvider = mock[FedoraProvider]
-      val foXMLs = Map(
-        "easy-file:2" -> fileFoXml(id = 2, name = "some.xlsx"),
-        "easy-file:25" -> fileFoXml(id = 25, name = "some.csv", location = "curated", creatorRole = "ARCHIVIST", derivedFrom = Some(2)),
-      )
-      foXMLs.foreach { case (id, xml) =>
-        (fedoraProvider.loadFoXml(_: String)) expects id once() returning Success(xml)
-      }
-      val triedFileInfos = FileInfo(foXMLs.keys.toList, fedoraProvider)
-      triedFileInfos.getOrElse(fail("could not load file info's"))
-    }
-    val fileItems = fileInfos.toList.map(FileItem(_, isOriginalVersioned = true).get)
+    val derivedFiles = callFileInfo(Map(
+      "easy-file:2" -> fileFoXml(id = 2, name = "some.xlsx"),
+      "easy-file:25" -> fileFoXml(id = 25, name = "some.csv", location = "curated", creatorRole = "ARCHIVIST", derivedFrom = Some(2)),
+    )).getOrElse(fail("could not load test data"))
 
+    val fileItems = derivedFiles.map(FileItem(_, isOriginalVersioned = true).get)
     normalized(FileItem.filesXml(fileItems)) shouldBe normalized(
       <files xsi:schemaLocation={ location } xmlns={ ns }>
         <file filepath="data/some.xlsx">
@@ -84,11 +76,10 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
                        <creatorRole>DEPOSITOR</creatorRole>
                        <visibleTo>ANONYMOUS</visibleTo>
                        <accessibleTo>RESTRICTED_REQUEST</accessibleTo>
+    val fileInfo = createFileInfo(fileMetadata)
 
-    val triedFileItem = FileInfo(fileFoXml(fileMetadata))
-      .flatMap(FileItem(_, isOriginalVersioned = false))
-      .map(trim)
-    triedFileItem shouldBe Success(trim(
+    val triedFileItem = FileItem(fileInfo, isOriginalVersioned = false)
+    triedFileItem.map(trim) shouldBe Success(trim(
       <file filepath="data/original/something.txt">
         <dct:identifier>easy-file:35</dct:identifier>
         <dct:title>something.txt</dct:title>
@@ -108,10 +99,9 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
                        <size>100000</size>
                        <mimeType>text/plain</mimeType>
                        <visibleTo>NONE</visibleTo>
+    val fileInfo = createFileInfo(fileMetadata)
 
-    val triedFileItem = FileInfo(fileFoXml(fileMetadata))
-      .flatMap(FileItem(_, isOriginalVersioned = false))
-      .map(trim)
+    val triedFileItem = FileItem(fileInfo, isOriginalVersioned = false)
     triedFileItem.map(trim) shouldBe Success(trim(
       <file filepath="data/original/something.txt">
         <dct:identifier>easy-file:35</dct:identifier>
@@ -130,11 +120,11 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
     val fileMetadata = <name>something.txt</name>
                        <path>original/something.txt</path>
                        <mimeType>text/plain</mimeType>
+                       <size>30</size>
                        <visibleTo>ANONYMOUS</visibleTo>
-
-    FileInfo(fileFoXml(fileMetadata))
-      .flatMap(FileItem(_, isOriginalVersioned = false))
-      .map(trim) should matchPattern {
+    callFileInfo(Map(
+      "easy-file:35" -> fileFoXml(fileMetadata),
+    )) should matchPattern {
       case Failure(e: Exception) if e.getMessage ==
         "<accessibleTo> not found" =>
     }
@@ -173,10 +163,9 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
           </addmd:additional>
       </addmd:additional-metadata>
     }
+    val fileInfo = createFileInfo(fileMetadata)
 
-    val triedFileItem = FileInfo(fileFoXml(fileMetadata))
-      .flatMap(FileItem(_, isOriginalVersioned = false))
-      .map(trim)
+    val triedFileItem = FileItem(fileInfo, isOriginalVersioned = false)
     triedFileItem.map(trim) shouldBe Success(trim(
       <file filepath="data/Fotos/R0011867.jpg">
           <dct:identifier>easy-file:35</dct:identifier>
@@ -229,10 +218,9 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
           </addmd:additional>
       </addmd:additional-metadata>
     }
+    val fileInfo = createFileInfo(fileMetadata)
 
-    val triedFileItem = FileInfo(fileFoXml(fileMetadata))
-      .flatMap(FileItem(_, isOriginalVersioned = false))
-      .map(trim)
+    val triedFileItem = FileItem(fileInfo, isOriginalVersioned = false)
     triedFileItem.map(trim) shouldBe Success(trim(
       <file filepath="data/Fotos/R0011867.jpg">
           <dct:identifier>easy-file:35</dct:identifier>
@@ -277,12 +265,11 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
         </addmd:additional>
       </addmd:additional-metadata>
    }
+    val fileInfo = createFileInfo(fileMetadata)
 
     // note that we have two times <dct:title>,
     // once from <name>, once from <addmd:additional-metadata><file_name>
-    val triedFileItem = FileInfo(fileFoXml(fileMetadata))
-      .flatMap(FileItem(_, isOriginalVersioned = false))
-      .map(trim)
+    val triedFileItem = FileItem(fileInfo, isOriginalVersioned = false)
     triedFileItem.map(trim) shouldBe Success(trim(
       <file filepath="data/GIS/SKKJ6_spoor.mif">
         <dct:identifier>easy-file:35</dct:identifier>
@@ -332,10 +319,9 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
         </addmd:additional>
       </addmd:additional-metadata>
     }
+    val fileInfo = createFileInfo(fileMetadata)
 
-    val triedFileItem = FileInfo(fileFoXml(fileMetadata))
-      .flatMap(FileItem(_, isOriginalVersioned = false))
-      .map(trim)
+    val triedFileItem = FileItem(fileInfo, isOriginalVersioned = false)
     triedFileItem.map(trim) shouldBe Success(trim(
       <file filepath="data/B">
           <dct:identifier>easy-file:35</dct:identifier>
@@ -379,10 +365,9 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
         </addmd:additional>
       </addmd:additional-metadata>
     }
+    val fileInfo = createFileInfo(fileMetadata)
 
-    val triedFileItem = FileInfo(fileFoXml(fileMetadata))
-      .flatMap(FileItem(_, isOriginalVersioned = false))
-      .map(trim)
+    val triedFileItem = FileItem(fileInfo, isOriginalVersioned = false)
     triedFileItem.map(trim) shouldBe Success(trim(
       <file filepath="data/B">
           <dct:identifier>easy-file:35</dct:identifier>
@@ -437,6 +422,21 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
     FileItem.checkNotImplementedFileMetadata(items.toList, Logger(mockLogger)) should matchPattern {
       case Failure(e) if e.getMessage == "2 file(s) with not implemented additional file metadata: List(analytic_units, mapprojection, opmerkingen)" =>
     }
+  }
+
+  private def createFileInfo(fileMetadata: NodeBuffer) = {
+    callFileInfo(Map(
+      "easy-file:35" -> fileFoXml(fileMetadata),
+    )).map(_.head).getOrElse(fail("could not load test data"))
+  }
+
+  private def callFileInfo(foXMLs: Map[Depositor, Elem]) = {
+    val fedoraProvider = mock[FedoraProvider]
+    foXMLs.foreach { case (id, xml) =>
+      (fedoraProvider.loadFoXml(_: String)) expects id once() returning Success(xml)
+    }
+    val triedFileInfos = FileInfo(foXMLs.keys.toList, fedoraProvider)
+    triedFileInfos
   }
 
   private def fileFoXml(fileMetadata: NodeBuffer) = {

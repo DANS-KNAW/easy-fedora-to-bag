@@ -29,9 +29,7 @@ case class InvalidTransformationException(msg: String) extends Exception(msg)
 trait DatasetFilter extends DebugEnhancedLogging {
   val targetIndex: TargetIndex
   val allowOriginalAndOthers: Boolean = false
-  private val invalidRightsKey = "4: invalid rights"
   private val invalidStateKey = "5: invalid state"
-  private val keysWithValues = Seq(invalidRightsKey, invalidStateKey)
 
   def violations(emd: EasyMetadataImpl, ddm: Node, amd: Node, fedoraIDs: Seq[String] = Seq.empty, fileInfos: List[FileInfo] = List.empty): Try[Option[String]] = {
     val maybeDoi = Option(emd.getEmdIdentifier.getDansManagedDoi)
@@ -45,7 +43,6 @@ trait DatasetFilter extends DebugEnhancedLogging {
       "2: has jump off" -> fedoraIDs.filter(_.startsWith("dans-jumpoff:")),
       "3: invalid title" -> Option(emd.getEmdTitle.getPreferredTitle)
         .filter(title => forbiddenTitle(title)).toSeq,
-      invalidRightsKey -> findInvalidRights(emd),
       invalidStateKey -> findInvalidState(amd),
       "6: DANS relations" -> findDansRelations(ddm).map(_.toOneLiner),
       "7: is in the vault" -> triedMaybeInTargetResponse.getOrElse(None).toSeq,
@@ -60,21 +57,13 @@ trait DatasetFilter extends DebugEnhancedLogging {
     triedMaybeInTargetResponse.map { _ =>
       if (violations.isEmpty) None
       else Some(violations.map {
-        case (k, v) if keysWithValues.contains(k) => k + v.mkString(" (", ", ", ")")
+        case (k, v) if k == invalidStateKey => k + v.mkString(" (", ", ", ")")
         case (k, _) => k
       }.mkString("Violates ", "; ", ""))
     }
   }
 
   def forbiddenTitle(title: String): Boolean
-
-  private def findInvalidRights(emd: EasyMetadataImpl) = {
-    val maybe = Option(emd.getEmdRights.getAccessCategory)
-    if (maybe.isEmpty) Seq("not found")
-    else maybe
-      .withFilter(!Seq(OPEN_ACCESS, REQUEST_PERMISSION).contains(_))
-      .map(_.toString).toSeq
-  }
 
   private def findInvalidState(amd: Node) = {
     val seq = amd \ "datasetState"

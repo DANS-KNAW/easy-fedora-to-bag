@@ -23,6 +23,7 @@ import nl.knaw.dans.easy.fedoratobag.versions.FedoraVersions
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
+import scala.collection.mutable.ListBuffer
 import scala.language.reflectiveCalls
 import scala.util.Try
 import scala.util.control.NonFatal
@@ -77,13 +78,15 @@ object Command extends App with DebugEnhancedLogging {
     else printer.apply(app.createOriginalVersionedExport(datasetIds, commandLine.outputDir(), options, commandLine.outputFormat()))
   }
 
-  private def datasetIds = {
+  private def datasetIds: Iterator[DatasetId] = {
+    val skip = commandLine.skipDatasets.toOption.toList.flatMap(_.lines)
     commandLine
       .datasetId.map(Iterator(_))
       .getOrElse(commandLine
         .inputFile()
         .lineIterator
         .filterNot(_.startsWith("#"))
+        .filterNot(skip.contains(_))
       )
   }
 }

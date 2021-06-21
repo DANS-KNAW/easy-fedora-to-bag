@@ -7,7 +7,7 @@ Retrieves a dataset from Fedora and transforms it to an AIP bag conforming to DA
 SYNOPSIS
 --------
 
-    easy-fedora-to-bag {-d <dataset-id> | -i <dataset-ids-file>} -o <output-dir> [-s] [-l <log-file>] [-e | -p] -f { AIP | SIP } <transformation>
+    easy-fedora-to-bag {-d <dataset-id> | -i <dataset-ids-file>} [--skip-list <skip-dataset-ids-file>] -o <output-dir> [-s] [-l <log-file>] [-e | -p] -f { AIP | SIP } <transformation>
 
 DESCRIPTION
 -----------
@@ -34,6 +34,7 @@ ARGUMENTS
      -f, --output-format  <arg>   Output format: AIP, SIP. 'SIP' is only implemented for simple, it creates the
                                   bags one directory level deeper. easy-bag-to-deposit completes these sips with
                                   deposit.properties
+         --skip-list  <arg>       File containing a newline-separated list of easy-dataset-ids to be skipped
      -s, --strict                 If provided, the transformation will check whether the datasets adhere to the
                                   requirements of the chosen transformation.
      -h, --help                   Show help message
@@ -62,6 +63,9 @@ EXAMPLES
     $ easy-fedora-to-bag -i dataset_ids.txt -f SIP -o ./stagedSIPs -e simple
         Creates bags for all dataset-ids in dataset_ids.txt using the 'simple' transformation.
         The payload consists of only one file, the largest PDF or image in the datasets.
+
+    $ easy-fedora-to-bag -i dataset_ids.txt --skip-list skip_dataset_ids.txt -f SIP -o ./stagedSIPs simple
+        Creates bags for all dataset-ids in dataset_ids.txt, but skipping the datasets in skip_dataset_ids.txt.
 
     $ easy-fedora-to-bag -i dataset_ids.txt fedora-versioned
         Dry run, each line in the log-file will contain one or more dataset IDs.

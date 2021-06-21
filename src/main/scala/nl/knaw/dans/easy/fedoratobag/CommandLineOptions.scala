@@ -31,7 +31,7 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   val description: String = s"""Tool for exporting datasets from Fedora and constructing Archival/Submission Information Packages."""
   val synopsis: String =
     s"""
-       |  easy-fedora-to-bag {-d <dataset-id> | -i <dataset-ids-file>} -o <output-dir> [-s] [-l <log-file>] [-e | -p] -f { AIP | SIP } <transformation>
+       |  easy-fedora-to-bag {-d <dataset-id> | -i <dataset-ids-file>} [--skip-list <skip-dataset-ids-file>] -o <output-dir> [-s] [-l <log-file>] [-e | -p] -f { AIP | SIP } <transformation>
      """.stripMargin
 
   version(s"$printedName v${ configuration.version }")
@@ -54,6 +54,8 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
     descr = "A single easy-dataset-id to be transformed. Use either this or the input-file argument")
   val inputFile: ScallopOption[File] = opt(name = "input-file", short = 'i',
     descr = "File containing a newline-separated list of easy-dataset-ids to be transformed. Use either this or the dataset-id argument")
+  val skipDatasets: ScallopOption[File] = opt(name = "skip-list",
+    descr = s"File containing a newline-separated list of easy-dataset-ids to be skipped")
   val outputDir: ScallopOption[File] = opt(name = "output-dir", short = 'o',
     descr = "Empty directory that will be created if it doesn't exist. Successful bags (or packages) will be moved to this directory.")
   val outputFormat: ScallopOption[OutputFormat] = opt(name = "output-format", short = 'f',

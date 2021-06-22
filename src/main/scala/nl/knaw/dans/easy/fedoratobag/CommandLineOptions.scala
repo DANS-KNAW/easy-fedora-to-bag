@@ -87,7 +87,7 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
     case (None, _) => Left(s"trailing argument 'transformation' is mandatory") // required so won't happen
     case (Some(FEDORA_VERSIONED), _) if inputFile.isEmpty => Left(s"argument 'input-file' is mandatory for $FEDORA_VERSIONED")
     case (Some(FEDORA_VERSIONED), _) => Right(())
-    case (Some(ORIGINAL_VERSIONED), _) if noPayload.isDefined => Left(s"no-payload conflicts with fedora-versioned")
+    case (Some(ORIGINAL_VERSIONED), _) if noPayload() => Left(s"no-payload conflicts with original-versioned")
     case (Some(t), None) => Left(s"argument 'output-dir' is mandatory for $t")
     case (_, Some(dir)) =>
       if (dir.exists) {

@@ -15,12 +15,12 @@
  */
 package nl.knaw.dans.easy.fedoratobag
 
-import java.nio.file.Paths
 import better.files.File
 import nl.knaw.dans.easy.fedoratobag.OutputFormat.OutputFormat
 import nl.knaw.dans.easy.fedoratobag.TransformationType.{ FEDORA_VERSIONED, ORIGINAL_VERSIONED, TransformationType }
 import org.rogach.scallop.{ ScallopConf, ScallopOption, ValueConverter, singleArgConverter }
 
+import java.nio.file.Paths
 import scala.xml.Properties
 
 class CommandLineOptions(args: Array[String], configuration: Configuration) extends ScallopConf(args) {
@@ -53,7 +53,7 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   val datasetId: ScallopOption[DatasetId] = opt(name = "datasetId", short = 'd',
     descr = "A single easy-dataset-id to be transformed. Use either this or the input-file argument")
   val inputFile: ScallopOption[File] = opt(name = "input-file", short = 'i',
-    descr = "File containing a newline-separated list of easy-dataset-ids to be transformed. Use either this or the dataset-id argument")
+    descr = "File containing a newline-separated list of easy-dataset-ids to be transformed. Use either this or the dataset-id argument. Lines starting with '#' are ignored.")
   val skipDatasets: ScallopOption[File] = opt(name = "skip-list",
     descr = s"File containing a newline-separated list of easy-dataset-ids to be skipped")
   val outputDir: ScallopOption[File] = opt(name = "output-dir", short = 'o',
@@ -69,6 +69,8 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
     descr = "If provided, only the largest pdf/image will selected as payload.")
   val noPayload: ScallopOption[Boolean] = opt(name = "no-payload", short = 'p',
     descr = "If provided, no payload files will be exported, i.e. only the metadata is present in the bag.")
+  val cutoff: ScallopOption[Int] = opt(name = "cutoff", short = 'c', required = false, default = Some(Int.MaxValue),
+    descr = "No payload files will be exported, when the dataset has more files than the specified value.")
   val transformation: ScallopOption[TransformationType] = trailArg(name = "transformation", required = true,
     descr = TransformationType.values.mkString("The type of transformation used: ", ", ", "."))
 

@@ -19,11 +19,14 @@ An AIP is a [DANS-V0 bag], a SIP is a directory with a bag and a `deposit.proper
 ARGUMENTS
 ---------
 
+     -c, --cutoff  <arg>          No payload files will be exported, when the dataset has more files than the
+                                  specified value. (default = 2147483647)
      -d, --datasetId  <arg>       A single easy-dataset-id to be transformed. Use either this or the input-file
                                   argument
      -e, --europeana              If provided, only the largest pdf/image will selected as payload.
      -i, --input-file  <arg>      File containing a newline-separated list of easy-dataset-ids to be transformed.
-                                  Use either this or the dataset-id argument
+                                  Use either this or the dataset-id argument. Lines starting with '#' are
+                                  ignored.
      -l, --log-file  <arg>        The name of the logfile in csv format. If not provided a file
                                   easy-fedora-to-bag-<timestamp>.csv will be created in the home-dir of the user.
                                   (default = /home/vagrant/easy-fedora-to-bag-2020-02-02T20:20:02.000Z.csv)

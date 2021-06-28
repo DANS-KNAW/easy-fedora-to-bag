@@ -78,13 +78,13 @@ object Command extends App with DebugEnhancedLogging {
   }
 
   private def datasetIds: Iterator[DatasetId] = {
-    val skip = commandLine.skipDatasets.toOption.toList.flatMap(_.lines)
+    val skip = commandLine.skipDatasets.toOption.toList.flatMap(_.lines).filterNot(_.trim.isEmpty)
     commandLine
       .datasetId.map(Iterator(_))
       .getOrElse(commandLine
         .inputFile()
         .lineIterator
-        .filterNot(_.startsWith("#"))
+        .filterNot(line => line.startsWith("#") || line.trim.isEmpty)
         .filterNot(skip.contains(_))
       )
   }

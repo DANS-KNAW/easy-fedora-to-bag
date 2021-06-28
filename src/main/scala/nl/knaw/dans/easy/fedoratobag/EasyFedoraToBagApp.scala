@@ -182,6 +182,15 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
         }
     }
 
+    def checkForTooManyFiles(selectedForSecondBag: List[FileInfo], selectedForFirstBag: List[FileInfo]) = {
+      if (!(selectedForFirstBag.size > options.cutoff) && !(selectedForSecondBag.size > options.cutoff))
+        !options.noPayload
+      else {
+        logger.warn(s"too many files ${selectedForFirstBag.size}, ${selectedForSecondBag.size}")
+        false
+      }
+    }
+
     for {
       foXml <- fedoraProvider.loadFoXml(datasetId)
       depositor <- getOwner(foXml)
@@ -226,8 +235,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       isOriginalVersioned = options.transformationType == ORIGINAL_VERSIONED
       selectedForSecondBag = allFileInfos.selectForSecondBag(isOriginalVersioned, options.noPayload)
       selectedForFirstBag <- allFileInfos.selectForFirstBag(emdXml, selectedForSecondBag.nonEmpty, options.europeana, options.noPayload)
-      withPayLoad = if (selectedForFirstBag.size > options.cutoff || selectedForSecondBag.size > options.cutoff) false
-                    else !options.noPayload
+      withPayLoad = checkForTooManyFiles(selectedForSecondBag, selectedForFirstBag)
       _ = trace(withPayLoad, selectedForFirstBag.size, selectedForSecondBag.size, options.noPayload, options.cutoff)
       (forFirstBag, forSecondBag) <- if (withPayLoad) checkDuplicates(selectedForFirstBag, selectedForSecondBag, isOriginalVersioned)
                                      else Success((Seq.empty, Seq.empty))

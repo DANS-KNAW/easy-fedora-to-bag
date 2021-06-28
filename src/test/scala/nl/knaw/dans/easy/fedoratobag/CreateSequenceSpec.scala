@@ -37,7 +37,7 @@ class CreateSequenceSpec extends TestSupportFixture with DelegatingApp with File
   "createSequences" should " process 2 sequences" in {
     val sw = new StringWriter()
     val createBagExpects = (1 to 5).map(i =>
-      s"easy-dataset:$i" -> Success(DatasetInfo(None, s"mocked-doi$i", "mocked-urn", "user001"))
+      s"easy-dataset:$i" -> Success(DatasetInfo(None, s"mocked-doi$i", "mocked-urn", "user001", withPayload = true))
     )
     // end of mocking
 
@@ -92,15 +92,15 @@ class CreateSequenceSpec extends TestSupportFixture with DelegatingApp with File
   it should "not abort on a metadata rule violation" in {
     val sw = new StringWriter()
     val createBagExpects = Seq(
-      "easy-dataset:1" -> Success(DatasetInfo(Some("Violates something"), "mocked-doi", "", "user001")),
+      "easy-dataset:1" -> Success(DatasetInfo(Some("Violates something"), "mocked-doi", "", "user001", withPayload = true)),
       "easy-dataset:10" -> Failure(InvalidTransformationException("Violates whatever")),
       // the two mocked results above mix a strict and non-strict run in a single test
-      "easy-dataset:2" -> Success(DatasetInfo(None, "mocked-doi", "", "user001")),
-      "easy-dataset:3" -> Success(DatasetInfo(None, "mocked-doi", "", "user001")),
+      "easy-dataset:2" -> Success(DatasetInfo(None, "mocked-doi", "", "user001", withPayload = true)),
+      "easy-dataset:3" -> Success(DatasetInfo(None, "mocked-doi", "", "user001", withPayload = true)),
       "easy-dataset:4" -> Failure(new FedoraClientException(404, "mocked not found")),
-      "easy-dataset:5" -> Success(DatasetInfo(None, "mocked-doi", "", "user001")),
+      "easy-dataset:5" -> Success(DatasetInfo(None, "mocked-doi", "", "user001", withPayload = true)),
       "easy-dataset:6" -> Failure(new IllegalArgumentException("mocked error")),
-      "easy-dataset:8" -> Success(DatasetInfo(None, "mocked-doi", "", "user001")),
+      "easy-dataset:8" -> Success(DatasetInfo(None, "mocked-doi", "", "user001", withPayload = true)),
       "easy-dataset:9" -> Failure(new IOException("mocked error")),
     )
 

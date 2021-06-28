@@ -237,7 +237,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       _ <- bag.save
       doi = emd.getEmdIdentifier.getDansManagedDoi
       urn = getUrn(datasetId, emd)
-    } yield DatasetInfo(maybeFilterViolations, doi, urn, depositor, forSecondBag)
+    } yield DatasetInfo(maybeFilterViolations, doi, urn, depositor, forSecondBag, withPayLoad)
   }
 
   private def getUrn(datasetId: DatasetId, emd: EasyMetadataImpl) = {

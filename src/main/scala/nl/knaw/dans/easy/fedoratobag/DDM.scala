@@ -16,6 +16,7 @@
 package nl.knaw.dans.easy.fedoratobag
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory._
+import nl.knaw.dans.easy.fedoratobag.DDM.lang
 import nl.knaw.dans.easy.fedoratobag.DateMap.isOtherDate
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import nl.knaw.dans.lib.string._
@@ -33,7 +34,7 @@ object DDM extends DebugEnhancedLogging {
   val dansLicense = "http://dans.knaw.nl/en/about/organisation-and-policy/legal-information/DANSLicence.pdf"
   val cc0 = "http://creativecommons.org/publicdomain/zero/1.0"
 
-  def apply(emd: EasyMetadataImpl, audiences: Seq[String], abrMapping: AbrMappings): Try[Elem] = Try {
+  def apply(emd: EasyMetadataImpl, audiences: Seq[String], abrMapping: AbrMappings, payloadInEasy: Node = Text("")): Try[Elem] = Try {
     //    println(new EmdMarshaller(emd).getXmlString)
 
     val dateMap: Map[String, Seq[Elem]] = DateMap(emd)
@@ -70,6 +71,7 @@ object DDM extends DebugEnhancedLogging {
        { emd.getEmdIdentifier.getDcIdentifier.asScala.map(bi => <dct:identifier xsi:type={ idType(bi) }>{ bi.getValue.trim }</dct:identifier>) }
        { emd.getEmdTitle.getDcTitle.asScala.drop(1).map(bs => <dc:title xml:lang={ lang(bs) }>{ bs.getValue.trim }</dc:title>) }
        { emd.getEmdTitle.getTermsAlternative.asScala.map(str => <dct:alternative>{ str }</dct:alternative>) }
+       { payloadInEasy }
        { emd.getEmdDescription.getTermsAbstract.asScala.map(bs => <ddm:description xml:lang={ lang(bs) } descriptionType='Abstract'>{ bs.getValue.trim }</ddm:description>) }
        { emd.getEmdDescription.getTermsTableOfContents.asScala.map(bs => <ddm:description xml:lang={ lang(bs) } descriptionType='TableOfContents'>{ bs.getValue.trim }</ddm:description>) }
        { emd.getEmdRelation.getDCRelationMap.asScala.map { case (key, values) => values.asScala.map(toRelationXml(key, _)) } }

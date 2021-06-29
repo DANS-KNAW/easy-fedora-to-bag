@@ -43,7 +43,7 @@ import java.util.UUID
 import javax.naming.ldap.InitialLdapContext
 import scala.collection.JavaConverters._
 import scala.util.{ Failure, Success, Try }
-import scala.xml.{ Elem, Node }
+import scala.xml.{ Elem, Node, Text }
 
 class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogging {
   lazy val fedoraProvider: FedoraProvider = new FedoraProvider(new FedoraClient(configuration.fedoraCredentials))
@@ -182,13 +182,19 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
         }
     }
 
-    def checkForTooManyFiles(selectedForSecondBag: List[FileInfo], selectedForFirstBag: List[FileInfo]) = {
+    def hasTooManyFiles(selectedForSecondBag: List[FileInfo], selectedForFirstBag: List[FileInfo]) = {
       if (!(selectedForFirstBag.size > options.cutoff) && !(selectedForSecondBag.size > options.cutoff))
         !options.noPayload
       else {
         logger.warn(s"too many files ${selectedForFirstBag.size}, ${selectedForSecondBag.size}")
         false
       }
+    }
+
+    def payloadInEasy(tooManyFiles: Boolean) = {
+      if (tooManyFiles)
+        <ddm:description xml:lang="en">{ s"Files for this dataset can be found at https://easy.dans.knaw.nl/ui/datasets/id/$datasetId/tab/2" }</ddm:description>
+      else Text("")
     }
 
     for {
@@ -206,10 +212,10 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       isOriginalVersioned = options.transformationType == ORIGINAL_VERSIONED
       selectedForSecondBag = allFileInfos.selectForSecondBag(isOriginalVersioned, options.noPayload)
       selectedForFirstBag <- allFileInfos.selectForFirstBag(emdXml, selectedForSecondBag.nonEmpty, options.europeana, options.noPayload)
-      withPayLoad = checkForTooManyFiles(selectedForSecondBag, selectedForFirstBag)
-      _ = trace(withPayLoad, selectedForFirstBag.size, selectedForSecondBag.size, options.noPayload, options.cutoff)
+      tooManyFiles = !hasTooManyFiles(selectedForSecondBag, selectedForFirstBag)
+      _ = trace(tooManyFiles, selectedForFirstBag.size, selectedForSecondBag.size, options.noPayload, options.cutoff)
       _ = trace("creating DDM from EMD")
-      ddm <- DDM(emd, audiences, configuration.abrMapping)
+      ddm <- DDM(emd, audiences, configuration.abrMapping, payloadInEasy(tooManyFiles))
       _ = trace("created DDM from EMD")
       maybeFilterViolations <- options.datasetFilter.violations(emd, ddm, amd, fedoraIDs, allFileInfos)
       _ = if (options.strict) maybeFilterViolations.foreach(msg => throw InvalidTransformationException(msg))
@@ -239,7 +245,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
         .map(addXmlMetadataTo(bag, "original/files.xml"))
         .getOrElse(Success(()))
       // TODO one more action to move up before creating the bag. It would break a test and we can live with it for now.
-      (forFirstBag, forSecondBag) <- if (withPayLoad) checkDuplicates(selectedForFirstBag, selectedForSecondBag, isOriginalVersioned)
+      (forFirstBag, forSecondBag) <- if (!tooManyFiles) checkDuplicates(selectedForFirstBag, selectedForSecondBag, isOriginalVersioned)
                                      else Success((Seq.empty, Seq.empty))
       fileItemsForFirstBag <- forFirstBag.toList.traverse(addPayloadFileTo(bag, isOriginalVersioned))
       _ <- checkNotImplementedFileMetadata(fileItemsForFirstBag, logger)
@@ -247,7 +253,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       _ <- bag.save
       doi = emd.getEmdIdentifier.getDansManagedDoi
       urn = getUrn(datasetId, emd)
-    } yield DatasetInfo(maybeFilterViolations, doi, urn, depositor, forSecondBag, withPayLoad)
+    } yield DatasetInfo(maybeFilterViolations, doi, urn, depositor, forSecondBag, !tooManyFiles)
   }
 
   private def getUrn(datasetId: DatasetId, emd: EasyMetadataImpl) = {

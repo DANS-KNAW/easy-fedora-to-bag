@@ -200,14 +200,20 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       amd <- getAmd(foXml)
       audiences <- emd.getEmdAudience.getDisciplines.asScala
         .map(id => getAudience(id.getValue)).collectResults
-      _ = trace("creating DDM from EMD")
-      ddm <- DDM(emd, audiences, configuration.abrMapping)
-      _ = trace("created DDM from EMD")
       fedoraIDs <- if (options.noPayload) Success(Seq.empty)
                    else fedoraProvider.getSubordinates(datasetId)
       allFileInfos <- FileInfo(fedoraIDs.filter(_.startsWith("easy-file:")).toList, fedoraProvider).map(_.toList)
+      isOriginalVersioned = options.transformationType == ORIGINAL_VERSIONED
+      selectedForSecondBag = allFileInfos.selectForSecondBag(isOriginalVersioned, options.noPayload)
+      selectedForFirstBag <- allFileInfos.selectForFirstBag(emdXml, selectedForSecondBag.nonEmpty, options.europeana, options.noPayload)
+      withPayLoad = checkForTooManyFiles(selectedForSecondBag, selectedForFirstBag)
+      _ = trace(withPayLoad, selectedForFirstBag.size, selectedForSecondBag.size, options.noPayload, options.cutoff)
+      _ = trace("creating DDM from EMD")
+      ddm <- DDM(emd, audiences, configuration.abrMapping)
+      _ = trace("created DDM from EMD")
       maybeFilterViolations <- options.datasetFilter.violations(emd, ddm, amd, fedoraIDs, allFileInfos)
       _ = if (options.strict) maybeFilterViolations.foreach(msg => throw InvalidTransformationException(msg))
+      // so far for collecting data, now we start writing
       _ = logger.info(s"Creating $bagDir from $datasetId with owner $depositor")
       bag <- DansV0Bag.empty(bagDir)
       _ = bag.withEasyUserAccount(depositor).withCreated(DateTime.now())
@@ -232,11 +238,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       _ <- getFilesXml(foXml)
         .map(addXmlMetadataTo(bag, "original/files.xml"))
         .getOrElse(Success(()))
-      isOriginalVersioned = options.transformationType == ORIGINAL_VERSIONED
-      selectedForSecondBag = allFileInfos.selectForSecondBag(isOriginalVersioned, options.noPayload)
-      selectedForFirstBag <- allFileInfos.selectForFirstBag(emdXml, selectedForSecondBag.nonEmpty, options.europeana, options.noPayload)
-      withPayLoad = checkForTooManyFiles(selectedForSecondBag, selectedForFirstBag)
-      _ = trace(withPayLoad, selectedForFirstBag.size, selectedForSecondBag.size, options.noPayload, options.cutoff)
+      // TODO one more action to move up before creating the bag. It would break a test and we can live with it for now.
       (forFirstBag, forSecondBag) <- if (withPayLoad) checkDuplicates(selectedForFirstBag, selectedForSecondBag, isOriginalVersioned)
                                      else Success((Seq.empty, Seq.empty))
       fileItemsForFirstBag <- forFirstBag.toList.traverse(addPayloadFileTo(bag, isOriginalVersioned))

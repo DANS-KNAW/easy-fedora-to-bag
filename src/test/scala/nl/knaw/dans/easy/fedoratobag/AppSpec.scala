@@ -263,13 +263,6 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
       (fedoraProvider.getSubordinates(_: String)) expects "easy-dataset:17" once() returning
         Success(Seq("easy-jumpoff:1"))
       Map(
-        "ADDITIONAL_LICENSE" -> "lalala",
-        "DATASET_LICENSE" -> "blablabla",
-      ).foreach { case (streamId, content) =>
-        (fedoraProvider.disseminateDatastream(_: String, _: String)) expects("easy-dataset:17", streamId
-        ) once() returning managed(content.inputStream)
-      }
-      Map(
         "easy-discipline:77" -> audienceFoXML("easy-discipline:77", "D13200"),
         "easy-dataset:17" -> XML.loadFile((sampleFoXML / "DepositApi.xml").toJava),
       ).foreach { case (id, xml) =>
@@ -286,22 +279,17 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
     // post conditions
 
-    val metadata = (testDir / "bags").children.next() / "metadata"
-    (metadata / "depositor-info/depositor-agreement.pdf").contentAsString shouldBe "blablabla"
-    (metadata / "license.pdf").contentAsString shouldBe "lalala"
-    metadata.list.toSeq.map(_.name).sortBy(identity) shouldBe
-      Seq("amd.xml", "dataset.xml", "depositor-info", "emd.xml", "license.pdf", "original")
-    (metadata / "depositor-info").list.toSeq.map(_.name).sortBy(identity) shouldBe
-      Seq("agreements.xml", "depositor-agreement.pdf", "message-from-depositor.txt")
+    (testDir / "bags") shouldNot exist
   }
 
   it should "report strict simple violation" in {
     val app = new AppWithMockedServices() {
       (fedoraProvider.getSubordinates(_: String)) expects "easy-dataset:17" once() returning
-        Success(Seq("dans-jumpoff:1"))
+        Success(Seq("dans-jumpoff:1", "easy-file:37"))
       Map(
         "easy-discipline:77" -> audienceFoXML("easy-discipline:77", "D13200"),
         "easy-dataset:17" -> XML.loadFile((sampleFoXML / "DepositApi.xml").toJava),
+        "easy-file:37" -> fileFoXml(id = 37, location = "x", accessibleTo = "ANONYMOUS", name = "b.txt", digest = digests("barbapappa")),
       ).foreach { case (id, xml) =>
         (fedoraProvider.loadFoXml(_: String)) expects id once() returning Success(xml)
       }
@@ -533,7 +521,6 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
   it should "cause NoPayloadFilesException" in {
     val app: AppWithMockedServices = new AppWithMockedServices() {
-      expectAUser()
       (fedoraProvider.getSubordinates(_: String)) expects "easy-dataset:13" once() returning
         Success(Seq("easy-file:1", "easy-file:5"))
       val foXMLs = Map(

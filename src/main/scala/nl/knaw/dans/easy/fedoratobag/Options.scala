@@ -29,4 +29,5 @@ case class Options(datasetFilter: DatasetFilter,
                    strict: Boolean = true,
                    europeana: Boolean = false,
                    noPayload: Boolean = false,
+                   cutoff: Int = Int.MaxValue,
                   )

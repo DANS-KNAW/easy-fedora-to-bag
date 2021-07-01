@@ -33,10 +33,10 @@ class CreateExportSpec extends TestSupportFixture with DelegatingApp with FileFo
     val sw = new StringWriter()
 
     val createBagExpects = Seq(
-      "easy-dataset:1" -> Success(DatasetInfo(None, "mocked-doi1", "", "user001")),
+      "easy-dataset:1" -> Success(DatasetInfo(None, "mocked-doi1", "", "user001", withPayload = true)),
       "easy-dataset:2" -> Failure(InvalidTransformationException("mocked")),
       "easy-dataset:3" -> Failure(new Exception("easy-dataset:3")),
-      "easy-dataset:4" -> Success(DatasetInfo(None, "mocked-doi4", "", "user001")),
+      "easy-dataset:4" -> Success(DatasetInfo(None, "mocked-doi4", "", "user001", withPayload = true)),
     )
 
     // end of mocking
@@ -70,8 +70,8 @@ class CreateExportSpec extends TestSupportFixture with DelegatingApp with FileFo
     val outputDir = (testDir / "output").createDirectories()
     val sw = new StringWriter()
     val createBagExpects = Seq(
-      "easy-dataset:1" -> Success(DatasetInfo(None, "mocked-doi1", "", "testUser")),
-      "easy-dataset:2" -> Success(DatasetInfo(None, "mocked-doi2", "", "testUser")),
+      "easy-dataset:1" -> Success(DatasetInfo(None, "mocked-doi1", "", "testUser", withPayload = true)),
+      "easy-dataset:2" -> Success(DatasetInfo(None, "mocked-doi2", "", "testUser", withPayload = true)),
     )
 
     // end of mocking
@@ -101,10 +101,10 @@ class CreateExportSpec extends TestSupportFixture with DelegatingApp with FileFo
     val outputDir = (testDir / "output").createDirectories()
     val sw = new StringWriter()
     val createBagExpects = Seq(
-      "easy-dataset:1" -> Success(DatasetInfo(None, "mocked-doi1", "", "testUser")),
+      "easy-dataset:1" -> Success(DatasetInfo(None, "mocked-doi1", "", "testUser", withPayload = true)),
       "easy-dataset:2" -> Failure(new Exception("easy-dataset:2")),
       "easy-dataset:3" -> Failure(InvalidTransformationException("mocked")),
-      "easy-dataset:4" -> Success(DatasetInfo(None, "mocked-doi4", "", "testUser")),
+      "easy-dataset:4" -> Success(DatasetInfo(None, "mocked-doi4", "", "testUser", withPayload = true)),
       "easy-dataset:5" -> Failure(new FedoraClientException(300, "mocked exception")),
     )
 

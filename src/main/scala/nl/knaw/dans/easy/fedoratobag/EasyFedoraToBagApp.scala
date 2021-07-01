@@ -43,7 +43,7 @@ import java.util.UUID
 import javax.naming.ldap.InitialLdapContext
 import scala.collection.JavaConverters._
 import scala.util.{ Failure, Success, Try }
-import scala.xml.{ Elem, Node }
+import scala.xml.{ Elem, Node, Text }
 
 class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogging {
   lazy val fedoraProvider: FedoraProvider = new FedoraProvider(new FedoraClient(configuration.fedoraCredentials))
@@ -182,6 +182,21 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
         }
     }
 
+    def hasTooManyFiles(selectedForSecondBag: List[FileInfo], selectedForFirstBag: List[FileInfo]) = {
+      if (!(selectedForFirstBag.size > options.cutoff) && !(selectedForSecondBag.size > options.cutoff))
+        !options.noPayload
+      else {
+        logger.warn(s"too many files ${selectedForFirstBag.size}, ${selectedForSecondBag.size}")
+        false
+      }
+    }
+
+    def payloadInEasy(tooManyFiles: Boolean) = {
+      if (tooManyFiles)
+        <ddm:description xml:lang="en">{ s"Files for this dataset can be found at https://easy.dans.knaw.nl/ui/datasets/id/$datasetId/tab/2" }</ddm:description>
+      else Text("")
+    }
+
     for {
       foXml <- fedoraProvider.loadFoXml(datasetId)
       depositor <- getOwner(foXml)
@@ -191,14 +206,20 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       amd <- getAmd(foXml)
       audiences <- emd.getEmdAudience.getDisciplines.asScala
         .map(id => getAudience(id.getValue)).collectResults
-      _ = trace("creating DDM from EMD")
-      ddm <- DDM(emd, audiences, configuration.abrMapping)
-      _ = trace("created DDM from EMD")
       fedoraIDs <- if (options.noPayload) Success(Seq.empty)
                    else fedoraProvider.getSubordinates(datasetId)
       allFileInfos <- FileInfo(fedoraIDs.filter(_.startsWith("easy-file:")).toList, fedoraProvider).map(_.toList)
+      isOriginalVersioned = options.transformationType == ORIGINAL_VERSIONED
+      selectedForSecondBag = allFileInfos.selectForSecondBag(isOriginalVersioned, options.noPayload)
+      selectedForFirstBag <- allFileInfos.selectForFirstBag(emdXml, selectedForSecondBag.nonEmpty, options.europeana, options.noPayload)
+      tooManyFiles = !hasTooManyFiles(selectedForSecondBag, selectedForFirstBag)
+      _ = trace(tooManyFiles, selectedForFirstBag.size, selectedForSecondBag.size, options.noPayload, options.cutoff)
+      _ = trace("creating DDM from EMD")
+      ddm <- DDM(emd, audiences, configuration.abrMapping, payloadInEasy(tooManyFiles))
+      _ = trace("created DDM from EMD")
       maybeFilterViolations <- options.datasetFilter.violations(emd, ddm, amd, fedoraIDs, allFileInfos)
       _ = if (options.strict) maybeFilterViolations.foreach(msg => throw InvalidTransformationException(msg))
+      // so far for collecting data, now we start writing
       _ = logger.info(s"Creating $bagDir from $datasetId with owner $depositor")
       bag <- DansV0Bag.empty(bagDir)
       _ = bag.withEasyUserAccount(depositor).withCreated(DateTime.now())
@@ -223,17 +244,16 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       _ <- getFilesXml(foXml)
         .map(addXmlMetadataTo(bag, "original/files.xml"))
         .getOrElse(Success(()))
-      isOriginalVersioned = options.transformationType == ORIGINAL_VERSIONED
-      selectedForSecondBag = allFileInfos.selectForSecondBag(isOriginalVersioned, options.noPayload)
-      selectedForFirstBag <- allFileInfos.selectForFirstBag(emdXml, selectedForSecondBag.nonEmpty, options.europeana, options.noPayload)
-      (forFirstBag, forSecondBag) <- checkDuplicates(selectedForFirstBag, selectedForSecondBag, isOriginalVersioned)
+      // TODO one more action to move up before creating the bag. It would break a test and we can live with it for now.
+      (forFirstBag, forSecondBag) <- if (!tooManyFiles) checkDuplicates(selectedForFirstBag, selectedForSecondBag, isOriginalVersioned)
+                                     else Success((Seq.empty, Seq.empty))
       fileItemsForFirstBag <- forFirstBag.toList.traverse(addPayloadFileTo(bag, isOriginalVersioned))
       _ <- checkNotImplementedFileMetadata(fileItemsForFirstBag, logger)
       _ <- addXmlMetadataTo(bag, "files.xml")(filesXml(fileItemsForFirstBag))
       _ <- bag.save
       doi = emd.getEmdIdentifier.getDansManagedDoi
       urn = getUrn(datasetId, emd)
-    } yield DatasetInfo(maybeFilterViolations, doi, urn, depositor, forSecondBag)
+    } yield DatasetInfo(maybeFilterViolations, doi, urn, depositor, forSecondBag, !tooManyFiles)
   }
 
   private def getUrn(datasetId: DatasetId, emd: EasyMetadataImpl) = {

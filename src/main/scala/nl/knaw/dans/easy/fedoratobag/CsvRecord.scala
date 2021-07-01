@@ -15,14 +15,13 @@
  */
 package nl.knaw.dans.easy.fedoratobag
 
-import java.io.IOException
-import java.util.UUID
-
 import better.files.{ Dispose, File }
 import nl.knaw.dans.easy.fedoratobag.Command.FeedBackMessage
 import nl.knaw.dans.easy.fedoratobag.TransformationType.ORIGINAL_VERSIONED
 import org.apache.commons.csv.{ CSVFormat, CSVPrinter }
 
+import java.io.IOException
+import java.util.UUID
 import scala.util.Try
 
 case class CsvRecord(easyDatasetId: DatasetId,
@@ -56,6 +55,8 @@ object CsvRecord {
     val violations = datasetInfo.maybeFilterViolations
     val comment = if (violations.isEmpty) "OK"
                   else violations.mkString("")
+    val commentSuffix = if (datasetInfo.withPayload && !options.noPayload) ""
+                        else s"; no payload, nr of files exceeds ${ options.cutoff }"
     val typePrefix = violations.map(_ => "not strict ").getOrElse("")
     val typeSuffix = uuid2.map(_ => "")
       .getOrElse(
@@ -70,7 +71,7 @@ object CsvRecord {
       datasetInfo.doi,
       datasetInfo.depositor,
       typePrefix + options.transformationType + typeSuffix,
-      comment,
+      comment + commentSuffix,
     )
   }
 }

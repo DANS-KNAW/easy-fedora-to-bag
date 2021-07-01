@@ -23,7 +23,6 @@ import nl.knaw.dans.easy.fedoratobag.versions.FedoraVersions
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
-import scala.collection.mutable.ListBuffer
 import scala.language.reflectiveCalls
 import scala.util.Try
 import scala.util.control.NonFatal
@@ -71,7 +70,7 @@ object Command extends App with DebugEnhancedLogging {
   }
 
   private def runExport(app: EasyFedoraToBagApp, datasetFilter: SimpleDatasetFilter) = {
-    val options = Options(datasetFilter, transformationType, commandLine.strictMode(), europeana, commandLine.noPayload())
+    val options = Options(datasetFilter, transformationType, commandLine.strictMode(), europeana, commandLine.noPayload(), commandLine.cutoff())
     val printer = CsvRecord.printer(csvLogFile)
     if (transformationType == FEDORA_VERSIONED)
       printer.apply(app.createSequences(datasetIds, commandLine.outputDir(), options))
@@ -79,13 +78,13 @@ object Command extends App with DebugEnhancedLogging {
   }
 
   private def datasetIds: Iterator[DatasetId] = {
-    val skip = commandLine.skipDatasets.toOption.toList.flatMap(_.lines)
+    val skip = commandLine.skipDatasets.toOption.toList.flatMap(_.lines).filterNot(_.trim.isEmpty)
     commandLine
       .datasetId.map(Iterator(_))
       .getOrElse(commandLine
         .inputFile()
         .lineIterator
-        .filterNot(_.startsWith("#"))
+        .filterNot(line => line.startsWith("#") || line.trim.isEmpty)
         .filterNot(skip.contains(_))
       )
   }

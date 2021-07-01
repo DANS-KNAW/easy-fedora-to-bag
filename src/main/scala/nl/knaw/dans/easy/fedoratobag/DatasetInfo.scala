@@ -20,4 +20,5 @@ case class DatasetInfo(maybeFilterViolations: Option[String],
                        urn: String,
                        depositor: Depositor,
                        nextBagFileInfos: Seq[FileInfo] = Seq.empty,
+                       withPayload: Boolean,
                       )

@@ -140,22 +140,19 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
       SIP
     )(CsvRecord.csvFormat.print(sw)) shouldBe Success("no fedora/IO errors")
 
-    // post condition
+    // post conditions
 
     sw.toString should fullyMatch regex
       """easyDatasetId,uuid1,uuid2,doi,depositor,transformationType,comment
         |easy-dataset:17,.+,,10.17026/test-Iiib-z9p-4ywa,user001,original-versioned without second bag,"OK; no payload, nr of files exceeds 1"
         |""".stripMargin
-
-    // post condition: the data folders of both bags have the same number of files as their files.xml
-
-    testDir.listRecursively.withFilter(_.name == "data").map(_.parent).foreach { bag =>
-      val nrOfFiles = (bag / "data").listRecursively.filterNot(_.isDirectory).size
-      (XML.loadFile((bag / "metadata" / "files.xml").toJava) \\ "file").theSeq.size shouldBe
-        nrOfFiles
-    }
-    testDir.listRecursively.withFilter(_.name == "dataset.xml").toSeq.head.contentAsString should
-      include("Files for this dataset can be found at https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:13/tab/2")
+    val dataDirs = testDir.listRecursively.withFilter(_.name == "data").toSeq
+    dataDirs.size shouldBe 1 // just one bag as listed by the CSV output
+    dataDirs.head.list shouldBe empty // the bag has no payload
+    val metadataDir = dataDirs.head.parent / "metadata"
+    (XML.loadFile((metadataDir / "files.xml").toJava) \ "file") shouldBe empty
+    ( metadataDir / "dataset.xml").contentAsString should
+      include("Files for this dataset can be found at https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:17/tab/2")
   }
 
   it should "produce the second bag as first and only" in {

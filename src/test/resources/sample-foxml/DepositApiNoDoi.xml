@@ -1,0 +1,427 @@
+<foxml:digitalObject VERSION="1.1" PID="easy-dataset:17" xmlns:foxml="info:fedora/fedora-system:def/foxml#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="info:fedora/fedora-system:def/foxml# http://www.fedora.info/definitions/1/0/foxml1-1.xsd">
+    <foxml:objectProperties>
+        <foxml:property NAME="info:fedora/fedora-system:def/model#state" VALUE="Active"/>
+        <foxml:property NAME="info:fedora/fedora-system:def/model#label" VALUE="as"/>
+        <foxml:property NAME="info:fedora/fedora-system:def/model#ownerId" VALUE="user001"/>
+        <foxml:property NAME="info:fedora/fedora-system:def/model#createdDate" VALUE="2020-03-17T10:24:16.944Z"/>
+        <foxml:property NAME="info:fedora/fedora-system:def/view#lastModifiedDate" VALUE="2020-03-17T10:24:33.529Z"/>
+    </foxml:objectProperties>
+    <foxml:datastream ID="AUDIT" STATE="A" CONTROL_GROUP="X" VERSIONABLE="false">
+        <foxml:datastreamVersion ID="AUDIT.0" LABEL="Audit Trail for this object" CREATED="2020-03-17T10:24:16.944Z" MIMETYPE="text/xml" FORMAT_URI="info:fedora/fedora-system:format/xml.fedora.audit">
+            <foxml:xmlContent>
+                <audit:auditTrail xmlns:audit="info:fedora/fedora-system:def/audit#">
+                    <audit:record ID="AUDREC1">
+                        <audit:process type="Fedora API-M"/>
+                        <audit:action>addDatastream</audit:action>
+                        <audit:componentID>AMD</audit:componentID>
+                        <audit:responsibility>fedoraAdmin</audit:responsibility>
+                        <audit:date>2020-03-17T10:24:17.268Z</audit:date>
+                        <audit:justification/>
+                    </audit:record>
+                    <audit:record ID="AUDREC2">
+                        <audit:process type="Fedora API-M"/>
+                        <audit:action>addDatastream</audit:action>
+                        <audit:componentID>EMD</audit:componentID>
+                        <audit:responsibility>fedoraAdmin</audit:responsibility>
+                        <audit:date>2020-03-17T10:24:17.315Z</audit:date>
+                        <audit:justification/>
+                    </audit:record>
+                    <audit:record ID="AUDREC3">
+                        <audit:process type="Fedora API-M"/>
+                        <audit:action>addDatastream</audit:action>
+                        <audit:componentID>PRSQL</audit:componentID>
+                        <audit:responsibility>fedoraAdmin</audit:responsibility>
+                        <audit:date>2020-03-17T10:24:17.333Z</audit:date>
+                        <audit:justification/>
+                    </audit:record>
+                    <audit:record ID="AUDREC4">
+                        <audit:process type="Fedora API-M"/>
+                        <audit:action>addDatastream</audit:action>
+                        <audit:componentID>dataset.xml</audit:componentID>
+                        <audit:responsibility>fedoraAdmin</audit:responsibility>
+                        <audit:date>2020-03-17T10:24:17.351Z</audit:date>
+                        <audit:justification/>
+                    </audit:record>
+                    <audit:record ID="AUDREC5">
+                        <audit:process type="Fedora API-M"/>
+                        <audit:action>addDatastream</audit:action>
+                        <audit:componentID>files.xml</audit:componentID>
+                        <audit:responsibility>fedoraAdmin</audit:responsibility>
+                        <audit:date>2020-03-17T10:24:17.369Z</audit:date>
+                        <audit:justification/>
+                    </audit:record>
+                    <audit:record ID="AUDREC6">
+                        <audit:process type="Fedora API-M"/>
+                        <audit:action>addDatastream</audit:action>
+                        <audit:componentID>manifest-sha1.txt</audit:componentID>
+                        <audit:responsibility>fedoraAdmin</audit:responsibility>
+                        <audit:date>2020-03-17T10:24:17.392Z</audit:date>
+                        <audit:justification/>
+                    </audit:record>
+                    <audit:record ID="AUDREC7">
+                        <audit:process type="Fedora API-M"/>
+                        <audit:action>addDatastream</audit:action>
+                        <audit:componentID>agreements.xml</audit:componentID>
+                        <audit:responsibility>fedoraAdmin</audit:responsibility>
+                        <audit:date>2020-03-17T10:24:17.434Z</audit:date>
+                        <audit:justification/>
+                    </audit:record>
+                    <audit:record ID="AUDREC8">
+                        <audit:process type="Fedora API-M"/>
+                        <audit:action>addDatastream</audit:action>
+                        <audit:componentID>message-from-depositor.txt</audit:componentID>
+                        <audit:responsibility>fedoraAdmin</audit:responsibility>
+                        <audit:date>2020-03-17T10:24:17.463Z</audit:date>
+                        <audit:justification/>
+                    </audit:record>
+                    <audit:record ID="AUDREC9">
+                        <audit:process type="Fedora API-M"/>
+                        <audit:action>addDatastream</audit:action>
+                        <audit:componentID>ADDITIONAL_LICENSE</audit:componentID>
+                        <audit:responsibility>fedoraAdmin</audit:responsibility>
+                        <audit:date>2020-03-17T10:24:17.496Z</audit:date>
+                        <audit:justification/>
+                    </audit:record>
+                    <audit:record ID="AUDREC10">
+                        <audit:process type="Fedora API-M"/>
+                        <audit:action>addDatastream</audit:action>
+                        <audit:componentID>DATASET_LICENSE</audit:componentID>
+                        <audit:responsibility>fedoraAdmin</audit:responsibility>
+                        <audit:date>2020-03-17T10:24:33.529Z</audit:date>
+                        <audit:justification/>
+                    </audit:record>
+                </audit:auditTrail>
+            </foxml:xmlContent>
+        </foxml:datastreamVersion>
+    </foxml:datastream>
+    <foxml:datastream ID="DC" STATE="A" CONTROL_GROUP="X" VERSIONABLE="true">
+        <foxml:datastreamVersion ID="DC1.0" LABEL="Dublin Core Record" CREATED="2020-03-17T10:24:17.079Z" MIMETYPE="text/xml" FORMAT_URI="http://www.openarchives.org/OAI/2.0/oai_dc/" SIZE="964">
+            <foxml:xmlContent>
+                <oai_dc:dc xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd">
+                    <dc:title>as
+                        with another line</dc:title>
+                    <dc:creator>as</dc:creator>
+                    <dc:description>as</dc:description>
+                    <dc:contributor>dfj, RightsHolder</dc:contributor>
+                    <dc:date>2020-03-17</dc:date>
+                    <dc:date>2020-03-17</dc:date>
+                    <dc:date>2020-03-17</dc:date>
+                    <dc:identifier>easy-dataset:17</dc:identifier>
+                    <dc:identifier>urn:nbn:nl:ui:13-00-1haq</dc:identifier>
+                    <dc:identifier>10.17026/test-Iiib-z9p-4ywa</dc:identifier>
+                    <dc:identifier>$sdo-id</dc:identifier>
+                    <dc:rights>REQUEST_PERMISSION</dc:rights>
+                    <dc:rights>http://dans.knaw.nl/en/about/organisation-and-policy/legal-information/DANSLicence.pdf</dc:rights>
+                    <dc:rights>accept</dc:rights>
+                    <dc:rights>dfj</dc:rights>
+                </oai_dc:dc>
+            </foxml:xmlContent>
+        </foxml:datastreamVersion>
+    </foxml:datastream>
+    <foxml:datastream ID="AMD" STATE="A" CONTROL_GROUP="X" VERSIONABLE="false">
+        <foxml:datastreamVersion ID="AMD.0" LABEL="Administrative metadata for this dataset" CREATED="2020-03-17T10:24:17.268Z" MIMETYPE="text/xml" SIZE="4807">
+            <foxml:xmlContent>
+                <damd:administrative-md xmlns:damd="http://easy.dans.knaw.nl/easy/dataset-administrative-metadata/" version="0.1">
+                    <datasetState>PUBLISHED</datasetState>
+                    <previousState>DRAFT</previousState>
+                    <lastStateChange>2020-03-17T11:24:09.739+01:00</lastStateChange>
+                    <depositorId>user001</depositorId>
+                    <stateChangeDates>
+                        <damd:stateChangeDate>
+                            <fromState>DRAFT</fromState>
+                            <toState>SUBMITTED</toState>
+                            <changeDate>2020-03-17T11:24:09.739+01:00</changeDate>
+                        </damd:stateChangeDate>
+                    </stateChangeDates>
+                    <groupIds/>
+                    <damd:workflowData version="0.1">
+                        <assigneeId>NOT_ASSIGNED</assigneeId>
+                        <wfs:workflow xmlns:wfs="http://easy.dans.knaw.nl/easy/workflow/">
+                            <id>dataset</id>
+                            <remarks>
+                                <remark>
+                                    <text>According to depositor User001First User001Last (user001, unknown@dans.knaw.nl) this dataset DOES contain Privacy Sensitive data.
+
+                                        The deposit can be found at https://deasy.dans.knaw.nl/deposit/deposit-form/98d5cca7-1f97-4471-9794-6c9331ac0424</text>
+                                    <remarkerId>user001</remarkerId>
+                                    <remarkDate>2020-03-17T11:24:13.351+01:00</remarkDate>
+                                </remark>
+                            </remarks>
+                            <steps>
+                                <wfs:workflow>
+                                    <id>dataset.sip</id>
+                                    <timeSpentWritable>true</timeSpentWritable>
+                                    <remarks/>
+                                    <steps>
+                                        <wfs:workflow>
+                                            <id>dataset.sip.files</id>
+                                            <remarks/>
+                                            <steps>
+                                                <wfs:workflow>
+                                                    <id>dataset.sip.files.completeness</id>
+                                                    <required>true</required>
+                                                    <remarks/>
+                                                    <steps/>
+                                                </wfs:workflow>
+                                                <wfs:workflow>
+                                                    <id>dataset.sip.files.accessibility</id>
+                                                    <required>true</required>
+                                                    <remarks/>
+                                                    <steps/>
+                                                </wfs:workflow>
+                                                <wfs:workflow>
+                                                    <id>dataset.sip.files.privacy</id>
+                                                    <required>true</required>
+                                                    <remarks/>
+                                                    <steps/>
+                                                </wfs:workflow>
+                                            </steps>
+                                        </wfs:workflow>
+                                        <wfs:workflow>
+                                            <id>dataset.sip.file-list</id>
+                                            <remarks/>
+                                            <steps>
+                                                <wfs:workflow>
+                                                    <id>dataset.sip.file-list.file-metadata</id>
+                                                    <remarks/>
+                                                    <steps/>
+                                                </wfs:workflow>
+                                            </steps>
+                                        </wfs:workflow>
+                                        <wfs:workflow>
+                                            <id>dataset.sip.descriptive-metadata</id>
+                                            <remarks/>
+                                            <steps>
+                                                <wfs:workflow>
+                                                    <id>dataset.sip.descriptive-metadata.completeness</id>
+                                                    <required>true</required>
+                                                    <remarks/>
+                                                    <steps/>
+                                                </wfs:workflow>
+                                                <wfs:workflow>
+                                                    <id>dataset.sip.descriptive-metadata.identifiers</id>
+                                                    <remarks/>
+                                                    <steps/>
+                                                </wfs:workflow>
+                                            </steps>
+                                        </wfs:workflow>
+                                    </steps>
+                                </wfs:workflow>
+                                <wfs:workflow>
+                                    <id>dataset.aip</id>
+                                    <timeSpentWritable>true</timeSpentWritable>
+                                    <remarks/>
+                                    <steps>
+                                        <wfs:workflow>
+                                            <id>dataset.aip.file-conversion</id>
+                                            <remarks/>
+                                            <steps/>
+                                        </wfs:workflow>
+                                        <wfs:workflow>
+                                            <id>dataset.aip.file-metadata</id>
+                                            <remarks/>
+                                            <steps/>
+                                        </wfs:workflow>
+                                        <wfs:workflow>
+                                            <id>dataset.aip.structure</id>
+                                            <remarks/>
+                                            <steps/>
+                                        </wfs:workflow>
+                                    </steps>
+                                </wfs:workflow>
+                                <wfs:workflow>
+                                    <id>dataset.dip</id>
+                                    <timeSpentWritable>true</timeSpentWritable>
+                                    <remarks/>
+                                    <steps>
+                                        <wfs:workflow>
+                                            <id>dataset.dip.publish-files</id>
+                                            <required>true</required>
+                                            <remarks/>
+                                            <steps/>
+                                        </wfs:workflow>
+                                        <wfs:workflow>
+                                            <id>dataset.dip.jumpoff</id>
+                                            <remarks/>
+                                            <steps/>
+                                        </wfs:workflow>
+                                        <wfs:workflow>
+                                            <id>dataset.dip.relations</id>
+                                            <remarks/>
+                                            <steps/>
+                                        </wfs:workflow>
+                                    </steps>
+                                </wfs:workflow>
+                            </steps>
+                        </wfs:workflow>
+                    </damd:workflowData>
+                </damd:administrative-md>
+            </foxml:xmlContent>
+        </foxml:datastreamVersion>
+    </foxml:datastream>
+    <foxml:datastream ID="EMD" STATE="A" CONTROL_GROUP="X" VERSIONABLE="false">
+        <foxml:datastreamVersion ID="EMD.0" LABEL="" CREATED="2020-03-17T10:24:17.315Z" MIMETYPE="text/xml" SIZE="2222">
+            <foxml:xmlContent>
+                <emd:easymetadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dct="http://purl.org/dc/terms/" xmlns:eas="http://easy.dans.knaw.nl/easy/easymetadata/eas/" xmlns:emd="http://easy.dans.knaw.nl/easy/easymetadata/" emd:version="0.1">
+                    <emd:title>
+                        <dc:title xml:lang="nld">as
+                        with another line</dc:title>
+                    </emd:title>
+                    <emd:creator>
+                        <eas:creator>
+                            <eas:organization>as</eas:organization>
+                        </eas:creator>
+                    </emd:creator>
+                    <emd:description>
+                        <dc:description xml:lang="nld">as</dc:description>
+                    </emd:description>
+                    <emd:contributor>
+                        <eas:contributor>
+                            <eas:organization>dfj</eas:organization>
+                            <eas:role eas:scheme="DATACITE">RightsHolder</eas:role>
+                        </eas:contributor>
+                    </emd:contributor>
+                    <emd:date>
+                        <eas:created eas:format="DAY" eas:scheme="W3CDTF">2020-03-17T00:00:00.000+01:00</eas:created>
+                        <eas:available eas:format="DAY" eas:scheme="W3CDTF">2020-03-17T00:00:00.000+01:00</eas:available>
+                        <eas:dateSubmitted eas:format="DAY" eas:scheme="W3CDTF">2020-03-17T00:00:00.000+01:00</eas:dateSubmitted>
+                    </emd:date>
+                    <emd:identifier>
+                        <dc:identifier eas:identification-system="http://www.persistent-identifier.nl" eas:scheme="PID">urn:nbn:nl:ui:13-00-1haq</dc:identifier>
+                        <dc:identifier eas:scheme="DMO_ID">easy-dataset:17</dc:identifier>
+                    </emd:identifier>
+                    <emd:rights>
+                        <dct:accessRights eas:schemeId="common.dcterms.accessrights">REQUEST_PERMISSION</dct:accessRights>
+                        <dct:license>http://dans.knaw.nl/en/about/organisation-and-policy/legal-information/DANSLicence.pdf</dct:license>
+                        <dct:license eas:scheme="Easy2 version 1">accept</dct:license>
+                        <dct:rightsHolder>dfj</dct:rightsHolder>
+                    </emd:rights>
+                    <emd:audience>
+                        <dct:audience eas:schemeId="custom.disciplines">easy-discipline:77</dct:audience>
+                    </emd:audience>
+                    <emd:other>
+                        <eas:application-specific>
+                            <eas:metadataformat>ANY_DISCIPLINE</eas:metadataformat>
+                            <eas:pakbon-status>NOT_IMPORTED</eas:pakbon-status>
+                            <eas:archive eas:location="EASY"/>
+                        </eas:application-specific>
+                        <eas:etc/>
+                    </emd:other>
+                </emd:easymetadata>
+            </foxml:xmlContent>
+        </foxml:datastreamVersion>
+    </foxml:datastream>
+    <foxml:datastream ID="PRSQL" STATE="A" CONTROL_GROUP="X" VERSIONABLE="false">
+        <foxml:datastreamVersion ID="PRSQL.0" LABEL="" CREATED="2020-03-17T10:24:17.333Z" MIMETYPE="text/xml" SIZE="154">
+            <foxml:xmlContent>
+                <psl:permissionSequenceList xmlns:psl="http://easy.dans.knaw.nl/easy/permission-sequence-list/">
+                    <sequences/>
+                </psl:permissionSequenceList>
+            </foxml:xmlContent>
+        </foxml:datastreamVersion>
+    </foxml:datastream>
+    <foxml:datastream ID="dataset.xml" STATE="A" CONTROL_GROUP="X" VERSIONABLE="false">
+        <foxml:datastreamVersion ID="dataset.xml.0" LABEL="DDM metadata for this dataset" CREATED="2020-03-17T10:24:17.351Z" MIMETYPE="text/xml" SIZE="1789">
+            <foxml:xmlContent>
+                <ddm:DDM xmlns:abr="http://www.den.nl/standaard/166/Archeologisch-Basisregister/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcx-dai="http://easy.dans.knaw.nl/schemas/dcx/dai/" xmlns:dcx-gml="http://easy.dans.knaw.nl/schemas/dcx/gml/" xmlns:ddm="http://easy.dans.knaw.nl/schemas/md/ddm/" xmlns:gml="http://www.opengis.net/gml" xmlns:id-type="http://easy.dans.knaw.nl/schemas/vocab/identifier-type/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
+                    <ddm:profile>
+                        <dc:title xml:lang="nld">as
+                        with another line</dc:title>
+                        <dcterms:description xml:lang="nld">as</dcterms:description>
+                        <dcx-dai:creatorDetails>
+                            <dcx-dai:organization>
+                                <dcx-dai:name xml:lang="nld">as</dcx-dai:name>
+                            </dcx-dai:organization>
+                        </dcx-dai:creatorDetails>
+                        <ddm:created>2020-03-17</ddm:created>
+                        <ddm:available>2020-03-17</ddm:available>
+                        <ddm:audience>D13200</ddm:audience>
+                        <ddm:accessRights>REQUEST_PERMISSION</ddm:accessRights>
+                    </ddm:profile>
+                    <ddm:dcmiMetadata>
+                        <dcterms:identifier xsi:type="id-type:DOI">10.17026/test-Iiib-z9p-4ywa</dcterms:identifier>
+                        <dcx-dai:contributorDetails>
+                            <dcx-dai:organization>
+                                <dcx-dai:name xml:lang="nld">dfj</dcx-dai:name>
+                                <dcx-dai:role>RightsHolder</dcx-dai:role>
+                            </dcx-dai:organization>
+                        </dcx-dai:contributorDetails>
+                        <dcterms:rightsHolder>dfj</dcterms:rightsHolder>
+                        <dcterms:dateSubmitted xsi:type="dcterms:W3CDTF">2020-03-17</dcterms:dateSubmitted>
+                        <dcterms:license xsi:type="dcterms:URI">http://dans.knaw.nl/en/about/organisation-and-policy/legal-information/DANSLicence.pdf</dcterms:license>
+                    </ddm:dcmiMetadata>
+                </ddm:DDM>
+            </foxml:xmlContent>
+        </foxml:datastreamVersion>
+    </foxml:datastream>
+    <foxml:datastream ID="files.xml" STATE="A" CONTROL_GROUP="X" VERSIONABLE="false">
+        <foxml:datastreamVersion ID="files.xml.0" LABEL="File metadata for this dataset" CREATED="2020-03-17T10:24:17.369Z" MIMETYPE="text/xml" SIZE="425">
+            <foxml:xmlContent>
+                <files xmlns="http://easy.dans.knaw.nl/schemas/bag/metadata/files/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/bag/metadata/files/ https://easy.dans.knaw.nl/schemas/bag/metadata/files/2018/04/files.xsd">
+                    <file filepath="data/original/P1130783.JPG">
+                        <dcterms:format>image/jpeg</dcterms:format>
+                    </file>
+                </files>
+            </foxml:xmlContent>
+        </foxml:datastreamVersion>
+    </foxml:datastream>
+    <foxml:datastream ID="manifest-sha1.txt" STATE="A" CONTROL_GROUP="M" VERSIONABLE="false">
+        <foxml:datastreamVersion ID="manifest-sha1.txt.0" LABEL="Manifest (sha1) of the original bag" CREATED="2020-03-17T10:24:17.392Z" MIMETYPE="text/plain" SIZE="69">
+            <foxml:contentLocation TYPE="INTERNAL_ID" REF="easy-dataset:17+manifest-sha1.txt+manifest-sha1.txt.0"/>
+        </foxml:datastreamVersion>
+    </foxml:datastream>
+    <foxml:datastream ID="agreements.xml" STATE="A" CONTROL_GROUP="X" VERSIONABLE="false">
+        <foxml:datastreamVersion ID="agreements.xml.0" LABEL="Agreement specific metadata for this dataset" CREATED="2020-03-17T10:24:17.434Z" MIMETYPE="text/xml" SIZE="920">
+            <foxml:xmlContent>
+                <agreements xmlns="http://easy.dans.knaw.nl/schemas/bag/metadata/agreements/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/bag/metadata/agreements/ https://easy.dans.knaw.nl/schemas/bag/metadata/agreements/2019/09/agreements.xsd">
+                    <depositAgreement>
+                        <signerId easy-account="user001" email="unknown@dans.knaw.nl">User001First User001Last</signerId>
+                        <dcterms:dateAccepted>2020-03-17T11:23:41.596+01:00</dcterms:dateAccepted>
+                        <depositAgreementAccepted>true</depositAgreementAccepted>
+                    </depositAgreement>
+                    <personalDataStatement>
+                        <signerId easy-account="user001" email="unknown@dans.knaw.nl">User001First User001Last</signerId>
+                        <dateSigned>2020-03-17T11:23:41.596+01:00</dateSigned>
+                        <containsPrivacySensitiveData>true</containsPrivacySensitiveData>
+                    </personalDataStatement>
+                </agreements>
+            </foxml:xmlContent>
+        </foxml:datastreamVersion>
+    </foxml:datastream>
+    <foxml:datastream ID="message-from-depositor.txt" STATE="A" CONTROL_GROUP="M" VERSIONABLE="false">
+        <foxml:datastreamVersion ID="message-from-depositor.txt.0" LABEL="Message from depositor to archivist about this dataset" CREATED="2020-03-17T10:24:17.463Z" MIMETYPE="text/plain" SIZE="112">
+            <foxml:contentLocation TYPE="INTERNAL_ID" REF="easy-dataset:17+message-from-depositor.txt+message-from-depositor.txt.0"/>
+        </foxml:datastreamVersion>
+    </foxml:datastream>
+    <foxml:datastream ID="ADDITIONAL_LICENSE" STATE="A" CONTROL_GROUP="M" VERSIONABLE="false">
+        <foxml:datastreamVersion ID="ADDITIONAL_LICENSE.0" LABEL="DANS_Licence_UK.pdf" CREATED="2020-03-17T10:24:17.496Z" MIMETYPE="application/pdf" SIZE="147777">
+            <foxml:contentLocation TYPE="INTERNAL_ID" REF="easy-dataset:17+ADDITIONAL_LICENSE+ADDITIONAL_LICENSE.0"/>
+        </foxml:datastreamVersion>
+    </foxml:datastream>
+    <foxml:datastream ID="RELS-EXT" STATE="A" CONTROL_GROUP="X" VERSIONABLE="false">
+        <foxml:datastreamVersion ID="RELS-EXT.7" LABEL="Relationships" CREATED="2020-03-17T10:24:17.907Z" MIMETYPE="application/rdf+xml" FORMAT_URI="info:fedora/fedora-system:FedoraRELSExt-1.0" SIZE="1063">
+            <foxml:xmlContent>
+                <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+
+                    <rdf:Description rdf:about="info:fedora/easy-dataset:17">
+                        <hasDoi xmlns="http://dans.knaw.nl/ontologies/relations#">10.17026/test-Iiib-z9p-4ywa</hasDoi>
+                        <hasPid xmlns="http://dans.knaw.nl/ontologies/relations#">urn:nbn:nl:ui:13-00-1haq</hasPid>
+                        <hasModel xmlns="info:fedora/fedora-system:def/model#" rdf:resource="info:fedora/dans-model:recursive-item-v1"/>
+                        <hasModel xmlns="info:fedora/fedora-system:def/model#" rdf:resource="info:fedora/easy-model:EDM1DATASET"/>
+                        <hasModel xmlns="info:fedora/fedora-system:def/model#" rdf:resource="info:fedora/easy-model:oai-item1"/>
+                        <itemID xmlns="http://www.openarchives.org/OAI/2.0/">oai:easy.dans.knaw.nl:easy-dataset:17</itemID>
+                        <isMemberOf xmlns="http://dans.knaw.nl/ontologies/relations#" rdf:resource="info:fedora/easy-discipline:77"/>
+                        <isMemberOfOAISet xmlns="http://dans.knaw.nl/ontologies/relations#" rdf:resource="info:fedora/easy-discipline:77"/>
+                    </rdf:Description>
+
+                </rdf:RDF>
+            </foxml:xmlContent>
+        </foxml:datastreamVersion>
+    </foxml:datastream>
+    <foxml:datastream ID="DATASET_LICENSE" STATE="A" CONTROL_GROUP="M" VERSIONABLE="true">
+        <foxml:datastreamVersion ID="DATASET_LICENSE.0" LABEL="license.pdf" CREATED="2020-03-17T10:24:33.529Z" MIMETYPE="application/pdf" SIZE="272538">
+            <foxml:contentDigest TYPE="SHA-1" DIGEST="27b3e13d0a022dcc8f56acd3c3a00d3b14594a2f"/>
+            <foxml:contentLocation TYPE="INTERNAL_ID" REF="easy-dataset:17+DATASET_LICENSE+DATASET_LICENSE.0"/>
+        </foxml:datastreamVersion>
+    </foxml:datastream>
+</foxml:digitalObject>

@@ -111,6 +111,12 @@
             <artifactId>fedora-client-core</artifactId>
         </dependency>
 
+        <!-- Postgresql -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+        </dependency>
+
         <!-- logging -->
         <dependency>
             <groupId>ch.qos.logback</groupId>

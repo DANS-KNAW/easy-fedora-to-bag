@@ -154,7 +154,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     ( metadataDir / "dataset.xml").contentAsString should
       include("Files for this dataset can be found at")
     ( metadataDir / "dataset.xml").contentAsString should
-      include("https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:17")
+      include("https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:17/tab/2")
   }
 
   it should "produce the second bag as first and only" in {
@@ -476,7 +476,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     (bagDir / "metadata" / "dataset.xml").contentAsString should
       include("Files for this dataset can be found at")
     (bagDir / "metadata" / "dataset.xml").contentAsString should
-      include("https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:13")
+      include("https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:13/tab/2")
   }
 
   it should "report an invalid checksum" in {

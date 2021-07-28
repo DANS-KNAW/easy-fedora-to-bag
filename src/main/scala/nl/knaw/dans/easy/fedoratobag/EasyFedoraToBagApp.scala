@@ -193,7 +193,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
 
     def payloadInEasy(tooManyFiles: Boolean) = {
       if (tooManyFiles)
-        <dct:description xml:lang="en">{ s"<b>Files not yet migrated to Data Station. Files for this dataset can be found at ${makelink(datasetId)}</b>" }</dct:description>
+        <dct:description xml:lang="en">{ s"<![CDATA[<b>Files not yet migrated to Data Station. Files for this dataset can be found at ${makelink(datasetId)}.</b>]]>" }</dct:description>
       else Text("")
     }
     def makelink(datasetId: DatasetId): Node = {

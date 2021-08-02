@@ -474,9 +474,9 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     triedRecord shouldBe a[Success[_]]
     (bagDir / "data").list shouldBe empty
     (bagDir / "metadata" / "dataset.xml").contentAsString should
-      include("Files for this dataset can be found at")
-    (bagDir / "metadata" / "dataset.xml").contentAsString should
-      include("https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:13/tab/2")
+      { include("Files for this dataset can be found at") and
+        include("https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:13/tab/2")
+      }
   }
 
   it should "report an invalid checksum" in {

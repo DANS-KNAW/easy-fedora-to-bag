@@ -57,7 +57,7 @@ object FileItem {
         <dct:source>{ "data/" + path }</dct:source>
     ).getOrElse(Seq[Node]())
     val bagPath = fileInfo.bagPath(isOriginalVersioned)
-    val comment = if (bagPath != fileInfo.path) Comment(fileInfo.path.toString)
+    val comment = if (bagPath != fileInfo.path) Comment(fileInfo.path.toString.replaceAll("--","__"))
                   else Text("")
 
       <file filepath={ "data/" + bagPath }>

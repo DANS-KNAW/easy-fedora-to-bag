@@ -27,7 +27,7 @@
 
     <groupId>nl.knaw.dans.easy</groupId>
     <artifactId>easy-fedora-to-bag</artifactId>
-    <version>1.0.23</version>
+    <version>1.0.24-SNAPSHOT</version>
 
     <name>EASY Fedora to Bag</name>
     <description>Tool for exporting datasets from Fedora and constructing Archival/Submission Information Packages.</description>
@@ -41,7 +41,7 @@
 
     <scm>
         <developerConnection>scm:git:https://github.com/DANS-KNAW/${project.artifactId}</developerConnection>
-        <tag>v1.0.23</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <dependencies>

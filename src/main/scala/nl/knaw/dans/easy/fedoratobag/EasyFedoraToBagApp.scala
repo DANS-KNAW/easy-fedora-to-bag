@@ -210,7 +210,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       amd <- getAmd(foXml)
       audiences <- emd.getEmdAudience.getDisciplines.asScala
         .map(id => getAudience(id.getValue)).collectResults
-      fedoraIDs <- if (options.noPayload) Success(List.empty)
+      fedoraIDs <- if (options.noPayload) Success(Seq.empty)
                    else fsRdb.getSubordinates(datasetId)
       allFileInfos <- FileInfo(fedoraIDs.filter(_.startsWith("easy-file:")).toList, fedoraProvider).map(_.toList)
       isOriginalVersioned = options.transformationType == ORIGINAL_VERSIONED

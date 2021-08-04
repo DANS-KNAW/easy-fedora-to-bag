@@ -82,7 +82,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
         ) returning managed(content.inputStream) repeat n
       }
       (fsRdb.getSubordinates(_: String)) expects "easy-dataset:17" once() returning
-        Success(List("easy-file:35", "easy-file:36", "easy-file:37"))
+        Success(Seq("easy-file:35", "easy-file:36", "easy-file:37"))
     }
     // end of mocking
 
@@ -129,7 +129,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
         ) returning managed(content.inputStream) repeat n
       }
       (fsRdb.getSubordinates(_: String)) expects "easy-dataset:17" once() returning
-        Success(List("easy-file:35", "easy-file:36", "easy-file:37"))
+        Success(Seq("easy-file:35", "easy-file:36", "easy-file:37"))
     }
     // end of mocking
 
@@ -175,7 +175,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
         ) returning managed(content.inputStream) repeat n
       }
       (fsRdb.getSubordinates(_: String)) expects "easy-dataset:17" once() returning
-        Success(List("easy-file:36", "easy-file:37"))
+        Success(Seq("easy-file:36", "easy-file:37"))
     }
     // end of mocking
 
@@ -217,7 +217,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
         ) returning managed(content.inputStream) repeat n
       }
       (fsRdb.getSubordinates(_: String)) expects "easy-dataset:17" once() returning
-        Success(List("easy-file:35"))
+        Success(Seq("easy-file:35"))
     }
     // end of mocking
 
@@ -256,7 +256,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
         ) returning managed(content.inputStream) once()
       }
       (fsRdb.getSubordinates(_: String)) expects "easy-dataset:17" once() returning
-        Success(List("easy-file:35"))
+        Success(Seq("easy-file:35"))
     }
     // end of mocking
 
@@ -287,7 +287,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
         (fedoraProvider.loadFoXml(_: String)) expects id once() returning Success(xml)
       }
       (fsRdb.getSubordinates(_: String)) expects "easy-dataset:13" once() returning
-        Success(List("easy-file:1", "easy-file:2", "easy-file:3", "easy-file:4"))
+        Success(Seq("easy-file:1", "easy-file:2", "easy-file:3", "easy-file:4"))
     }
 
     // end of mocking
@@ -308,7 +308,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
   "createBag" should "report not strict simple violation" in {
     val app = new AppWithMockedServices() {
       (fsRdb.getSubordinates(_: String)) expects "easy-dataset:17" once() returning
-        Success(List())
+        Success(Seq())
       Map(
         "easy-discipline:77" -> audienceFoXML("easy-discipline:77", "D13200"),
         "easy-dataset:17" -> XML.loadFile((sampleFoXML / "DepositApi.xml").toJava),
@@ -330,12 +330,15 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
   }
 
   it should "report strict simple violation" in {
+    // remove line containing doi from the xml
+    val noDoiString = (sampleFoXML / "DepositApi.xml").lineIterator.filterNot(_.contains("doi")).mkString("")
+    val noDoiXml = XML.loadString(noDoiString)
     val app = new AppWithMockedServices() {
       (fsRdb.getSubordinates(_: String)) expects "easy-dataset:17" once() returning
-        Success(List("easy-file:37"))
+        Success(Seq("easy-file:37"))
       Map(
         "easy-discipline:77" -> audienceFoXML("easy-discipline:77", "D13200"),
-        "easy-dataset:17" -> XML.loadFile((sampleFoXML / "DepositApiNoDoi.xml").toJava),
+        "easy-dataset:17" -> noDoiXml,
         "easy-file:37" -> fileFoXml(id = 37, location = "x", accessibleTo = "ANONYMOUS", name = "b.txt", digest = digests("barbapappa")),
       ).foreach { case (id, xml) =>
         (fedoraProvider.loadFoXml(_: String)) expects id once() returning Success(xml)
@@ -367,7 +370,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
         "EASY_FILE"
       ) once() returning managed("barbapappa".inputStream)
       (fsRdb.getSubordinates(_: String)) expects "easy-dataset:13" once() returning
-        Success(List("easy-file:35"))
+        Success(Seq("easy-file:35"))
     }
     // end of mocking
 
@@ -400,7 +403,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
     val app = new AppWithMockedServices() {
       (fsRdb.getSubordinates(_: String)) expects "easy-dataset:13" once() returning
-        Success(List("easy-file:35"))
+        Success(Seq("easy-file:35"))
       Map(
         "easy-discipline:6" -> audienceFoXML("easy-discipline:6", "D35400"),
         "easy-dataset:13" -> XML.loadFile((sampleFoXML / "streaming.xml").toJava),
@@ -423,7 +426,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     val app: AppWithMockedServices = new AppWithMockedServices() {
       expectAUser()
       (fsRdb.getSubordinates(_: String)) expects "easy-dataset:13" once() returning
-        Success(List("easy-file:1", "easy-file:2", "easy-file:3"))
+        Success(Seq("easy-file:1", "easy-file:2", "easy-file:3"))
       val foXMLs = Map(
         "easy-dataset:13" -> XML.loadFile((sampleFoXML / "streaming.xml").toJava),
         "easy-discipline:6" -> audienceFoXML("easy-discipline:6", "D35400"),
@@ -453,7 +456,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     val app: AppWithMockedServices = new AppWithMockedServices() {
       expectAUser()
       (fsRdb.getSubordinates(_: String)) expects "easy-dataset:13" once() returning
-        Success(List("easy-file:1", "easy-file:2", "easy-file:3"))
+        Success(Seq("easy-file:1", "easy-file:2", "easy-file:3"))
       val foXMLs = Map(
         "easy-dataset:13" -> XML.loadFile((sampleFoXML / "streaming.xml").toJava),
         "easy-discipline:6" -> audienceFoXML("easy-discipline:6", "D35400"),
@@ -480,7 +483,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     val app: AppWithMockedServices = new AppWithMockedServices() {
       expectAUser()
       (fsRdb.getSubordinates(_: String)) expects "easy-dataset:13" once() returning
-        Success(List("easy-file:1"))
+        Success(Seq("easy-file:1"))
       val foXMLs = Map(
         "easy-dataset:13" -> XML.loadFile((sampleFoXML / "streaming.xml").toJava),
         "easy-discipline:6" -> audienceFoXML("easy-discipline:6", "D35400"),
@@ -508,7 +511,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     val app: AppWithMockedServices = new AppWithMockedServices() {
       expectAUser()
       (fsRdb.getSubordinates(_: String)) expects "easy-dataset:13" once() returning
-        Success(List("easy-file:1", "easy-file:2", "easy-file:3", "easy-file:4", "easy-file:5"))
+        Success(Seq("easy-file:1", "easy-file:2", "easy-file:3", "easy-file:4", "easy-file:5"))
       val foXMLs = Map(
         "easy-dataset:13" -> XML.loadFile((sampleFoXML / "streaming.xml").toJava),
         "easy-discipline:6" -> audienceFoXML("easy-discipline:6", "D35400"),
@@ -536,7 +539,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     val app: AppWithMockedServices = new AppWithMockedServices() {
       expectAUser()
       (fsRdb.getSubordinates(_: String)) expects "easy-dataset:13" once() returning
-        Success(List("easy-file:1", "easy-file:2", "easy-file:3", "easy-file:4", "easy-file:5"))
+        Success(Seq("easy-file:1", "easy-file:2", "easy-file:3", "easy-file:4", "easy-file:5"))
       val foXMLs = Map(
         "easy-dataset:13" -> XML.loadFile((sampleFoXML / "streaming.xml").toJava),
         "easy-discipline:6" -> audienceFoXML("easy-discipline:6", "D35400"),
@@ -564,7 +567,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     val app: AppWithMockedServices = new AppWithMockedServices() {
       expectAUser()
       (fsRdb.getSubordinates(_: String)) expects "easy-dataset:13" once() returning
-        Success(List("easy-file:1", "easy-file:2", "easy-file:3", "easy-file:4", "easy-file:5"))
+        Success(Seq("easy-file:1", "easy-file:2", "easy-file:3", "easy-file:4", "easy-file:5"))
       val foXMLs = Map(
         "easy-dataset:13" -> XML.loadFile((sampleFoXML / "streaming.xml").toJava),
         "easy-discipline:6" -> audienceFoXML("easy-discipline:6", "D35400"),
@@ -596,7 +599,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
   it should "cause NoPayloadFilesException" in {
     val app: AppWithMockedServices = new AppWithMockedServices() {
       (fsRdb.getSubordinates(_: String)) expects "easy-dataset:13" once() returning
-        Success(List("easy-file:1", "easy-file:5"))
+        Success(Seq("easy-file:1", "easy-file:5"))
       val foXMLs = Map(
         "easy-dataset:13" -> XML.loadFile((sampleFoXML / "streaming.xml").toJava),
         "easy-discipline:6" -> audienceFoXML("easy-discipline:6", "D35400"),

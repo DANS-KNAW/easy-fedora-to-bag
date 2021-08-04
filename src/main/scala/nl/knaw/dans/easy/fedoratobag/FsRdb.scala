@@ -19,6 +19,7 @@ import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import resource.{ManagedResource, managed}
 
 import java.sql.{Connection, DriverManager}
+import scala.collection.mutable.ListBuffer
 import scala.util.Try
 
 class FsRdb(fsrdb: DatabaseConnection) extends DebugEnhancedLogging {
@@ -35,20 +36,20 @@ class FsRdb(fsrdb: DatabaseConnection) extends DebugEnhancedLogging {
     }
   }
 
-  def getSubordinates(identifier: DatasetId): Try[List[String]] = {
+  def getSubordinates(identifier: DatasetId): Try[Seq[String]] = {
     fsRdbConnection.map(implicit connection => getSubordinatesFromFsRdb(identifier)).tried
   }
 
-  private def getSubordinatesFromFsRdb(fedoraId: DatasetId)(implicit connection: Connection): List[String] = {
+  private def getSubordinatesFromFsRdb(fedoraId: DatasetId)(implicit connection: Connection): Seq[String] = {
     val subordinatesQuery = s"SELECT pid FROM easy_files WHERE dataset_sid = '$fedoraId';"
     val statement = connection.createStatement()
     val resultSet = statement.executeQuery(subordinatesQuery)
 
-    var ids = List.empty[String]
+    val ids = ListBuffer[String]()
     while (resultSet.next) {
       val id = resultSet.getString("pid")
-      ids = id :: ids
+      ids += id
     }
-    ids
+    ids.toList
   }
 }

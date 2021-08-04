@@ -153,7 +153,9 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     val metadataDir = dataDirs.head.parent / "metadata"
     (XML.loadFile((metadataDir / "files.xml").toJava) \ "file") shouldBe empty
     ( metadataDir / "dataset.xml").contentAsString should
-      include("Files for this dataset can be found at https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:17/tab/2")
+      { include("Files for this dataset can be found at") and
+        include("https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:17/tab/2")
+      }
   }
 
   it should "produce the second bag as first and only" in {
@@ -476,7 +478,9 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     triedRecord shouldBe a[Success[_]]
     (bagDir / "data").list shouldBe empty
     (bagDir / "metadata" / "dataset.xml").contentAsString should
-      include("Files for this dataset can be found at https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:13/tab/2")
+      { include("Files for this dataset can be found at") and
+        include("https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:13/tab/2")
+      }
   }
 
   it should "report an invalid checksum" in {

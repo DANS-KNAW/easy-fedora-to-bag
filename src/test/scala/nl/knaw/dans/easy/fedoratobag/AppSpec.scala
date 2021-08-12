@@ -525,7 +525,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     // end of mocking
     val bagDir = testDir / "bags" / UUID.randomUUID.toString
     app.createBag("easy-dataset:13", bagDir, Options(app.filter)) shouldBe
-      Failure(InvalidTransformationException("not:implemented in the DDM"))
+      Failure(InvalidTransformationException("<not:implemented>invalid box: SpatialBox(Some(RD),None,None,None,None)</not:implemented>"))
   }
 
   it should "export largest image as payload" in {

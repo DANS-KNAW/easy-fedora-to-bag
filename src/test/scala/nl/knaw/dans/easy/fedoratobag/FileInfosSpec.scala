@@ -70,7 +70,7 @@ class FileInfosSpec extends TestSupportFixture with FileFoXmlSupport with MockFa
   }
   "FileInfo" should "replace non allowed characters in name and filepath with '_'" in {
     val foxml = fileFoXml(
-      location = "p:t*/t?/s>m|w;e#e",
+      location = "p:t*/t?/s>m|w;e#e'f",
       name = "a:c*e?g>i|k;m#o\".txt",
     )
     val fedoraProvider = mock[FedoraProvider]
@@ -79,6 +79,6 @@ class FileInfosSpec extends TestSupportFixture with FileFoXmlSupport with MockFa
     val fileInfo = FileInfo(List("easy-file:35"), fedoraProvider)
       .getOrElse(fail("could not load test data")).head
     fileInfo.name shouldBe "a_c_e_g_i_k_m_o_.txt"
-    fileInfo.path shouldBe Paths.get("p_t_/t_/s_m_w_e_e/a_c_e_g_i_k_m_o_.txt")
+    fileInfo.path shouldBe Paths.get("p_t_/t_/s_m_w_e_e_f/a_c_e_g_i_k_m_o_.txt")
   }
 }

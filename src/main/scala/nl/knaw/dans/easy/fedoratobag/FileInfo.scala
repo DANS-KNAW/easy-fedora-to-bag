@@ -61,10 +61,10 @@ case class FileInfo(fedoraFileId: String,
 }
 
 object FileInfo extends DebugEnhancedLogging {
-  private val nonAllowedCharacters = List(':', '*', '?', '"', '<', '>', '|', ';', '#')
+  private val allowedCharacters =(('a' to 'z') ++ ('A' to 'Z') ++ ('0' to '9') ++ List('_', '-', '.', '\\', '/', ' ')).toSet
 
   private def replaceNonAllowedCharacters(s: String): String = {
-    s.map(char => if (nonAllowedCharacters.contains(char)) '_'
+    s.map(char => if (! allowedCharacters.contains(char)) '_'
                   else char)
   }
 

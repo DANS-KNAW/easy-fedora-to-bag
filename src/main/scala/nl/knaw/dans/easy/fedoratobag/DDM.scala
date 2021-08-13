@@ -172,7 +172,7 @@ object DDM extends DebugEnhancedLogging {
 
   private def notImplemented(msg: String)(data: Any): Elem = {
     logger.error(s"not implemented $msg [$data]")
-    <not:implemented/>
+    <not:implemented>{s"$msg: ${data.toString.trim}"}</not:implemented>
   }
 
   /** a null value skips rendering the attribute */

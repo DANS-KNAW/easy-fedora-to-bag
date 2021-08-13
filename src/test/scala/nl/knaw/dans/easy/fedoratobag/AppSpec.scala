@@ -507,6 +507,27 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     }
   }
 
+  it should "report not:implemented node" in {
+    val foXml = XML.loadFile((sampleFoXML / "streaming.xml").toJava).toString().replace("<emd:coverage/>", "<emd:coverage><eas:spatial><eas:box eas:scheme=\"RD\"></eas:box></eas:spatial></emd:coverage>")
+    val app: AppWithMockedServices = new AppWithMockedServices() {
+      (fedoraProvider.getSubordinates(_: String)) expects "easy-dataset:13" once() returning
+        Success(Seq("easy-file:1"))
+      val foXMLs = Map(
+        "easy-dataset:13" -> XML.loadString(foXml),
+        "easy-discipline:6" -> audienceFoXML("easy-discipline:6", "D35400"),
+        "easy-file:1" -> fileFoXml(id = 1, name = "a.txt", digest = digests("acabadabra")),
+      )
+      foXMLs.foreach { case (id, xml) =>
+        (fedoraProvider.loadFoXml(_: String)) expects id once() returning Success(xml)
+      }
+    }
+
+    // end of mocking
+    val bagDir = testDir / "bags" / UUID.randomUUID.toString
+    app.createBag("easy-dataset:13", bagDir, Options(app.filter)) shouldBe
+      Failure(InvalidTransformationException("<not:implemented>invalid box: SpatialBox(Some(RD),None,None,None,None)</not:implemented>"))
+  }
+
   it should "export largest image as payload" in {
     val app: AppWithMockedServices = new AppWithMockedServices() {
       expectAUser()

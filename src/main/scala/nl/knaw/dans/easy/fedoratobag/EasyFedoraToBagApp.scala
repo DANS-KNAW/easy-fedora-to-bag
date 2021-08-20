@@ -47,6 +47,7 @@ import scala.xml.{ Elem, Node, Text }
 
 class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogging {
   lazy val fedoraProvider: FedoraProvider = new FedoraProvider(new FedoraClient(configuration.fedoraCredentials))
+  lazy val fsRdb = new FsRdb(configuration.databaseConnection)
   lazy val ldapContext: InitialLdapContext = new InitialLdapContext(configuration.ldapEnv, null)
   lazy val bagIndex: BagIndex = filter.BagIndex(configuration.bagIndexUrl)
   private lazy val ldap = new Ldap(ldapContext)
@@ -210,7 +211,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       audiences <- emd.getEmdAudience.getDisciplines.asScala
         .map(id => getAudience(id.getValue)).collectResults
       fedoraIDs <- if (options.noPayload) Success(Seq.empty)
-                   else fedoraProvider.getSubordinates(datasetId)
+                   else fsRdb.getSubordinates(datasetId)
       allFileInfos <- FileInfo(fedoraIDs.filter(_.startsWith("easy-file:")).toList, fedoraProvider).map(_.toList)
       isOriginalVersioned = options.transformationType == ORIGINAL_VERSIONED
       selectedForSecondBag = allFileInfos.selectForSecondBag(isOriginalVersioned, options.noPayload)

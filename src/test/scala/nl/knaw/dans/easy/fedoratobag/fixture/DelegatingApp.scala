@@ -29,7 +29,7 @@ trait DelegatingApp extends MockFactory {
 
   /* delegate most of createBag to a mock to test the rest of the class and/or application */
   def delegatingApp(staging: File, createBagExpects: Seq[(String, Try[DatasetInfo])]): EasyFedoraToBagApp = new EasyFedoraToBagApp(
-    new Configuration("testVersion", null, null, new URI(""), staging, null)
+    new Configuration("testVersion", null, null, null, new URI(""), staging, null)
   ) {
     // mock requires a constructor without parameters
     class MockEasyFedoraToBagApp() extends EasyFedoraToBagApp(null) {

@@ -27,6 +27,7 @@ class ReadmeSpec extends TestSupportFixture with CustomMatchers with FixedCurren
   private val configuration = Configuration(
     version = "my-version",
     fedoraCredentials = null,
+    databaseConnection = null,
     ldapEnv = null,
     bagIndexUrl = null,
     stagingDir = null,

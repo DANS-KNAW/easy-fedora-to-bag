@@ -30,6 +30,7 @@ package object fedoratobag {
   type LdapEnv = java.util.Hashtable[String, String]
 
   case class NoPayloadFilesException() extends Exception("No payload files found to put into bag")
+  case class DatabaseConnection(url: String, username: String, password: String)
 
   val dateTimeFormatter: DateTimeFormatter = ISODateTimeFormat.dateTime()
 

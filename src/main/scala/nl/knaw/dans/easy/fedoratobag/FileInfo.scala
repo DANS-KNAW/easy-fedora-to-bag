@@ -61,10 +61,15 @@ case class FileInfo(fedoraFileId: String,
 }
 
 object FileInfo extends DebugEnhancedLogging {
-  private val allowedCharacters =(('a' to 'z') ++ ('A' to 'Z') ++ ('0' to '9') ++ List('_', '-', '.', '\\', '/', ' ')).toSet
+  private val allowedCharactersInPath =(('a' to 'z') ++ ('A' to 'Z') ++ ('0' to '9') ++ List('_', '-', '.', '\\', '/', ' ')).toSet
+  private val nonAllowedCharactersInFileName = List(':', '*', '?', '"', '<', '>', '|', ';', '#')
 
-  private def replaceNonAllowedCharacters(s: String): String = {
-    s.map(char => if (! allowedCharacters.contains(char)) '_'
+  private def replaceNonAllowedCharactersInPath(s: String): String = {
+    s.map(char => if (! allowedCharactersInPath.contains(char)) '_'
+                  else char)
+  }
+  private def replaceNonAllowedCharactersInFileName(s: String): String = {
+    s.map(char => if (nonAllowedCharactersInFileName.contains(char)) '_'
                   else char)
   }
 
@@ -92,7 +97,7 @@ object FileInfo extends DebugEnhancedLogging {
           derivedFromId = derivedFrom(FoXml.getStreamRoot("RELS-EXT", foXml))
           digest = digestValue(FoXml.getStreamRoot("EASY_FILE", foXml))
           path = (fileMetadata \\ "path").map(_.text).headOption
-            .map(p => Paths.get(replaceNonAllowedCharacters(p)))
+            .map(p => Paths.get(replaceNonAllowedCharactersInPath(p)))
         } yield (fileId, derivedFromId, digest, fileMetadata, path)
       }.map { files =>
       val pathMap = files.map {
@@ -111,7 +116,7 @@ object FileInfo extends DebugEnhancedLogging {
                              else get("accessibleTo")
           new FileInfo(
             fileId, path,
-            replaceNonAllowedCharacters(get("name")),
+            replaceNonAllowedCharactersInFileName(get("name")),
             get("size").toLong,
             get("mimeType"),
             accessibleTo,

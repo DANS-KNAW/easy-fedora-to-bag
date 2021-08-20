@@ -514,7 +514,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
   it should "report not:implemented node" in {
     val foXml = XML.loadFile((sampleFoXML / "streaming.xml").toJava).toString().replace("<emd:coverage/>", "<emd:coverage><eas:spatial><eas:box eas:scheme=\"RD\"></eas:box></eas:spatial></emd:coverage>")
     val app: AppWithMockedServices = new AppWithMockedServices() {
-      (fedoraProvider.getSubordinates(_: String)) expects "easy-dataset:13" once() returning
+      (fsRdb.getSubordinates(_: String)) expects "easy-dataset:13" once() returning
         Success(Seq("easy-file:1"))
       val foXMLs = Map(
         "easy-dataset:13" -> XML.loadString(foXml),

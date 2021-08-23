@@ -31,6 +31,7 @@ case class Configuration(version: String,
                          bagIndexUrl: URI,
                          stagingDir: File,
                          abrMapping: AbrMappings,
+                         exportStates: List[String],
                         )
 
 object Configuration {
@@ -68,6 +69,7 @@ object Configuration {
       new URI(properties.getString("bag-index.url")),
       File(properties.getString("staging.dir")),
       AbrMappings(cfgPath / "EMD_acdm.xsl"),
+      properties.getString("export.states").replace(" ", "").split(",").toList,
     )
   }
 }

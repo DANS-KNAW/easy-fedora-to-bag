@@ -116,17 +116,6 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
       Success(Some("Violates 3: invalid title"))
   }
 
-  it should "report jump off" in {
-    val emdTitle = <emd:title><dc:title xml:lang="nld">thematische collectie</dc:title></emd:title>
-    val emd = parseEmdContent(Seq(emdTitle, emdDoi))
-
-    simpleChecker(loggerExpectsWarnings = Seq(
-      "violated 2: has jump off dans-jumpoff:123",
-      "violated 3: invalid title thematische collectie",
-    )).violations(emd, emd2ddm(emd), amd("PUBLISHED"), Seq("dans-jumpoff:123")) shouldBe
-      Success(Some("Violates 2: has jump off; 3: invalid title"))
-  }
-
   it should "report invalid status" in {
     val emd = parseEmdContent(emdDoi)
 

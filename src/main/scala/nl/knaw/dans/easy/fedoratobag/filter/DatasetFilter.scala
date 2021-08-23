@@ -40,7 +40,6 @@ trait DatasetFilter extends DebugEnhancedLogging {
     val violations = Seq(
       "1: DANS DOI" -> (if (maybeDoi.isEmpty) Seq("not found")
                         else Seq[String]()),
-      "2: has jump off" -> fedoraIDs.filter(_.startsWith("dans-jumpoff:")),
       "3: invalid title" -> Option(emd.getEmdTitle.getPreferredTitle)
         .filter(title => forbiddenTitle(title)).toSeq,
       invalidStateKey -> findInvalidState(amd, exportStates),

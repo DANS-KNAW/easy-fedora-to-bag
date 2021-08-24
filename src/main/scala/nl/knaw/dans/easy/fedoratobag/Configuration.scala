@@ -69,7 +69,7 @@ object Configuration {
       new URI(properties.getString("bag-index.url")),
       File(properties.getString("staging.dir")),
       AbrMappings(cfgPath / "EMD_acdm.xsl"),
-      properties.getString("export.states").replace(" ", "").split(",").toList,
+      properties.getString("export.states").split(",").toList.map(_.trim),
     )
   }
 }

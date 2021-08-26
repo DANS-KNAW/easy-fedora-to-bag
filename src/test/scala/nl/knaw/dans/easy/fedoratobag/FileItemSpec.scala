@@ -48,6 +48,10 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
           <dct:extent>0.0MB</dct:extent>
           <accessibleToRights>RESTRICTED_REQUEST</accessibleToRights>
           <visibleToRights>ANONYMOUS</visibleToRights>
+          <afm:keyvaluepair>
+            <afm:key>ORIGINAL_FILE_PATH</afm:key>
+            <afm:value>original/so:me.xslx</afm:value>
+          </afm:keyvaluepair>
         </file>
         <file filepath="data/cu_rated/so_me.csv"><dct:identifier>easy-file:25</dct:identifier>
           <dct:title>so_me.csv</dct:title>
@@ -55,6 +59,10 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
           <dct:extent>0.0MB</dct:extent>
           <accessibleToRights>RESTRICTED_REQUEST</accessibleToRights>
           <visibleToRights>ANONYMOUS</visibleToRights>
+          <afm:keyvaluepair>
+            <afm:key>ORIGINAL_FILE_PATH</afm:key>
+            <afm:value>cu*rated/so:me.csv</afm:value>
+          </afm:keyvaluepair>
           <dct:source>data/so_me.xslx</dct:source>
         </file>
       </files>
@@ -71,6 +79,10 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
           <dct:extent>0.0MB</dct:extent>
           <accessibleToRights>RESTRICTED_REQUEST</accessibleToRights>
           <visibleToRights>ANONYMOUS</visibleToRights>
+          <afm:keyvaluepair>
+            <afm:key>ORIGINAL_FILE_PATH</afm:key>
+            <afm:value>original/so:me.xslx</afm:value>
+          </afm:keyvaluepair>
         </file><file filepath="data/cu_rated/so_me.csv">
           <dct:identifier>easy-file:25</dct:identifier>
           <dct:title>so_me.csv</dct:title>
@@ -78,6 +90,10 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
           <dct:extent>0.0MB</dct:extent>
           <accessibleToRights>RESTRICTED_REQUEST</accessibleToRights>
           <visibleToRights>ANONYMOUS</visibleToRights>
+          <afm:keyvaluepair>
+            <afm:key>ORIGINAL_FILE_PATH</afm:key>
+            <afm:value>cu*rated/so:me.csv</afm:value>
+          </afm:keyvaluepair>
           <dct:source>data/original/so_me.xslx</dct:source>
         </file>
       </files>

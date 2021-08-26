@@ -35,6 +35,7 @@ case class FileInfo(fedoraFileId: String,
                     contentDigest: Option[Node],
                     additionalMetadata: Option[Node],
                     wasDerivedForm: Option[Path] = None,
+                    originalPath: Path,
                    ) {
   private val isAccessible: Boolean = accessibleTo.toUpperCase() != "NONE"
   val isOriginal: Boolean = startsWithOriginalFolder(path)
@@ -61,11 +62,12 @@ case class FileInfo(fedoraFileId: String,
 }
 
 object FileInfo extends DebugEnhancedLogging {
-  private val allowedCharactersInPath =(('a' to 'z') ++ ('A' to 'Z') ++ ('0' to '9') ++ List('_', '-', '.', '\\', '/', ' ')).toSet
+  //private val allowedCharactersInPath =(('a' to 'z') ++ ('A' to 'Z') ++ ('0' to '9') ++ List('_', '-', '.', '\\', '/', ' ')).toSet
   private val nonAllowedCharactersInFileName = List(':', '*', '?', '"', '<', '>', '|', ';', '#')
+  private val nonAllowedCharactersInPathName = nonAllowedCharactersInFileName ++ List('(', ')', ',', '\'', '[', ']', '&', '+')
 
   private def replaceNonAllowedCharactersInPath(s: String): String = {
-    s.map(char => if (! allowedCharactersInPath.contains(char)) '_'
+    s.map(char => if (nonAllowedCharactersInPathName.contains(char)) '_'
                   else char)
   }
   private def replaceNonAllowedCharactersInFileName(s: String): String = {
@@ -124,6 +126,7 @@ object FileInfo extends DebugEnhancedLogging {
             digest,
             (fileMetadata \ "additional-metadata" \ "additional" \ "content").headOption,
             derivedFrom.flatMap(pathMap), // TODO error handling
+            (fileMetadata \\ "path").map(_.text).headOption.map(p=>Paths.get(p)).get,  //when 'path' is a Some, so is this
           )
       }
     }

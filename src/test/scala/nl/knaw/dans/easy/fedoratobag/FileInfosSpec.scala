@@ -24,7 +24,7 @@ import scala.util.Success
 import scala.xml.NodeBuffer
 
 class FileInfosSpec extends TestSupportFixture with FileFoXmlSupport with MockFactory {
-  private val fileInfo = new FileInfo("easy-file:1", Paths.get("x.txt"), "x.txt", size = 2, mimeType = "text/plain", accessibleTo = "ANONYMOUS", visibleTo = "ANONYMOUS", contentDigest = None, additionalMetadata = None)
+  private val fileInfo = new FileInfo("easy-file:1", Paths.get("x.txt"), "x.txt", size = 2, mimeType = "text/plain", accessibleTo = "ANONYMOUS", visibleTo = "ANONYMOUS", contentDigest = None, additionalMetadata = None, None, Paths.get("x.txt"))
   "selectForXxxBag" should "return files for two bags" in {
     val fileInfos = List(
       fileInfo.copy(fedoraFileId = "easy-file:1", path = Paths.get("original/x.txt")),
@@ -70,7 +70,7 @@ class FileInfosSpec extends TestSupportFixture with FileFoXmlSupport with MockFa
   }
   "FileInfo" should "replace non allowed characters in name and filepath with '_'" in {
     val foxml = fileFoXml(
-      location = "p(e:t*/t?/s>m|w;e#e'f",
+      location = "pשr(e:t*/t?/s>m|w;e#e'f",
       name = "a:cקq*e?g>i|k;m#o\".txt",
     )
     val fedoraProvider = mock[FedoraProvider]
@@ -79,6 +79,6 @@ class FileInfosSpec extends TestSupportFixture with FileFoXmlSupport with MockFa
     val fileInfo = FileInfo(List("easy-file:35"), fedoraProvider)
       .getOrElse(fail("could not load test data")).head
     fileInfo.name shouldBe "a_cקq_e_g_i_k_m_o_.txt"
-    fileInfo.path shouldBe Paths.get("p_e_t_/t_/s_m_w_e_e_f/a_cקq_e_g_i_k_m_o_.txt")
+    fileInfo.path shouldBe Paths.get("pשr_e_t_/t_/s_m_w_e_e_f/a_cקq_e_g_i_k_m_o_.txt")
   }
 }

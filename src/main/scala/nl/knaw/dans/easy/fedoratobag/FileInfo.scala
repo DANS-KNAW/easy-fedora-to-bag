@@ -59,6 +59,9 @@ case class FileInfo(fedoraFileId: String,
   def bagPath(isOriginalVersioned: Boolean): Path = {
     fixedPath(path, isOriginalVersioned)
   }
+  def originalBagPath(isOriginalVersioned: Boolean): Path = {
+    fixedPath(originalPath, isOriginalVersioned)
+  }
 }
 
 object FileInfo extends DebugEnhancedLogging {
@@ -174,6 +177,7 @@ object FileInfo extends DebugEnhancedLogging {
 
   private def versionedInfo(fileInfo: FileInfo): FileInfo = fileInfo.copy(
     path = fileInfo.bagPath(isOriginalVersioned = true),
+    originalPath = fileInfo.originalBagPath(isOriginalVersioned = true),
     fedoraFileId = "",
     accessibleTo = "",
     visibleTo = "",

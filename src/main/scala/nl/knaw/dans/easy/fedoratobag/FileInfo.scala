@@ -177,6 +177,7 @@ object FileInfo extends DebugEnhancedLogging {
     fedoraFileId = "",
     accessibleTo = "",
     visibleTo = "",
+    originalPath = fileInfo.bagPath(isOriginalVersioned = true),
   )
 
   private def logDuplicates(prefix: String, duplicates: Map[Path, String]): Unit = {

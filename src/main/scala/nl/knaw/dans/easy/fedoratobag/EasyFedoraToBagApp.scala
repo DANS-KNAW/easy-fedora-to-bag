@@ -287,7 +287,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
 
   private def addPayloadFileTo(bag: DansV0Bag, isOriginalVersioned: Boolean)(fileInfo: FileInfo): Try[Node] = {
     trace(fileInfo)
-    val target = fileInfo.bagPath(isOriginalVersioned)
+    val target = fileInfo.path.bagPath(isOriginalVersioned)
     val file = bag.baseDir / "data" / target.toString
     for {
       fileItem <- FileItem(fileInfo, isOriginalVersioned)

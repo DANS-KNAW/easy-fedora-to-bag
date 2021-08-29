@@ -50,7 +50,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
           <visibleToRights>ANONYMOUS</visibleToRights>
           <afm:keyvaluepair>
             <afm:key>ORIGINAL_FILE_PATH</afm:key>
-            <afm:value>original/so:me.xslx</afm:value>
+            <afm:value>so:me.xslx</afm:value>
           </afm:keyvaluepair>
         </file>
         <file filepath="data/cu_rated/so_me.csv"><dct:identifier>easy-file:25</dct:identifier>

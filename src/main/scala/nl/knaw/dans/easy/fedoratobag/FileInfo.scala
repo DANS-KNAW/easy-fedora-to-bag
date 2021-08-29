@@ -38,27 +38,13 @@ case class FileInfo(fedoraFileId: String,
                     originalPath: Path,
                    ) {
   private val isAccessible: Boolean = accessibleTo.toUpperCase() != "NONE"
-  val isOriginal: Boolean = startsWithOriginalFolder(path)
+  val isOriginal: Boolean = path.startsWithOriginalFolder
   val isAccessibleOriginal: Boolean = isOriginal && isAccessible
   val maybeDigestType: Option[String] = contentDigest.map(n => (n \\ "@TYPE").text)
   val maybeDigestValue: Option[String] = contentDigest.map(n => (n \\ "@DIGEST").text)
 
-  private def startsWithOriginalFolder(path: Path) = {
-    path.getName(0).toString.toLowerCase == "original"
-  }
-
-  private def fixedPath(path: Path, isOriginalVersioned: Boolean) = {
-    if (isOriginalVersioned && startsWithOriginalFolder(path))
-      path.subpath(1, path.getNameCount)
-    else path
-  }
-
   def bagSource(isOriginalVersioned: Boolean): Option[Path] = wasDerivedForm
-    .map(fixedPath(_, isOriginalVersioned))
-
-  def bagPath(isOriginalVersioned: Boolean): Path = {
-    fixedPath(path, isOriginalVersioned)
-  }
+    .map(_.path.bagPath(isOriginalVersioned))
 }
 
 object FileInfo extends DebugEnhancedLogging {
@@ -146,7 +132,7 @@ object FileInfo extends DebugEnhancedLogging {
 
     /** @return bagPath -> digestValues */
     def findDuplicateFiles(fileInfos: Seq[FileInfo]) = fileInfos
-      .groupBy(_.bagPath(isOriginalVersioned))
+      .groupBy(_.path.bagPath(isOriginalVersioned))
       .filter(_._2.size > 1)
       .mapValues(infos =>
         infos.map(info =>
@@ -173,7 +159,8 @@ object FileInfo extends DebugEnhancedLogging {
   }
 
   private def versionedInfo(fileInfo: FileInfo): FileInfo = fileInfo.copy(
-    path = fileInfo.bagPath(isOriginalVersioned = true),
+    path = fileInfo.path.bagPath(isOriginalVersioned = true),
+    originalPath = fileInfo.originalPath.bagPath(isOriginalVersioned = true),
     fedoraFileId = "",
     accessibleTo = "",
     visibleTo = "",

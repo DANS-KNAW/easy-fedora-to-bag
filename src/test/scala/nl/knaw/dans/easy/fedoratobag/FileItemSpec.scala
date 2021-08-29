@@ -282,7 +282,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
   it should "use file name as second title (first title from mandatory name)" in {
     val fileMetadata = {
       <name>SKKJ6_spoor.mix</name>
-      <path>GIS/SKKJ6_spoor.mif</path>
+      <path>GIS/SKKJ6_spoor.mix</path>
       <mimeType>application/x-framemaker</mimeType>
       <size>911988</size>
       <creatorRole>ARCHIVIST</creatorRole>
@@ -311,7 +311,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
     // once from <name>, once from <addmd:additional-metadata><file_name>
     val triedFileItem = FileItem(fileInfo, isOriginalVersioned = false)
     triedFileItem.map(trim) shouldBe Success(trim(
-      <file filepath="data/GIS/SKKJ6_spoor.mif">
+      <file filepath="data/GIS/SKKJ6_spoor.mix">
         <dct:identifier>easy-file:35</dct:identifier>
         <dct:title>SKKJ6_spoor.mix</dct:title>
         <dct:format>application/x-framemaker</dct:format>
@@ -336,7 +336,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
   it should "use archival_name as title and skip quantity 1" in {
     val fileMetadata = {
       <name>A</name>
-      <path>B</path>
+      <path>B/A</path>
       <mimeType>C</mimeType>
       <size>9</size>
       <creatorRole>D</creatorRole>
@@ -363,7 +363,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
 
     val triedFileItem = FileItem(fileInfo, isOriginalVersioned = false)
     triedFileItem.map(trim) shouldBe Success(trim(
-      <file filepath="data/B">
+      <file filepath="data/B/A">
           <dct:identifier>easy-file:35</dct:identifier>
           <dct:title>A</dct:title>
           <dct:format>C</dct:format>
@@ -388,7 +388,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
   "checkNotImplemented" should "report an original_file combined with archival_name" in {
     val fileMetadata = {
       <name>A</name>
-      <path>B</path>
+      <path>B/A</path>
       <mimeType>C</mimeType>
       <size>9</size>
       <creatorRole>D</creatorRole>
@@ -409,7 +409,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
 
     val triedFileItem = FileItem(fileInfo, isOriginalVersioned = false)
     triedFileItem.map(trim) shouldBe Success(trim(
-      <file filepath="data/B">
+      <file filepath="data/B/A">
           <dct:identifier>easy-file:35</dct:identifier>
           <dct:title>A</dct:title>
           <dct:format>C</dct:format>
@@ -424,7 +424,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
     ))
     val mockLogger = mock[UnderlyingLogger]
     Seq(
-      "easy-file:35 (data/B) NOT IMPLEMENTED: original_file AND archival_name",
+      "easy-file:35 (data/B/A) NOT IMPLEMENTED: original_file AND archival_name",
     ).foreach(s => (mockLogger.warn(_: String)) expects s once())
     (() => mockLogger.isWarnEnabled()) expects() anyNumberOfTimes() returning true
 

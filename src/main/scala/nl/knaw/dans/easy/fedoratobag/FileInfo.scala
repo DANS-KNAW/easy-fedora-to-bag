@@ -84,8 +84,9 @@ object FileInfo extends DebugEnhancedLogging {
           fileMetadata <- FoXml.getFileMD(foXml)
           derivedFromId = derivedFrom(FoXml.getStreamRoot("RELS-EXT", foXml))
           digest = digestValue(FoXml.getStreamRoot("EASY_FILE", foXml))
+          filename = (fileMetadata \\ "name").map(_.text).mkString
           path = (fileMetadata \\ "path").map(_.text).headOption
-            .map(p => Paths.get(replaceNonAllowedCharactersInPath(p)))
+            .map(p => Paths.get(replaceNonAllowedCharactersInPath(p.substring(0, p.lastIndexOf(filename)))+replaceNonAllowedCharactersInFileName(filename)))
         } yield (fileId, derivedFromId, digest, fileMetadata, path)
       }.map { files =>
       val pathMap = files.map {

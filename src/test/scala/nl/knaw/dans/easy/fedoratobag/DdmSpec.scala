@@ -263,7 +263,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }
         <ddm:dcmiMetadata>
-          <ddm:replaces href="www.persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-mp3-pb2">
+          <ddm:replaces href="http://www.persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-mp3-pb2">
             Vlaardingen
           </ddm:replaces>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>

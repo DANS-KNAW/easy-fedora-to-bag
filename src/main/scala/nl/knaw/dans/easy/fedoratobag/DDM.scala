@@ -309,6 +309,7 @@ object DDM extends DebugEnhancedLogging {
     }.getOrElse {
       if (uri.toString.startsWith("10.17026/")) s"https://doi.org/$uri"
       else if (uri.toString.isBlank) null
+      else if (uri.toString.startsWith("www.")) "http://" + uri
            else uri.toString
     }
   }

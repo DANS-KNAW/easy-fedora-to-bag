@@ -32,6 +32,7 @@ class ReadmeSpec extends TestSupportFixture with CustomMatchers with FixedCurren
     bagIndexUrl = null,
     stagingDir = null,
     abrMapping = null,
+    exportStates = null,
   )
   Properties.setProp("user.home", "/home/vagrant")
   private val clo = new CommandLineOptions(Array[String](), configuration) {

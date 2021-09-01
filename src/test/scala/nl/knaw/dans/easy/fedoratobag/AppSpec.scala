@@ -34,7 +34,7 @@ import scala.xml.XML
 class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupport with MockFactory with FileSystemSupport with AudienceSupport {
   implicit val logFile: File = testDir / "log.txt"
 
-  private class AppWithMockedServices(configuration: Configuration = new Configuration("test-version", null, null, null, null, testDir / "staging", AbrMappings(File("src/main/assembly/dist/cfg/EMD_acdm.xsl"))),
+  private class AppWithMockedServices(configuration: Configuration = new Configuration("test-version", null, null, null, null, testDir / "staging", AbrMappings(File("src/main/assembly/dist/cfg/EMD_acdm.xsl")), List("PUBLISHED", "SUBMITTED")),
                                      ) extends EasyFedoraToBagApp(configuration) {
     private class MockedLdapContext extends InitialLdapContext(new java.util.Hashtable[String, String](), null)
 

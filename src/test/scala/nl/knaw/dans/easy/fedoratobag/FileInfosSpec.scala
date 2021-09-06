@@ -15,13 +15,14 @@
  */
 package nl.knaw.dans.easy.fedoratobag
 
+import com.sun.xml.internal.ws.api.model.wsdl.WSDLBoundOperation.ANONYMOUS
 import nl.knaw.dans.easy.fedoratobag.filter._
 import nl.knaw.dans.easy.fedoratobag.fixture.{ FileFoXmlSupport, TestSupportFixture }
 import org.scalamock.scalatest.MockFactory
 
 import java.nio.file.Paths
-import scala.util.Success
-import scala.xml.NodeBuffer
+import scala.util.{ Failure, Success }
+import scala.xml.{ NodeBuffer, XML }
 
 class FileInfosSpec extends TestSupportFixture with FileFoXmlSupport with MockFactory {
   private val fileInfo = new FileInfo("easy-file:1", Paths.get("x.txt"), "x.txt", size = 2, mimeType = "text/plain", accessibleTo = "ANONYMOUS", visibleTo = "ANONYMOUS", contentDigest = None, additionalMetadata = None, None, Paths.get("x.txt"))
@@ -80,6 +81,21 @@ class FileInfosSpec extends TestSupportFixture with FileFoXmlSupport with MockFa
       .getOrElse(fail("could not load test data")).head
     fileInfo.name shouldBe "a_cקq_e_g_i_k_m_o_.txt"
     fileInfo.path shouldBe Paths.get("pשr_e_t_/t_/s_m_w_e_e_f/a_cקq_e_g_i_k_m_o_.txt")
+  }
+
+  "FileInfo" should "not stumble over an inconsistent file name" in {
+    val foxml = XML.loadFile("src/test/resources/sample-foxml/inconsistentName.xml")
+    val fedoraProvider = mock[FedoraProvider]
+    (fedoraProvider.loadFoXml(_: String)) expects "easy-file:35" once() returning Success(foxml)
+
+    val triedInfoes = FileInfo(List("easy-file:35"), fedoraProvider)
+    triedInfoes should matchPattern {
+      case Success(List(fileInfo: FileInfo)) if
+        fileInfo.name == "a_cקq_e_g_i_k_m_o_.txt" &&
+        fileInfo.path.toString == "pשr_e_t_/t_/s_m_w_e_e_fa_cקq_e_g_i_k_m_o_.pdf" &&
+        fileInfo.originalPath.toString == "pשr(e:t*/t?/s>m|w;e#e'f/a:cקq*e?g>i|k;m#o\".pdf"
+      =>
+    }
   }
 
   it should "replace more non allowed characters in filepath than in name with '_'" in {

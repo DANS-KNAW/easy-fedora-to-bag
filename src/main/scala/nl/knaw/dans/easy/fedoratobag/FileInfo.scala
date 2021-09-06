@@ -38,7 +38,7 @@ case class FileInfo(fedoraFileId: String,
                     originalPath: Path,
                    ) {
   private val isAccessible: Boolean = accessibleTo.toUpperCase() != "NONE"
-  val isOriginal: Boolean = path.startsWithOriginalFolder
+  val isOriginal: Boolean = path.startsWithOriginalFolder()
   val isAccessibleOriginal: Boolean = isOriginal && isAccessible
   val maybeDigestType: Option[String] = contentDigest.map(n => (n \\ "@TYPE").text)
   val maybeDigestValue: Option[String] = contentDigest.map(n => (n \\ "@DIGEST").text)
@@ -49,16 +49,23 @@ case class FileInfo(fedoraFileId: String,
 
 object FileInfo extends DebugEnhancedLogging {
   //private val allowedCharactersInPath =(('a' to 'z') ++ ('A' to 'Z') ++ ('0' to '9') ++ List('_', '-', '.', '\\', '/', ' ')).toSet
-  private val nonAllowedCharactersInFileName = List(':', '*', '?', '"', '<', '>', '|', ';', '#')
-  private val nonAllowedCharactersInPathName = nonAllowedCharactersInFileName ++ List('(', ')', ',', '\'', '[', ']', '&', '+')
+  private val forbiddenCharactersInFileName = List(':', '*', '?', '"', '<', '>', '|', ';', '#')
+  private val forbiddenCharactersInPathName = forbiddenCharactersInFileName ++ List('(', ')', ',', '\'', '[', ']', '&', '+')
 
-  private def replaceNonAllowedCharactersInPath(s: String): String = {
-    s.map(char => if (nonAllowedCharactersInPathName.contains(char)) '_'
+  private def replaceForbiddenCharactersInPath(s: String): String = {
+    s.map(char => if (forbiddenCharactersInPathName.contains(char)) '_'
                   else char)
   }
-  private def replaceNonAllowedCharactersInFileName(s: String): String = {
-    s.map(char => if (nonAllowedCharactersInFileName.contains(char)) '_'
+  private def replaceForbiddenCharactersInFileName(s: String): String = {
+    s.map(char => if (forbiddenCharactersInFileName.contains(char)) '_'
                   else char)
+  }
+
+  private def toValidChars(fileMetadataPath: String) = {
+    val p = Paths.get(fileMetadataPath)
+    val s = replaceForbiddenCharactersInPath(p.getParent.toString) +
+      replaceForbiddenCharactersInFileName(p.getFileName.toString)
+    Paths.get(s)
   }
 
   def apply(fedoraIDs: Seq[String], fedoraProvider: FedoraProvider): Try[Seq[FileInfo]] = {
@@ -84,9 +91,7 @@ object FileInfo extends DebugEnhancedLogging {
           fileMetadata <- FoXml.getFileMD(foXml)
           derivedFromId = derivedFrom(FoXml.getStreamRoot("RELS-EXT", foXml))
           digest = digestValue(FoXml.getStreamRoot("EASY_FILE", foXml))
-          filename = (fileMetadata \\ "name").map(_.text).mkString
-          path = (fileMetadata \\ "path").map(_.text).headOption
-            .map(p => Paths.get(replaceNonAllowedCharactersInPath(p.substring(0, p.lastIndexOf(filename)))+replaceNonAllowedCharactersInFileName(filename)))
+          path = (fileMetadata \\ "path").map(_.text).headOption.map(toValidChars)
         } yield (fileId, derivedFromId, digest, fileMetadata, path)
       }.map { files =>
       val pathMap = files.map {
@@ -105,7 +110,7 @@ object FileInfo extends DebugEnhancedLogging {
                              else get("accessibleTo")
           new FileInfo(
             fileId, path,
-            replaceNonAllowedCharactersInFileName(get("name")),
+            replaceForbiddenCharactersInFileName(get("name")),
             get("size").toLong,
             get("mimeType"),
             accessibleTo,

@@ -63,7 +63,9 @@ object FileInfo extends DebugEnhancedLogging {
 
   private def toValidChars(fileMetadataPath: String) = {
     val p = Paths.get(fileMetadataPath)
-    val s = replaceForbiddenCharactersInPath(p.getParent.toString) +
+    val s = Option(p.getParent)
+      .map(parent => replaceForbiddenCharactersInPath(parent.toString)+"/")
+      .getOrElse("") +
       replaceForbiddenCharactersInFileName(p.getFileName.toString)
     Paths.get(s)
   }

@@ -92,7 +92,7 @@ class FileInfosSpec extends TestSupportFixture with FileFoXmlSupport with MockFa
     triedInfoes should matchPattern {
       case Success(List(fileInfo: FileInfo)) if
         fileInfo.name == "a_cקq_e_g_i_k_m_o_.txt" &&
-        fileInfo.path.toString == "pשr_e_t_/t_/s_m_w_e_e_fa_cקq_e_g_i_k_m_o_.pdf" &&
+        fileInfo.path.toString == "pשr_e_t_/t_/s_m_w_e_e_f/a_cקq_e_g_i_k_m_o_.pdf" &&
         fileInfo.originalPath.toString == "pשr(e:t*/t?/s>m|w;e#e'f/a:cקq*e?g>i|k;m#o\".pdf"
       =>
     }

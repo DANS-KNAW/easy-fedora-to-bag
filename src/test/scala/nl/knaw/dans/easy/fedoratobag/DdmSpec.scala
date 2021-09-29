@@ -263,7 +263,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }
         <ddm:dcmiMetadata>
-          <ddm:replaces href="www.persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-mp3-pb2">
+          <ddm:replaces href="http://www.persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-mp3-pb2">
             Vlaardingen
           </ddm:replaces>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
@@ -793,8 +793,8 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }
         <ddm:dcmiMetadata>
-          <not:implemented/>
-          <not:implemented/>
+          <not:implemented>invalid box: SpatialBox(Some(RD),None,None,None,None)</not:implemented>
+          <not:implemented>invalid box: SpatialBox(Some(degrees),None,None,None,None)</not:implemented>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>
@@ -834,10 +834,12 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }
         <ddm:dcmiMetadata>
-          <not:implemented/>
-          <not:implemented/>
-          <not:implemented/>
-          <not:implemented/>
+          <not:implemented>expected either point, box or polygon: name=A general description</not:implemented>
+          <not:implemented>expected either point, box or polygon: scheme=null x=1 y=nullscheme=degrees north=79.5 east=23.0 south=76.7 west=10.0</not:implemented>
+          <not:implemented>
+            expected either point, box or polygon: scheme=degrees north=79.5 east=23.0 south=76.7 west=10.0(exterior=null, interior=null)
+          </not:implemented>
+          <not:implemented>expected either point, box or polygon: scheme=null x=1 y=null(exterior=null, interior=null)</not:implemented>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>
@@ -1059,7 +1061,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D13200") }
         <ddm:dcmiMetadata>
-          <not:implemented/>
+          <not:implemented>relation (references): title=rababera URI=isbn:9053566937</not:implemented>
           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
         </ddm:dcmiMetadata>
       </ddm:DDM>

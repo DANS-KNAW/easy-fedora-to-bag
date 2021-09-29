@@ -31,7 +31,7 @@ trait DatasetFilter extends DebugEnhancedLogging {
   val allowOriginalAndOthers: Boolean = false
   private val invalidStateKey = "5: invalid state"
 
-  def violations(emd: EasyMetadataImpl, ddm: Node, amd: Node, fedoraIDs: Seq[String] = Seq.empty, fileInfos: List[FileInfo] = List.empty): Try[Option[String]] = {
+  def violations(emd: EasyMetadataImpl, ddm: Node, amd: Node, fedoraIDs: Seq[String] = Seq.empty, fileInfos: List[FileInfo] = List.empty, exportStates: List[String]): Try[Option[String]] = {
     val maybeDoi = Option(emd.getEmdIdentifier.getDansManagedDoi)
     val mixOfOriginalAndOthers = allowOriginalAndOthers || !fileInfos.hasOriginalAndOthers
     val triedMaybeInTargetResponse: Try[Option[String]] = maybeDoi
@@ -40,10 +40,9 @@ trait DatasetFilter extends DebugEnhancedLogging {
     val violations = Seq(
       "1: DANS DOI" -> (if (maybeDoi.isEmpty) Seq("not found")
                         else Seq[String]()),
-      "2: has jump off" -> fedoraIDs.filter(_.startsWith("dans-jumpoff:")),
       "3: invalid title" -> Option(emd.getEmdTitle.getPreferredTitle)
         .filter(title => forbiddenTitle(title)).toSeq,
-      invalidStateKey -> findInvalidState(amd),
+      invalidStateKey -> findInvalidState(amd, exportStates),
       "6: DANS relations" -> findDansRelations(ddm).map(_.toOneLiner),
       "7: is in the vault" -> triedMaybeInTargetResponse.getOrElse(None).toSeq,
       "8: original and other files" -> (if (mixOfOriginalAndOthers) Seq.empty
@@ -65,11 +64,11 @@ trait DatasetFilter extends DebugEnhancedLogging {
 
   def forbiddenTitle(title: String): Boolean
 
-  private def findInvalidState(amd: Node) = {
+  private def findInvalidState(amd: Node, exportStates: List[String]) = {
     val seq = amd \ "datasetState"
     if (seq.isEmpty) Seq("not found")
     else seq
-      .withFilter(node => !(node.text == "PUBLISHED"))
+      .withFilter(node => !exportStates.contains(node.text))
       .map(_.text)
   }
 

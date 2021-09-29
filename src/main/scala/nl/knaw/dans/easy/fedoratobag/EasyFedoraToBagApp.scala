@@ -47,6 +47,7 @@ import scala.xml.{ Elem, Node, Text }
 
 class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogging {
   lazy val fedoraProvider: FedoraProvider = new FedoraProvider(new FedoraClient(configuration.fedoraCredentials))
+  lazy val fsRdb = new FsRdb(configuration.databaseConnection)
   lazy val ldapContext: InitialLdapContext = new InitialLdapContext(configuration.ldapEnv, null)
   lazy val bagIndex: BagIndex = filter.BagIndex(configuration.bagIndexUrl)
   private lazy val ldap = new Ldap(ldapContext)
@@ -193,8 +194,11 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
 
     def payloadInEasy(tooManyFiles: Boolean) = {
       if (tooManyFiles)
-        <ddm:description xml:lang="en">{ s"Files for this dataset can be found at https://easy.dans.knaw.nl/ui/datasets/id/$datasetId/tab/2" }</ddm:description>
+        <dct:description xml:lang="en">{ s"<![CDATA[<b>Files not yet migrated to Data Station. Files for this dataset can be found at ${makelink(datasetId)}.</b>]]>" }</dct:description>
       else Text("")
+    }
+    def makelink(datasetId: DatasetId): Node = {
+     <a href={ s"https://easy.dans.knaw.nl/ui/datasets/id/$datasetId/tab/2" }>{ s"https://easy.dans.knaw.nl/ui/datasets/id/$datasetId" }</a>
     }
 
     for {
@@ -207,7 +211,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       audiences <- emd.getEmdAudience.getDisciplines.asScala
         .map(id => getAudience(id.getValue)).collectResults
       fedoraIDs <- if (options.noPayload) Success(Seq.empty)
-                   else fedoraProvider.getSubordinates(datasetId)
+                   else fsRdb.getSubordinates(datasetId)
       allFileInfos <- FileInfo(fedoraIDs.filter(_.startsWith("easy-file:")).toList, fedoraProvider).map(_.toList)
       isOriginalVersioned = options.transformationType == ORIGINAL_VERSIONED
       selectedForSecondBag = allFileInfos.selectForSecondBag(isOriginalVersioned, options.noPayload)
@@ -217,8 +221,9 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       _ = trace("creating DDM from EMD")
       ddm <- DDM(emd, audiences, configuration.abrMapping, payloadInEasy(tooManyFiles))
       _ = trace("created DDM from EMD")
-      maybeFilterViolations <- options.datasetFilter.violations(emd, ddm, amd, fedoraIDs, allFileInfos)
+      maybeFilterViolations <- options.datasetFilter.violations(emd, ddm, amd, fedoraIDs, allFileInfos, configuration.exportStates)
       _ = if (options.strict) maybeFilterViolations.foreach(msg => throw InvalidTransformationException(msg))
+      _ = (ddm \\ "implemented").filter(_.prefix == "not").foreach(n => throw InvalidTransformationException(n.toString()))
       // so far for collecting data, now we start writing
       _ = logger.info(s"Creating $bagDir from $datasetId with owner $depositor")
       bag <- DansV0Bag.empty(bagDir)

@@ -56,9 +56,12 @@ object FileItem {
     val src = fileInfo.bagSource(isOriginalVersioned).map(path =>
         <dct:source>{ "data/" + path }</dct:source>
     ).getOrElse(Seq[Node]())
-    val bagPath = fileInfo.bagPath(isOriginalVersioned)
+    val bagPath = fileInfo.path.bagPath(isOriginalVersioned)
     val comment = if (bagPath != fileInfo.path) Comment(fileInfo.path.toString.replaceAll("--","__"))
                   else Text("")
+    val originalPath = if (fileInfo.originalPath != fileInfo.path)
+                         <afm:keyvaluepair><afm:key>ORIGINAL_FILE_PATH</afm:key><afm:value>{ fileInfo.originalPath.bagPath(isOriginalVersioned) }</afm:value></afm:keyvaluepair>
+                       else Text("")
 
       <file filepath={ "data/" + bagPath }>
         { comment }
@@ -69,6 +72,7 @@ object FileItem {
         { fileInfo.additionalMetadata.map(convert).getOrElse( Seq[Node]()) }
         <accessibleToRights>{ fileInfo.accessibleTo }</accessibleToRights>
         <visibleToRights>{ fileInfo.visibleTo }</visibleToRights>
+        { originalPath }
         { src }
       </file>
   }

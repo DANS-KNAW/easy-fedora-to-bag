@@ -67,7 +67,7 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
     val fileInfos = List(
       "original/x.txt",
       "x.txt",
-    ).map(p => new FileInfo("easy-file:2", Paths.get(p), "x.txt", 2, "text/plain", "ANONYMOUS", "ANONYMOUS", None, None))
+    ).map(p => new FileInfo("easy-file:2", Paths.get(p), "x.txt", 2, "text/plain", "ANONYMOUS", "ANONYMOUS", None, None, None, Paths.get(p)))
 
     simpleChecker(loggerExpectsWarnings = Seq(
       "violated 8: original and other files should not occur both",
@@ -82,7 +82,7 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
     val fileInfos = List(
       "original/x.txt",
       "x.txt",
-    ).map(p => new FileInfo("easy-file:2", Paths.get(p), "x.txt", 2, "text/plain", "ANONYMOUS", "ANONYMOUS", None, None))
+    ).map(p => new FileInfo("easy-file:2", Paths.get(p), "x.txt", 2, "text/plain", "ANONYMOUS", "ANONYMOUS", None, None, None, Paths.get(p)))
 
     FedoraVersionedFilter().violations(emd, ddm, amd("PUBLISHED"), fedoraIDs = Seq(), fileInfos, exportStates) shouldBe
       Success(None)

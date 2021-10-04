@@ -35,37 +35,39 @@ case class FileInfo(fedoraFileId: String,
                     contentDigest: Option[Node],
                     additionalMetadata: Option[Node],
                     wasDerivedForm: Option[Path] = None,
+                    originalPath: Path,
                    ) {
   private val isAccessible: Boolean = accessibleTo.toUpperCase() != "NONE"
-  val isOriginal: Boolean = startsWithOriginalFolder(path)
+  val isOriginal: Boolean = path.startsWithOriginalFolder()
   val isAccessibleOriginal: Boolean = isOriginal && isAccessible
   val maybeDigestType: Option[String] = contentDigest.map(n => (n \\ "@TYPE").text)
   val maybeDigestValue: Option[String] = contentDigest.map(n => (n \\ "@DIGEST").text)
 
-  private def startsWithOriginalFolder(path: Path) = {
-    path.getName(0).toString.toLowerCase == "original"
-  }
-
-  private def fixedPath(path: Path, isOriginalVersioned: Boolean) = {
-    if (isOriginalVersioned && startsWithOriginalFolder(path))
-      path.subpath(1, path.getNameCount)
-    else path
-  }
-
   def bagSource(isOriginalVersioned: Boolean): Option[Path] = wasDerivedForm
-    .map(fixedPath(_, isOriginalVersioned))
-
-  def bagPath(isOriginalVersioned: Boolean): Path = {
-    fixedPath(path, isOriginalVersioned)
-  }
+    .map(_.path.bagPath(isOriginalVersioned))
 }
 
 object FileInfo extends DebugEnhancedLogging {
-  private val nonAllowedCharacters = List(':', '*', '?', '"', '<', '>', '|', ';', '#')
+  //private val allowedCharactersInPath =(('a' to 'z') ++ ('A' to 'Z') ++ ('0' to '9') ++ List('_', '-', '.', '\\', '/', ' ')).toSet
+  private val forbiddenCharactersInFileName = List(':', '*', '?', '"', '<', '>', '|', ';', '#')
+  private val forbiddenCharactersInPathName = forbiddenCharactersInFileName ++ List('(', ')', ',', '\'', '[', ']', '&', '+')
 
-  private def replaceNonAllowedCharacters(s: String): String = {
-    s.map(char => if (nonAllowedCharacters.contains(char)) '_'
+  private def replaceForbiddenCharactersInPath(s: String): String = {
+    s.map(char => if (forbiddenCharactersInPathName.contains(char)) '_'
                   else char)
+  }
+  private def replaceForbiddenCharactersInFileName(s: String): String = {
+    s.map(char => if (forbiddenCharactersInFileName.contains(char)) '_'
+                  else char)
+  }
+
+  private def toValidChars(fileMetadataPath: String) = {
+    val p = Paths.get(fileMetadataPath)
+    val s = Option(p.getParent)
+      .map(parent => replaceForbiddenCharactersInPath(parent.toString)+"/")
+      .getOrElse("") +
+      replaceForbiddenCharactersInFileName(p.getFileName.toString)
+    Paths.get(s)
   }
 
   def apply(fedoraIDs: Seq[String], fedoraProvider: FedoraProvider): Try[Seq[FileInfo]] = {
@@ -91,8 +93,7 @@ object FileInfo extends DebugEnhancedLogging {
           fileMetadata <- FoXml.getFileMD(foXml)
           derivedFromId = derivedFrom(FoXml.getStreamRoot("RELS-EXT", foXml))
           digest = digestValue(FoXml.getStreamRoot("EASY_FILE", foXml))
-          path = (fileMetadata \\ "path").map(_.text).headOption
-            .map(p => Paths.get(replaceNonAllowedCharacters(p)))
+          path = (fileMetadata \\ "path").map(_.text).headOption.map(toValidChars)
         } yield (fileId, derivedFromId, digest, fileMetadata, path)
       }.map { files =>
       val pathMap = files.map {
@@ -111,7 +112,7 @@ object FileInfo extends DebugEnhancedLogging {
                              else get("accessibleTo")
           new FileInfo(
             fileId, path,
-            replaceNonAllowedCharacters(get("name")),
+            replaceForbiddenCharactersInFileName(get("name")),
             get("size").toLong,
             get("mimeType"),
             accessibleTo,
@@ -119,6 +120,7 @@ object FileInfo extends DebugEnhancedLogging {
             digest,
             (fileMetadata \ "additional-metadata" \ "additional" \ "content").headOption,
             derivedFrom.flatMap(pathMap), // TODO error handling
+            (fileMetadata \\ "path").map(_.text).headOption.map(p=>Paths.get(p)).get,  //when 'path' is a Some, so is this
           )
       }
     }
@@ -138,7 +140,7 @@ object FileInfo extends DebugEnhancedLogging {
 
     /** @return bagPath -> digestValues */
     def findDuplicateFiles(fileInfos: Seq[FileInfo]) = fileInfos
-      .groupBy(_.bagPath(isOriginalVersioned))
+      .groupBy(_.path.bagPath(isOriginalVersioned))
       .filter(_._2.size > 1)
       .mapValues(infos =>
         infos.map(info =>
@@ -165,7 +167,8 @@ object FileInfo extends DebugEnhancedLogging {
   }
 
   private def versionedInfo(fileInfo: FileInfo): FileInfo = fileInfo.copy(
-    path = fileInfo.bagPath(isOriginalVersioned = true),
+    path = fileInfo.path.bagPath(isOriginalVersioned = true),
+    originalPath = fileInfo.originalPath.bagPath(isOriginalVersioned = true),
     fedoraFileId = "",
     accessibleTo = "",
     visibleTo = "",

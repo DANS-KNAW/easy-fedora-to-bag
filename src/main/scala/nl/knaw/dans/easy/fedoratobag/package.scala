@@ -15,10 +15,10 @@
  */
 package nl.knaw.dans.easy
 
-import nl.knaw.dans.bag.v0.DansV0Bag
 import org.joda.time.format.{ DateTimeFormatter, ISODateTimeFormat }
 import org.joda.time.{ DateTime, DateTimeZone }
 
+import java.nio.file.Path
 import scala.util.{ Failure, Try }
 import scala.xml.{ Node, PrettyPrinter, Utility }
 
@@ -60,6 +60,18 @@ package object fedoratobag {
       tries
         .collectFirst { case Failure(e) => Failure(e) }
         .getOrElse(onSuccess)
+    }
+  }
+
+  implicit class RichPath(val path: Path) extends AnyVal {
+    def startsWithOriginalFolder(): Boolean = {
+      path.getName(0).toString.toLowerCase == "original"
+    }
+
+    def bagPath(isOriginalVersioned: Boolean): Path = {
+      if (isOriginalVersioned && startsWithOriginalFolder)
+        path.subpath(1, path.getNameCount)
+      else path
     }
   }
 }

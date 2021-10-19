@@ -479,6 +479,46 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     triedDDM.flatMap(validate) shouldBe Success(())
   }
 
+  it should "ignore empty place" in {
+    val emd = parseEmdContent(Seq(
+      emdTitle, emdCreator, emdDescription, emdDates,
+        <emd:coverage>
+          <eas:spatial>
+            <eas:place></eas:place>
+            <eas:box eas:scheme="degrees">
+              <eas:north>90.0</eas:north>
+              <eas:east>180.0</eas:east>
+              <eas:south>-90.0</eas:south>
+              <eas:west>-180.0</eas:west>
+            </eas:box>
+          </eas:spatial>
+        </emd:coverage>,
+      emdRights,
+    ))
+    val triedDDM = DDM(emd, Seq("D35400"), abrMapping)
+    // logs: WARN  Empty point: scheme=RD x=null y=null
+    // note that a missing x or y defaults to zero
+    triedDDM.map(normalized) shouldBe Success(normalized(
+      <ddm:DDM xsi:schemaLocation={ schemaLocation }>
+        { ddmProfile("D35400") }
+        <ddm:dcmiMetadata>
+           <dcx-gml:spatial>
+             <boundedBy xmlns="http://www.opengis.net/gml">
+               <Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/4326">
+                 <lowerCorner>-90.0 -180.0</lowerCorner>
+                 <upperCorner>90.0 180.0</upperCorner>
+               </Envelope>
+             </boundedBy>
+           </dcx-gml:spatial>
+           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
+        </ddm:dcmiMetadata>
+      </ddm:DDM>
+      )
+    )
+    assume(schemaIsAvailable)
+    triedDDM.flatMap(validate) shouldBe Success(())
+  }
+
   it should "fix mixed up RD values" in {
     val emd = parseEmdContent(Seq(
       emdTitle, emdCreator, emdDescription, emdDates,

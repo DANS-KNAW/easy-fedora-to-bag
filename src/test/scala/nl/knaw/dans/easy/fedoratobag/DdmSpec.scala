@@ -496,8 +496,6 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       emdRights,
     ))
     val triedDDM = DDM(emd, Seq("D35400"), abrMapping)
-    // logs: WARN  Empty point: scheme=RD x=null y=null
-    // note that a missing x or y defaults to zero
     triedDDM.map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }
@@ -517,6 +515,20 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     )
     assume(schemaIsAvailable)
     triedDDM.flatMap(validate) shouldBe Success(())
+  }
+
+  it should "fail with only a place" in {
+    val emd = parseEmdContent(Seq(
+      emdTitle, emdCreator, emdDescription, emdDates,
+        <emd:coverage>
+          <eas:spatial>
+            <eas:place>Something</eas:place>
+          </eas:spatial>
+        </emd:coverage>,
+      emdRights,
+    ))
+    val triedDDM = DDM(emd, Seq("D35400"), abrMapping)
+    triedDDM.flatMap(validate) should failWithNotImplementedElement
   }
 
   it should "fix mixed up RD values" in {

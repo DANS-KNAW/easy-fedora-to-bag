@@ -541,7 +541,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       emdRights,
     ))
     val triedDDM = DDM(emd, Seq("D35400"), abrMapping)
-    // logs: WARN  Empty point: scheme=RD x=null y=null
+    // TODO onec this was supposed to log: WARN  Empty point: scheme=RD x=null y=null
     // note that a missing x or y defaults to zero
     triedDDM.map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
@@ -658,6 +658,35 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     triedDDM.flatMap(validate) shouldBe Success(())
   }
 
+  it should "ignore place description" in {
+    val emd = parseEmdContent(Seq(
+      emdTitle, emdCreator, emdDescription, emdDates,
+        <emd:coverage>
+          <eas:spatial>
+            <eas:place>blablabla</eas:place>
+            <eas:box eas:scheme="degrees">
+              <eas:north>90.0</eas:north>
+              <eas:east>180.0</eas:east>
+              <eas:south>-90.0</eas:south>
+              <eas:west>-180.0</eas:west>
+            </eas:box>
+          </eas:spatial>
+        </emd:coverage>,
+      emdRights,
+    ))
+    val triedDDM = DDM(emd, Seq("D35400"), abrMapping)
+    triedDDM.map(normalized) shouldBe Success(normalized(
+      <ddm:DDM xsi:schemaLocation={ schemaLocation }>
+        { ddmProfile("D35400") }
+        <ddm:dcmiMetadata>
+           <not:implemented>expected either point, box or polygon: name=blablabla scheme=degrees north=90.0 east=180.0 south=-90.0 west=-180.0</not:implemented>
+           <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
+        </ddm:dcmiMetadata>
+      </ddm:DDM>
+      )
+    )
+  }
+
   it should "render a box with an srsName" in {
     val emd = parseEmdContent(Seq(
       emdTitle, emdCreator, emdDescription, emdDates,
@@ -692,9 +721,6 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       emdRights,
     ))
     val triedDDM = DDM(emd, Seq("D35400"), abrMapping)
-    // logs
-    //  ERROR not implemented invalid box [SpatialBox(Some(RD),None,None,None,None)]
-    //  ERROR not implemented invalid box [SpatialBox(Some(degrees),None,None,None,None)]
     triedDDM.map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }
@@ -773,9 +799,6 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       emdRights,
     ))
     val triedDDM = DDM(emd, Seq("D35400"), abrMapping)
-    // logs
-    //  ERROR not implemented invalid box [SpatialBox(Some(RD),None,None,None,None)]
-    //  ERROR not implemented invalid box [SpatialBox(Some(degrees),None,None,None,None)]
     triedDDM.map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }
@@ -835,7 +858,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
         </emd:coverage>,
       emdRights,
     ))
-    // logs
+    // TODO once this was supposed to log
     //  ERROR not implemented expected either point, box or polygon [name=A general description ]
     //  ERROR not implemented expected either point, box or polygon [scheme=null x=1 y=nullscheme=degrees north=79.5 east=23.0 south=76.7 west=10.0]
     //  ERROR not implemented expected either point, box or polygon [scheme=degrees north=79.5 east=23.0 south=76.7 west=10.0(exterior=null, interior=null) ]
@@ -877,7 +900,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
         </emd:coverage>,
       emdRights,
     ))
-    // logs
+    // TODO once this was suppose to log
     //  ERROR not implemented  [subject 0]
     //  ERROR not implemented  [subject 1]
     //  ERROR not implemented  [subject z

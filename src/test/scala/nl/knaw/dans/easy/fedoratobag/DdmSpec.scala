@@ -541,8 +541,6 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       emdRights,
     ))
     val triedDDM = DDM(emd, Seq("D35400"), abrMapping)
-    // TODO onec this was supposed to log: WARN  Empty point: scheme=RD x=null y=null
-    // note that a missing x or y defaults to zero
     triedDDM.map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }

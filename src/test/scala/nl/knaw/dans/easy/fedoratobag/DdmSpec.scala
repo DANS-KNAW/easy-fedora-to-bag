@@ -856,11 +856,9 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
         </emd:coverage>,
       emdRights,
     ))
-    // TODO once this was supposed to log
-    //  ERROR not implemented expected either point, box or polygon [name=A general description ]
-    //  ERROR not implemented expected either point, box or polygon [scheme=null x=1 y=nullscheme=degrees north=79.5 east=23.0 south=76.7 west=10.0]
-    //  ERROR not implemented expected either point, box or polygon [scheme=degrees north=79.5 east=23.0 south=76.7 west=10.0(exterior=null, interior=null) ]
-    //  ERROR not implemented expected either point, box or polygon [scheme=null x=1 y=null(exterior=null, interior=null) ]
+    // logs
+    //    ERROR not implemented invalid box [SpatialBox(Some(RD),None,None,None,None)]
+    //    ERROR not implemented invalid box [SpatialBox(Some(degrees),None,None,None,None)]    val triedDDM = DDM(emd, Seq("D35400"), abrMapping)
     val triedDDM = DDM(emd, Seq("D35400"), abrMapping)
     triedDDM.map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
@@ -898,10 +896,11 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
         </emd:coverage>,
       emdRights,
     ))
-    // TODO once this was suppose to log
-    //  ERROR not implemented  [subject 0]
-    //  ERROR not implemented  [subject 1]
-    //  ERROR not implemented  [subject z
+    // logs
+    //    ERROR not implemented expected either point, box or polygon [name=A general description ]
+    //    ERROR not implemented expected either point, box or polygon [scheme=null x=1 y=nullscheme=degrees north=79.5 east=23.0 south=76.7 west=10.0]
+    //    ERROR not implemented expected either point, box or polygon [scheme=degrees north=79.5 east=23.0 south=76.7 west=10.0(exterior=null, interior=null) ]
+    //    ERROR not implemented expected either point, box or polygon [scheme=null x=1 y=null(exterior=null, interior=null) ]
     val triedDDM = DDM(emd, Seq("D35400"), abrMapping)
     triedDDM.map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>

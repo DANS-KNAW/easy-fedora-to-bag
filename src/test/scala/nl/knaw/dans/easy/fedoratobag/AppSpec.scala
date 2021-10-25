@@ -108,6 +108,12 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
       (XML.loadFile((bag / "metadata" / "files.xml").toJava) \\ "file").theSeq.size shouldBe
         nrOfFiles
     }
+
+    //post condition: both bags should have the depositor-info/agreements.xml
+    testDir.listRecursively.withFilter(_.name == "data").map(_.parent).foreach { bag =>
+      val agreementsXml = bag / "metadata" / "depositor-info" / "agreements.xml"
+      agreementsXml.exists shouldBe true
+    }
   }
 
   it should "produce just one bag referring to payload in EASY from the same dataset" in {

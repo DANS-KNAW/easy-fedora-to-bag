@@ -233,7 +233,6 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
       """easyDatasetId,uuid1,uuid2,doi,depositor,transformationType,comment
         |easy-dataset:17,.+,,10.17026/test-Iiib-z9p-4ywa,user001,original-versioned without second bag,OK
         |""".stripMargin
-    val Array(_,line) = sw.toString.split("\n")
     testDir.listRecursively.filter(_.name == "dataset.xml").toSeq.head.contentAsString should
       include ("""<dc:title xml:lang="nld">as
                  |                        with another line</dc:title>""".stripMargin)
@@ -276,7 +275,6 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
   it should "report a duplicate file" in {
     val app: AppWithMockedServices = new AppWithMockedServices() {
-      expectAUser()
       Map(
         "easy-dataset:13" -> XML.loadFile((sampleFoXML / "streaming.xml").toJava),
         "easy-discipline:6" -> audienceFoXML("easy-discipline:6", "D35400"),

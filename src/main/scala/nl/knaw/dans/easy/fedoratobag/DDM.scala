@@ -209,18 +209,20 @@ object DDM extends DebugEnhancedLogging {
   }
 
   private def toXml(spatial: Spatial): Node = {
-    (Option(spatial.getPlace),
+    def notExpected = notImplemented("expected either point, box or polygon")(spatial)
+    ( Option(spatial.getPlace),
       Option(spatial.getPoint),
       Option(spatial.getBox),
       Option(spatial.getPolygons),
     ) match {
-      case (None, None, None, Some(polygons)) if !polygons.isEmpty =>
+      case (Some(s), _, _, _) if s.getValue.nonEmpty => notExpected
+      case (_, None, None, Some(polygons)) if !polygons.isEmpty =>
         <dcx-gml:spatial>
           { toXml(polygons.asScala) }
         </dcx-gml:spatial>
       case (_, Some(_), None, None) => toXmlPoint(spatial.getPoint)
-      case (None, None, Some(_), None) => toXml(spatial.getBox)
-      case _ => notImplemented("expected either point, box or polygon")(spatial)
+      case (_, None, Some(_), None) => toXml(spatial.getBox)
+      case _ => notExpected
     }
   }
 

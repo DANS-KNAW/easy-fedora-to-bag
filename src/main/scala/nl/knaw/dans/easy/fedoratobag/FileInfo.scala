@@ -163,13 +163,13 @@ object FileInfo extends DebugEnhancedLogging {
       ))
     }
 
-    for {
-      // TODO conflicting duplicate paths for second bag are not report if first one has too
-      forFirst <- groupByBagPath(selectedForFirstBag)
-      forSecond <- groupByBagPath(selectedForSecondBag)
-    } yield if (forFirst.map(versionedInfo) == forSecond.map(versionedInfo))
-              (forSecond, Seq.empty)
-            else (forFirst, forSecond)
+    (groupByBagPath(selectedForFirstBag), groupByBagPath(selectedForSecondBag)) match {
+      case (Failure(e1), Failure(e2)) => Failure(InvalidTransformationException (s"${e1.getMessage} ${e2.getMessage}"))
+      case (Failure(e), _) => Failure(e)
+      case (_, Failure(e)) => Failure(e)
+      case (Success(for1), Success(for2)) if for1.map(versionedInfo) == for2.map(versionedInfo) => Success(for2,Seq.empty)
+      case (Success(for1), Success(for2)) => Success(for1,for2)
+    }
   }
 
   private def versionedInfo(fileInfo: FileInfo): FileInfo = fileInfo.copy(

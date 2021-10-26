@@ -138,32 +138,38 @@ object FileInfo extends DebugEnhancedLogging {
                       isOriginalVersioned: Boolean,
                      ): Try[(Seq[FileInfo], Seq[FileInfo])] = {
 
-    /** @return bagPath -> digestValues */
-    def findDuplicateFiles(fileInfos: Seq[FileInfo]) = fileInfos
-      .groupBy(_.path.bagPath(isOriginalVersioned))
-      .filter(_._2.size > 1)
-      .mapValues(infos =>
-        infos.map(info =>
-          s"${ info.path }[${ info.fedoraFileId },${ info.maybeDigestValue.getOrElse("") }]"
-        ).mkString("[", ",", "]")
-      )
+    def pickDuplicate(filesWithSameBagPath: Seq[FileInfo]): Seq[FileInfo] = {
+      if (filesWithSameBagPath.size == 1)
+        filesWithSameBagPath // unique is ok
+      else if (filesWithSameBagPath.map(_.contentDigest).distinct.size != 1)
+             filesWithSameBagPath // conflicting shas, keep both, they will be reported by caller
+           else {
+             // minBy avoids the original folder
+             logger.warn(s"Picked the shortest path from " + filesWithSameBagPath.mkString(", "))
+             Seq(filesWithSameBagPath.minBy(_.path.toString.length))
+             // TODO pick the least access or richest metadata
+           }
+    }
 
-    val duplicatesForFirstBag = findDuplicateFiles(selectedForFirstBag)
-    val duplicatesForSecondBag = findDuplicateFiles(selectedForSecondBag)
-    if (duplicatesForFirstBag.nonEmpty || duplicatesForSecondBag.nonEmpty) {
-      val prefix1 = "duplicates in first bag: "
-      val prefix2 = "duplicates in second bag: "
-      logDuplicates(prefix1, duplicatesForFirstBag)
-      logDuplicates(prefix2, duplicatesForSecondBag)
-      Failure(InvalidTransformationException(
-        s"$prefix1${ duplicatesForFirstBag.keys.mkString(", ") }; $prefix2${ duplicatesForSecondBag.keys.mkString(", ") } (isOriginalVersioned==$isOriginalVersioned)"
+    def groupByBagPath(fileInfos: Seq[FileInfo]): Try[Seq[FileInfo]] = {
+      val grouped = fileInfos
+        .groupBy(_.path.bagPath(isOriginalVersioned))
+        .values
+        .map(pickDuplicate).toSeq
+      val conflicts = grouped.filter(_.size > 1)
+      if (conflicts.isEmpty) Success(grouped.flatten)
+      else Failure(InvalidTransformationException(
+        s"Files with same bag path but different shas: " + conflicts.flatten.mkString(", ")
       ))
     }
-    else {
-      if (selectedForFirstBag.map(versionedInfo) == selectedForSecondBag.map(versionedInfo))
-        Success((selectedForSecondBag, Seq.empty))
-      else Success((selectedForFirstBag, selectedForSecondBag))
-    }
+
+    for {
+      // TODO conflicting duplicate paths for second bag are not report if first one has too
+      forFirst <- groupByBagPath(selectedForFirstBag)
+      forSecond <- groupByBagPath(selectedForSecondBag)
+    } yield if (forFirst.map(versionedInfo) == forSecond.map(versionedInfo))
+              (forSecond, Seq.empty)
+            else (forFirst, forSecond)
   }
 
   private def versionedInfo(fileInfo: FileInfo): FileInfo = fileInfo.copy(
@@ -173,9 +179,4 @@ object FileInfo extends DebugEnhancedLogging {
     accessibleTo = "",
     visibleTo = "",
   )
-
-  private def logDuplicates(prefix: String, duplicates: Map[Path, String]): Unit = {
-    if (duplicates.nonEmpty)
-      logger.error(prefix + duplicates.values.mkString("; "))
-  }
 }

@@ -273,8 +273,9 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
         |""".stripMargin
   }
 
-  it should "report a duplicate file" in {
+  it should "no longer report a duplicate file" in {
     val app: AppWithMockedServices = new AppWithMockedServices() {
+      expectAUser()
       Map(
         "easy-dataset:13" -> XML.loadFile((sampleFoXML / "streaming.xml").toJava),
         "easy-discipline:6" -> audienceFoXML("easy-discipline:6", "D35400"),
@@ -284,6 +285,15 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
         "easy-file:4" -> fileFoXml(id = 4, location = "a", name = "z.txt", digest = digests("lalala")),
       ).foreach { case (id, xml) =>
         (fedoraProvider.loadFoXml(_: String)) expects id once() returning Success(xml)
+      }
+      Map(
+        "easy-file:1" -> ("acabadabra", 1),
+        "easy-file:2" -> ("acabadabra",1),
+        "easy-file:3" -> ("acabadabra",2), // this one in both bags, the others each in one of the bags
+        "easy-file:4" -> ("lalala", 1),
+      ).foreach { case (id, (content, times)) =>
+        (fedoraProvider.disseminateDatastream(_: String, _: String)) expects(id, "EASY_FILE"
+        ) returning managed(content.inputStream) repeat times
       }
       (fsRdb.getSubordinates(_: String)) expects "easy-dataset:13" once() returning
         Success(Seq("easy-file:1", "easy-file:2", "easy-file:3", "easy-file:4"))
@@ -301,7 +311,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
     // post condition
     sw.toString.split("\n").last should fullyMatch regex
-      s"easy-dataset:13,.*,,,,-,FAILED: .*InvalidTransformationException: duplicates in first bag: ; duplicates in second bag: a/x.txt .isOriginalVersioned==true."
+      s"easy-dataset:13,.*,.*,10.17026/mocked-Iiib-z9p-4ywa,user001,original-versioned,OK"
   }
 
   "createBag" should "report not strict simple violation" in {

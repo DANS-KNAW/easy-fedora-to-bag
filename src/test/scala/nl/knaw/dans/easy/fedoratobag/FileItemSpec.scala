@@ -385,7 +385,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
     triedFileItem.flatMap(validateItem) shouldBe Success(())
   }
 
-  "checkNotImplemented" should "report an original_file combined with archival_name" in {
+  "checkNotImplemented" should "no longer report an original_file combined with archival_name" in {
     val fileMetadata = {
       <name>A</name>
       <path>B/A</path>
@@ -415,7 +415,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
           <dct:format>C</dct:format>
           <dct:extent>0.0MB</dct:extent>
           <afm:keyvaluepair><afm:key>blabla</afm:key><afm:value>K</afm:value></afm:keyvaluepair>
-          <notImplemented>original_file AND archival_name</notImplemented>
+          <dct:title>G</dct:title>
           <dct:isFormatOf>I</dct:isFormatOf>
           <dct:title>j</dct:title>
           <accessibleToRights>F</accessibleToRights>
@@ -423,14 +423,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
       </file>
     ))
     val mockLogger = mock[UnderlyingLogger]
-    Seq(
-      "easy-file:35 (data/B/A) NOT IMPLEMENTED: original_file AND archival_name",
-    ).foreach(s => (mockLogger.warn(_: String)) expects s once())
-    (() => mockLogger.isWarnEnabled()) expects() anyNumberOfTimes() returning true
-
-    FileItem.checkNotImplementedFileMetadata(List(triedFileItem.get), Logger(mockLogger)) should matchPattern {
-      case Failure(e) if e.getMessage == "1 file(s) with not implemented additional file metadata: List(original_file AND archival_name)" =>
-    }
+    FileItem.checkNotImplementedFileMetadata(List(triedFileItem.get), Logger(mockLogger)) shouldBe a[Success[_]]
   }
 
   it should "report items once" in {

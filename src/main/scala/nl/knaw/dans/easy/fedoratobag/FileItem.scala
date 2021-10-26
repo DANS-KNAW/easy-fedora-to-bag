@@ -16,13 +16,14 @@
 package nl.knaw.dans.easy.fedoratobag
 
 import com.typesafe.scalalogging.Logger
+import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import java.nio.file.Path
 import java.util.Locale
 import scala.util.{ Failure, Success, Try }
 import scala.xml._
 
-object FileItem {
+object FileItem extends DebugEnhancedLogging {
 
   private val baseNS = "http://easy.dans.knaw.nl/schemas/bag/metadata"
 
@@ -82,12 +83,12 @@ object FileItem {
     val hasOriginalFile = (additionalContent \ "original_file").nonEmpty // EASY-II
     additionalContent.nonEmptyChildren.map {
       case Elem(_, label, attributes, _, Text(value)) if attributes.nonEmpty => <notImplemented>{ s"$label(attributes: $attributes): $value" }</notImplemented>
-      case Elem(_, "file_name", _, _, _) if hasArchivalName && hasOriginalFile => <notImplemented>original_file AND archival_name</notImplemented>
 
       case Elem(_, "original_file", _, _, Text(value)) => <dct:isFormatOf>{ value }</dct:isFormatOf>
-      case Elem(_, "file_name", _, _, Text(value)) if hasOriginalFile => <dct:title>{ value }</dct:title>
 
+      case Elem(_, "file_name", _, _, Text(value)) if hasOriginalFile => <dct:title>{ value }</dct:title>
       case Elem(_, "file_name", _, _, Text(value)) if hasArchivalName => <dct:isFormatOf>{ value }</dct:isFormatOf>
+
       case Elem(_, "archival_name", _, _, Text(value)) => <dct:title>{ value }</dct:title>
 
       case Elem(_, "case_quantity", _, _, Text(value)) if value.trim == "1" => Text("") // RAAP mis-interpretation

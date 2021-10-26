@@ -159,7 +159,7 @@ object FileInfo extends DebugEnhancedLogging {
       val conflicts = grouped.filter(_.size > 1)
       if (conflicts.isEmpty) Success(grouped.flatten)
       else Failure(InvalidTransformationException(
-        s"Files with same bag path but different shas: " + conflicts.flatten.mkString(", ")
+        s"Files with same bag path but different SHAs: " + conflicts.flatten.mkString(", ")
       ))
     }
 

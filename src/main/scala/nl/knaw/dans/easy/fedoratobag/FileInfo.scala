@@ -97,7 +97,8 @@ object FileInfo extends DebugEnhancedLogging {
         } yield (fileId, derivedFromId, digest, fileMetadata, path)
       }.map { files =>
       val pathMap = files.map {
-        case (fileId, _, _, _, maybePath) => fileId -> maybePath}.toMap
+        case (fileId, _, _, _, maybePath) => fileId -> maybePath
+      }.toMap
       files.map {
         case (fileId, _, _, _, None) =>
           throw new Exception(s"<path> not found for $fileId")
@@ -127,14 +128,14 @@ object FileInfo extends DebugEnhancedLogging {
   }
 
   /**
-   * @param selectedForSecondBag will be empty if isOriginalVersioned is false
-   *                             might be empty if isOriginalVersioned is true
-   * @param isOriginalVersioned  true: drop original level from bagPath
+   * @param selectedForBag2     will be empty if isOriginalVersioned is false
+   *                            might be empty if isOriginalVersioned is true
+   * @param isOriginalVersioned true: drop original level from bagPath
    * @return Failure if at least one of the bags has files with the same bagPath
    *         otherwise fileInfosForSecondBag as first and only list if both lists have the same files
    */
-  def checkDuplicates(selectedForFirstBag: Seq[FileInfo],
-                      selectedForSecondBag: Seq[FileInfo],
+  def checkDuplicates(selectedForBag1: Seq[FileInfo],
+                      selectedForBag2: Seq[FileInfo],
                       isOriginalVersioned: Boolean,
                      ): Try[(Seq[FileInfo], Seq[FileInfo])] = {
 
@@ -163,12 +164,19 @@ object FileInfo extends DebugEnhancedLogging {
       ))
     }
 
-    (groupByBagPath(selectedForFirstBag), groupByBagPath(selectedForSecondBag)) match {
-      case (Failure(e1), Failure(e2)) => Failure(InvalidTransformationException (s"${e1.getMessage} ${e2.getMessage}"))
+    (groupByBagPath(selectedForBag1), groupByBagPath(selectedForBag2)) match {
+      case (Failure(InvalidTransformationException(m1)), Failure(InvalidTransformationException(m2))) =>
+        Failure(InvalidTransformationException(s"$m1 $m2"))
+      case (Failure(e1), Failure(e2)) =>
+        logger.error(e1.getMessage,e1)
+        logger.error(e2.getMessage,e2)
+        Failure(new IllegalStateException(s"Bag1: ${e1.getMessage} Bag2: ${e2.getMessage}"))
       case (Failure(e), _) => Failure(e)
       case (_, Failure(e)) => Failure(e)
-      case (Success(for1), Success(for2)) if for1.map(versionedInfo) == for2.map(versionedInfo) => Success(for2,Seq.empty)
-      case (Success(for1), Success(for2)) => Success(for1,for2)
+      case (Success(forBag1), Success(forBag2)) if forBag1.map(versionedInfo) == forBag2.map(versionedInfo) =>
+        Success(forBag2, Seq.empty)
+      case (Success(forBag1), Success(forBag2)) =>
+        Success(forBag1, forBag2)
     }
   }
 

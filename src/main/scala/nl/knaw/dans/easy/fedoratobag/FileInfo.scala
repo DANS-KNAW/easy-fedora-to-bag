@@ -34,7 +34,7 @@ case class FileInfo(fedoraFileId: String,
                     visibleTo: String,
                     contentDigest: Option[Node],
                     additionalMetadata: Option[Node],
-                    wasDerivedForm: Option[Path] = None,
+                    wasDerivedFrom: Option[Path] = None,
                     originalPath: Path,
                    ) {
   private val isAccessible: Boolean = accessibleTo.toUpperCase() != "NONE"
@@ -43,7 +43,7 @@ case class FileInfo(fedoraFileId: String,
   val maybeDigestType: Option[String] = contentDigest.map(n => (n \\ "@TYPE").text)
   val maybeDigestValue: Option[String] = contentDigest.map(n => (n \\ "@DIGEST").text)
 
-  def bagSource(isOriginalVersioned: Boolean): Option[Path] = wasDerivedForm
+  def bagSource(isOriginalVersioned: Boolean): Option[Path] = wasDerivedFrom
     .map(_.path.bagPath(isOriginalVersioned))
 }
 
@@ -56,6 +56,7 @@ object FileInfo extends DebugEnhancedLogging {
     s.map(char => if (forbiddenCharactersInPathName.contains(char)) '_'
                   else char)
   }
+
   private def replaceForbiddenCharactersInFileName(s: String): String = {
     s.map(char => if (forbiddenCharactersInFileName.contains(char)) '_'
                   else char)
@@ -64,7 +65,7 @@ object FileInfo extends DebugEnhancedLogging {
   private def toValidChars(fileMetadataPath: String) = {
     val p = Paths.get(fileMetadataPath)
     val s = Option(p.getParent)
-      .map(parent => replaceForbiddenCharactersInPath(parent.toString)+"/")
+      .map(parent => replaceForbiddenCharactersInPath(parent.toString) + "/")
       .getOrElse("") +
       replaceForbiddenCharactersInFileName(p.getFileName.toString)
     Paths.get(s)
@@ -121,7 +122,7 @@ object FileInfo extends DebugEnhancedLogging {
             digest,
             (fileMetadata \ "additional-metadata" \ "additional" \ "content").headOption,
             derivedFrom.flatMap(pathMap), // TODO error handling
-            (fileMetadata \\ "path").map(_.text).headOption.map(p=>Paths.get(p)).get,  //when 'path' is a Some, so is this
+            (fileMetadata \\ "path").map(_.text).headOption.map(p => Paths.get(p)).get, //when 'path' is a Some, so is this
           )
       }
     }
@@ -145,10 +146,14 @@ object FileInfo extends DebugEnhancedLogging {
       else if (filesWithSameBagPath.map(_.contentDigest).distinct.size != 1)
              filesWithSameBagPath // conflicting shas, keep both, they will be reported by caller
            else {
-             // minBy avoids the original folder
-             logger.warn(s"Picked the shortest path from " + filesWithSameBagPath.mkString(", "))
-             Seq(filesWithSameBagPath.minBy(_.path.toString.length))
-             // TODO pick the least access or richest metadata
+             val newest = Seq(filesWithSameBagPath.maxBy(_.fedoraFileId))
+             val msg = s"Picked $newest from " + filesWithSameBagPath.mkString(", ")
+             if (filesWithSameBagPath
+               .map(f => (f.accessibleTo, f.visibleTo, f.additionalMetadata))
+               .distinct.nonEmpty
+             ) logger.warn(msg)
+             else logger.info(msg)
+             newest
            }
     }
 
@@ -168,9 +173,9 @@ object FileInfo extends DebugEnhancedLogging {
       case (Failure(InvalidTransformationException(m1)), Failure(InvalidTransformationException(m2))) =>
         Failure(InvalidTransformationException(s"$m1 $m2"))
       case (Failure(e1), Failure(e2)) =>
-        logger.error(e1.getMessage,e1)
-        logger.error(e2.getMessage,e2)
-        Failure(new IllegalStateException(s"Bag1: ${e1.getMessage} Bag2: ${e2.getMessage}"))
+        logger.error(e1.getMessage, e1)
+        logger.error(e2.getMessage, e2)
+        Failure(new IllegalStateException(s"Bag1: ${ e1.getMessage } Bag2: ${ e2.getMessage }"))
       case (Failure(e), _) => Failure(e)
       case (_, Failure(e)) => Failure(e)
       case (Success(forBag1), Success(forBag2)) if forBag1.map(versionedInfo) == forBag2.map(versionedInfo) =>

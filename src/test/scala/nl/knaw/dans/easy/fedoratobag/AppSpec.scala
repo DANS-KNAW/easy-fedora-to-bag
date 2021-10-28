@@ -319,7 +319,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
       Map(
         "easy-dataset:13" -> XML.loadFile((sampleFoXML / "streaming.xml").toJava),
         "easy-discipline:6" -> audienceFoXML("easy-discipline:6", "D35400"),
-        "easy-file:1" -> fileFoXml(id = 1, location = "original/a", name = "x.txt", digest = digests("acabadabra")),
+        "easy-file:1" -> fileFoXml(id = 2, location = "original/a", name = "x.txt", digest = digests("acabadabra")),
         "easy-file:2" -> fileFoXml(id = 2, location = "a", name = "x.txt", digest = digests("rabarbera")),
         "easy-file:3" -> fileFoXml(id = 3, name = "y.txt", digest = digests("barbapappa")),
         "easy-file:4" -> fileFoXml(id = 4, location = "a", name = "z.txt", digest = digests("lalala")),

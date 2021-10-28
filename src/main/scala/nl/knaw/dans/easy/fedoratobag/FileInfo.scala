@@ -152,7 +152,7 @@ object FileInfo extends DebugEnhancedLogging {
                .map(f => (f.accessibleTo, f.visibleTo, f.additionalMetadata))
                .distinct.nonEmpty
              ) logger.warn(msg)
-             else logger.info(msg)
+             else logger.debug(msg)
              Seq(newest)
            }
     }

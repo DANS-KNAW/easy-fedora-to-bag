@@ -210,10 +210,10 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       amd <- getAmd(foXml)
       audiences <- emd.getEmdAudience.getDisciplines.asScala
         .map(id => getAudience(id.getValue)).collectResults
-      fedoraIDs <- if (options.noPayload) Success(Seq.empty)
-                   else fsRdb.getSubordinates(datasetId)
+      fedoraFileIDs <- if (options.noPayload) Success(Seq.empty)
+                       else fsRdb.getSubordinates(datasetId)
       isOriginalVersioned = options.transformationType == ORIGINAL_VERSIONED
-      allFileInfos <- FileInfo(fedoraIDs.filter(_.startsWith("easy-file:")).toList, fedoraProvider).map(_.toList)
+      allFileInfos <- FileInfo(fedoraFileIDs, fedoraProvider).map(_.toList)
       selectedForSecondBag = allFileInfos.selectForSecondBag(isOriginalVersioned, options.noPayload)
       selectedForFirstBag <- allFileInfos.selectForFirstBag(emdXml, selectedForSecondBag.nonEmpty, options.europeana, options.noPayload)
       tooManyFiles = !hasTooManyFiles(selectedForSecondBag, selectedForFirstBag)
@@ -223,7 +223,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       _ = trace("creating DDM from EMD")
       ddm <- DDM(emd, audiences, configuration.abrMapping, payloadInEasy(tooManyFiles))
       _ = trace("created DDM from EMD")
-      maybeFilterViolations <- options.datasetFilter.violations(emd, ddm, amd, fedoraIDs, allFileInfos, configuration.exportStates)
+      maybeFilterViolations <- options.datasetFilter.violations(emd, ddm, amd, allFileInfos, configuration.exportStates)
       _ = if (options.strict) maybeFilterViolations.foreach(msg => throw InvalidTransformationException(msg))
       _ = (ddm \\ "implemented").filter(_.prefix == "not").foreach(n => throw InvalidTransformationException(n.toString()))
       // so far for collecting data, now we start writing

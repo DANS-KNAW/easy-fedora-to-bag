@@ -146,14 +146,15 @@ object FileInfo extends DebugEnhancedLogging {
       else if (filesWithSameBagPath.map(_.contentDigest).distinct.size != 1)
              filesWithSameBagPath // conflicting shas, keep both, they will be reported by caller
            else {
-             val newest = filesWithSameBagPath.maxBy(_.fedoraFileId)
-             val msg = s"Picked ${newest.fedoraFileId} from " + filesWithSameBagPath.mkString(", ")
+             // pick the the most recent file based on the id
+             val latest = filesWithSameBagPath.maxBy(_.fedoraFileId)
+             val msg = s"Picked ${ latest.fedoraFileId } from " + filesWithSameBagPath.mkString(", ")
              if (filesWithSameBagPath
-               .map(f => (f.accessibleTo, f.visibleTo, f.additionalMetadata))
-               .distinct.nonEmpty
+               .map(f => (f.accessibleTo, f.visibleTo, f.additionalMetadata, f.wasDerivedFrom, f.originalPath))
+               .size > 1 // the files have the same sha but different metadata
              ) logger.warn(msg)
              else logger.debug(msg)
-             Seq(newest)
+             Seq(latest)
            }
     }
 

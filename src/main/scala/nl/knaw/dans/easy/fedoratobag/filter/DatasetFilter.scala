@@ -31,7 +31,7 @@ trait DatasetFilter extends DebugEnhancedLogging {
   val allowOriginalAndOthers: Boolean = false
   private val invalidStateKey = "5: invalid state"
 
-  def violations(emd: EasyMetadataImpl, ddm: Node, amd: Node, fedoraIDs: Seq[String] = Seq.empty, fileInfos: List[FileInfo] = List.empty, exportStates: List[String]): Try[Option[String]] = {
+  def violations(emd: EasyMetadataImpl, ddm: Node, amd: Node, fileInfos: List[FileInfo] = List.empty, exportStates: List[String]): Try[Option[String]] = {
     val maybeDoi = Option(emd.getEmdIdentifier.getDansManagedDoi)
     val mixOfOriginalAndOthers = allowOriginalAndOthers || !fileInfos.hasOriginalAndOthers
     val triedMaybeInTargetResponse: Try[Option[String]] = maybeDoi

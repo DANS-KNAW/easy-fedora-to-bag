@@ -47,7 +47,7 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
     val emd = parseEmdContent(Seq(emdTitle, emdDoi, emdRights))
 
     themaChecker(loggerExpectsWarnings = Seq.empty)
-      .violations(emd, emd2ddm(emd), amd("PUBLISHED"), Seq(),List.empty, exportStates) shouldBe
+          .violations(emd, emd2ddm(emd), amd("PUBLISHED"), List.empty, exportStates) shouldBe
       Success(None)
   }
 
@@ -56,8 +56,8 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
     val emd = parseEmdContent(Seq(emdTitle, emdDoi, emdRights))
 
     themaChecker(loggerExpectsWarnings = Seq(
-      "violated 3: invalid title some collection",
-    )).violations(emd, emd2ddm(emd), amd("PUBLISHED"), Seq(),List.empty, exportStates) shouldBe
+          "violated 3: invalid title some collection",
+        )).violations(emd, emd2ddm(emd), amd("PUBLISHED"), List.empty, exportStates) shouldBe
       Success(Some("Violates 3: invalid title"))
   }
 
@@ -70,8 +70,8 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
     ).map(p => new FileInfo("easy-file:2", Paths.get(p), "x.txt", 2, "text/plain", "ANONYMOUS", "ANONYMOUS", None, None, None, Paths.get(p)))
 
     simpleChecker(loggerExpectsWarnings = Seq(
-      "violated 8: original and other files should not occur both",
-    )).violations(emd, emd2ddm(emd), amd("PUBLISHED"), fedoraIDs = Seq(), fileInfos, exportStates) shouldBe
+          "violated 8: original and other files should not occur both",
+        )).violations(emd, emd2ddm(emd), amd("PUBLISHED"), fileInfos, exportStates) shouldBe
       Success(Some("Violates 8: original and other files"))
   }
 
@@ -84,25 +84,25 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
       "x.txt",
     ).map(p => new FileInfo("easy-file:2", Paths.get(p), "x.txt", 2, "text/plain", "ANONYMOUS", "ANONYMOUS", None, None, None, Paths.get(p)))
 
-    FedoraVersionedFilter().violations(emd, ddm, amd("PUBLISHED"), fedoraIDs = Seq(), fileInfos, exportStates) shouldBe
+    FedoraVersionedFilter().violations(emd, ddm, amd("PUBLISHED"), fileInfos, exportStates) shouldBe
       Success(None)
     SimpleDatasetFilter(allowOriginalAndOthers = true)
-      .violations(emd, ddm, amd("PUBLISHED"), fedoraIDs = Seq(), fileInfos, exportStates) shouldBe
+          .violations(emd, ddm, amd("PUBLISHED"), fileInfos, exportStates) shouldBe
       Success(None)
   }
 
   "SimpleChecker.simpleViolations" should "succeed" in {
     val emdTitle = <emd:title><dc:title xml:lang="nld">no theme</dc:title></emd:title>
     val emd = parseEmdContent(Seq(emdTitle, emdDoi, emdRights))
-    simpleChecker(loggerExpectsWarnings = Seq(), mockBagIndexRespondsWith(body = "", code = 404)).violations(emd, emd2ddm(emd), amd("PUBLISHED"), Seq.empty, List.empty, exportStates) shouldBe
+    simpleChecker(loggerExpectsWarnings = Seq(), mockBagIndexRespondsWith(body = "", code = 404)).violations(emd, emd2ddm(emd), amd("PUBLISHED"), List.empty, exportStates) shouldBe
       Success(None)
   }
 
   it should "report missing DOI" in {
     val emd = parseEmdContent(emdRights)
     simpleChecker(loggerExpectsWarnings = Seq(
-      "violated 1: DANS DOI not found",
-    ), bagIndex = null).violations(emd, emd2ddm(emd), amd("SUBMITTED"), Seq.empty,List.empty, exportStates) shouldBe
+          "violated 1: DANS DOI not found",
+        ), bagIndex = null).violations(emd, emd2ddm(emd), amd("SUBMITTED"), List.empty, exportStates) shouldBe
       Success(Some("Violates 1: DANS DOI"))
   }
 
@@ -111,8 +111,8 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
     val emd = parseEmdContent(Seq(emdTitle, emdDoi))
 
     simpleChecker(loggerExpectsWarnings = Seq(
-      "violated 3: invalid title thematische collectie",
-    )).violations(emd, emd2ddm(emd), amd("PUBLISHED"), Seq(),List.empty, exportStates) shouldBe
+          "violated 3: invalid title thematische collectie",
+        )).violations(emd, emd2ddm(emd), amd("PUBLISHED"), List.empty, exportStates) shouldBe
       Success(Some("Violates 3: invalid title"))
   }
 
@@ -120,8 +120,8 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
     val emd = parseEmdContent(emdDoi)
     val exportStates = List("PUBLISHED")
     simpleChecker(loggerExpectsWarnings = Seq(
-      "violated 5: invalid state SUBMITTED",
-    )).violations(emd, emd2ddm(emd), amd("SUBMITTED"), Seq.empty,List.empty, exportStates) shouldBe
+          "violated 5: invalid state SUBMITTED",
+        )).violations(emd, emd2ddm(emd), amd("SUBMITTED"), List.empty, exportStates) shouldBe
       Success(Some("Violates 5: invalid state (SUBMITTED)"))
   }
 
@@ -140,10 +140,10 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
       emdRights
     ))
     simpleChecker(loggerExpectsWarnings = Seq(
-      "violated 6: DANS relations <dct:isVersionOf>https://doi.org/10.17026/test-123-456</dct:isVersionOf>",
-      "violated 6: DANS relations <dct:isVersionOf>http://www.persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-2ajw-cq</dct:isVersionOf>",
-      """violated 6: DANS relations <ddm:replaces scheme="id-type:URN" href="http://persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-aka-hff">Prehistorische bewoning op het World Forum gebied - Den Haag (replaces)</ddm:replaces>""",
-    )).violations(emd, emd2ddm(emd), amd("PUBLISHED"), Seq.empty,List.empty, exportStates) shouldBe
+          "violated 6: DANS relations <dct:isVersionOf>https://doi.org/10.17026/test-123-456</dct:isVersionOf>",
+          "violated 6: DANS relations <dct:isVersionOf>http://www.persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-2ajw-cq</dct:isVersionOf>",
+          """violated 6: DANS relations <ddm:replaces scheme="id-type:URN" href="http://persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-aka-hff">Prehistorische bewoning op het World Forum gebied - Den Haag (replaces)</ddm:replaces>""",
+        )).violations(emd, emd2ddm(emd), amd("PUBLISHED"), List.empty, exportStates) shouldBe
       Success(Some("Violates 6: DANS relations"))
   }
 
@@ -151,9 +151,9 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
     val emd = parseEmdContent(Seq(emdDoi, emdRights))
     val result = "<bag-info><bag-id>blabla</bag-id><doi>10.80270/test-zwu-cxjx</doi></bag-info>"
     simpleChecker(
-      loggerExpectsWarnings = Seq(s"violated 7: is in the vault $result"),
-      mockBagIndexRespondsWith(body = s"<result>$result</result>", code = 200),
-    ).violations(emd, emd2ddm(emd), amd("PUBLISHED"), Seq.empty,List.empty, exportStates) shouldBe
+          loggerExpectsWarnings = Seq(s"violated 7: is in the vault $result"),
+          mockBagIndexRespondsWith(body = s"<result>$result</result>", code = 200),
+        ).violations(emd, emd2ddm(emd), amd("PUBLISHED"), List.empty, exportStates) shouldBe
       Success(Some("Violates 7: is in the vault"))
   }
 

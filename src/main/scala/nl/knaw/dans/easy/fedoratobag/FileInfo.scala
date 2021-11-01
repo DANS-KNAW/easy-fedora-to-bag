@@ -34,7 +34,7 @@ case class FileInfo(fedoraFileId: String,
                     visibleTo: String,
                     contentDigest: Option[Node],
                     additionalMetadata: Option[Node],
-                    wasDerivedForm: Option[Path] = None,
+                    wasDerivedFrom: Option[Path] = None,
                     originalPath: Path,
                    ) {
   private val isAccessible: Boolean = accessibleTo.toUpperCase() != "NONE"
@@ -43,7 +43,7 @@ case class FileInfo(fedoraFileId: String,
   val maybeDigestType: Option[String] = contentDigest.map(n => (n \\ "@TYPE").text)
   val maybeDigestValue: Option[String] = contentDigest.map(n => (n \\ "@DIGEST").text)
 
-  def bagSource(isOriginalVersioned: Boolean): Option[Path] = wasDerivedForm
+  def bagSource(isOriginalVersioned: Boolean): Option[Path] = wasDerivedFrom
     .map(_.path.bagPath(isOriginalVersioned))
 }
 
@@ -56,6 +56,7 @@ object FileInfo extends DebugEnhancedLogging {
     s.map(char => if (forbiddenCharactersInPathName.contains(char)) '_'
                   else char)
   }
+
   private def replaceForbiddenCharactersInFileName(s: String): String = {
     s.map(char => if (forbiddenCharactersInFileName.contains(char)) '_'
                   else char)
@@ -64,7 +65,7 @@ object FileInfo extends DebugEnhancedLogging {
   private def toValidChars(fileMetadataPath: String) = {
     val p = Paths.get(fileMetadataPath)
     val s = Option(p.getParent)
-      .map(parent => replaceForbiddenCharactersInPath(parent.toString)+"/")
+      .map(parent => replaceForbiddenCharactersInPath(parent.toString) + "/")
       .getOrElse("") +
       replaceForbiddenCharactersInFileName(p.getFileName.toString)
     Paths.get(s)
@@ -97,7 +98,8 @@ object FileInfo extends DebugEnhancedLogging {
         } yield (fileId, derivedFromId, digest, fileMetadata, path)
       }.map { files =>
       val pathMap = files.map {
-        case (fileId, _, _, _, maybePath) => fileId -> maybePath}.toMap
+        case (fileId, _, _, _, maybePath) => fileId -> maybePath
+      }.toMap
       files.map {
         case (fileId, _, _, _, None) =>
           throw new Exception(s"<path> not found for $fileId")
@@ -120,49 +122,67 @@ object FileInfo extends DebugEnhancedLogging {
             digest,
             (fileMetadata \ "additional-metadata" \ "additional" \ "content").headOption,
             derivedFrom.flatMap(pathMap), // TODO error handling
-            (fileMetadata \\ "path").map(_.text).headOption.map(p=>Paths.get(p)).get,  //when 'path' is a Some, so is this
+            (fileMetadata \\ "path").map(_.text).headOption.map(p => Paths.get(p)).get, //when 'path' is a Some, so is this
           )
       }
     }
   }
 
   /**
-   * @param selectedForSecondBag will be empty if isOriginalVersioned is false
-   *                             might be empty if isOriginalVersioned is true
-   * @param isOriginalVersioned  true: drop original level from bagPath
+   * @param selectedForBag2     will be empty if isOriginalVersioned is false
+   *                            might be empty if isOriginalVersioned is true
+   * @param isOriginalVersioned true: drop original level from bagPath
    * @return Failure if at least one of the bags has files with the same bagPath
    *         otherwise fileInfosForSecondBag as first and only list if both lists have the same files
    */
-  def checkDuplicates(selectedForFirstBag: Seq[FileInfo],
-                      selectedForSecondBag: Seq[FileInfo],
+  def checkDuplicates(selectedForBag1: Seq[FileInfo],
+                      selectedForBag2: Seq[FileInfo],
                       isOriginalVersioned: Boolean,
                      ): Try[(Seq[FileInfo], Seq[FileInfo])] = {
 
-    /** @return bagPath -> digestValues */
-    def findDuplicateFiles(fileInfos: Seq[FileInfo]) = fileInfos
-      .groupBy(_.path.bagPath(isOriginalVersioned))
-      .filter(_._2.size > 1)
-      .mapValues(infos =>
-        infos.map(info =>
-          s"${ info.path }[${ info.fedoraFileId },${ info.maybeDigestValue.getOrElse("") }]"
-        ).mkString("[", ",", "]")
-      )
+    def pickDuplicate(filesWithSameBagPath: Seq[FileInfo]): Seq[FileInfo] = {
+      if (filesWithSameBagPath.size == 1)
+        filesWithSameBagPath // unique is ok
+      else if (filesWithSameBagPath.map(_.contentDigest).distinct.size != 1)
+             filesWithSameBagPath // conflicting shas, keep both, they will be reported by caller
+           else {
+             // pick the the most recent file based on the id
+             val latest = filesWithSameBagPath.maxBy(_.fedoraFileId)
+             val msg = s"Picked ${ latest.fedoraFileId } from " + filesWithSameBagPath.mkString(", ")
+             if (filesWithSameBagPath
+               .map(f => (f.accessibleTo, f.visibleTo, f.additionalMetadata, f.wasDerivedFrom, f.originalPath))
+               .size > 1 // the files have the same sha but different metadata
+             ) logger.warn(msg)
+             else logger.debug(msg)
+             Seq(latest)
+           }
+    }
 
-    val duplicatesForFirstBag = findDuplicateFiles(selectedForFirstBag)
-    val duplicatesForSecondBag = findDuplicateFiles(selectedForSecondBag)
-    if (duplicatesForFirstBag.nonEmpty || duplicatesForSecondBag.nonEmpty) {
-      val prefix1 = "duplicates in first bag: "
-      val prefix2 = "duplicates in second bag: "
-      logDuplicates(prefix1, duplicatesForFirstBag)
-      logDuplicates(prefix2, duplicatesForSecondBag)
-      Failure(InvalidTransformationException(
-        s"$prefix1${ duplicatesForFirstBag.keys.mkString(", ") }; $prefix2${ duplicatesForSecondBag.keys.mkString(", ") } (isOriginalVersioned==$isOriginalVersioned)"
+    def groupByBagPath(fileInfos: Seq[FileInfo]): Try[Seq[FileInfo]] = {
+      val grouped = fileInfos
+        .groupBy(_.path.bagPath(isOriginalVersioned))
+        .values
+        .map(pickDuplicate).toSeq
+      val conflicts = grouped.filter(_.size > 1)
+      if (conflicts.isEmpty) Success(grouped.flatten)
+      else Failure(InvalidTransformationException(
+        s"Files with same bag path but different SHAs: " + conflicts.flatten.mkString(", ")
       ))
     }
-    else {
-      if (selectedForFirstBag.map(versionedInfo) == selectedForSecondBag.map(versionedInfo))
-        Success((selectedForSecondBag, Seq.empty))
-      else Success((selectedForFirstBag, selectedForSecondBag))
+
+    (groupByBagPath(selectedForBag1), groupByBagPath(selectedForBag2)) match {
+      case (Failure(InvalidTransformationException(m1)), Failure(InvalidTransformationException(m2))) =>
+        Failure(InvalidTransformationException(s"$m1 $m2"))
+      case (Failure(e1), Failure(e2)) =>
+        logger.error(e1.getMessage, e1)
+        logger.error(e2.getMessage, e2)
+        Failure(new IllegalStateException(s"Bag1: ${ e1.getMessage } Bag2: ${ e2.getMessage }"))
+      case (Failure(e), _) => Failure(e)
+      case (_, Failure(e)) => Failure(e)
+      case (Success(forBag1), Success(forBag2)) if forBag1.map(versionedInfo) == forBag2.map(versionedInfo) =>
+        Success(forBag2, Seq.empty)
+      case (Success(forBag1), Success(forBag2)) =>
+        Success(forBag1, forBag2)
     }
   }
 
@@ -173,9 +193,4 @@ object FileInfo extends DebugEnhancedLogging {
     accessibleTo = "",
     visibleTo = "",
   )
-
-  private def logDuplicates(prefix: String, duplicates: Map[Path, String]): Unit = {
-    if (duplicates.nonEmpty)
-      logger.error(prefix + duplicates.values.mkString("; "))
-  }
 }

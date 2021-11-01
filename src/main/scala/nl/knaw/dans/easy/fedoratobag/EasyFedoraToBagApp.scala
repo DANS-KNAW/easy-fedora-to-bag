@@ -211,18 +211,20 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       amd <- getAmd(foXml)
       audiences <- emd.getEmdAudience.getDisciplines.asScala
         .map(id => getAudience(id.getValue)).collectResults
-      fedoraIDs <- if (options.noPayload) Success(Seq.empty)
-                   else fsRdb.getSubordinates(datasetId)
-      allFileInfos <- FileInfo(fedoraIDs.filter(_.startsWith("easy-file:")).toList, fedoraProvider).map(_.toList)
+      fedoraFileIDs <- if (options.noPayload) Success(Seq.empty)
+                       else fsRdb.getSubordinates(datasetId)
       isOriginalVersioned = options.transformationType == ORIGINAL_VERSIONED
+      allFileInfos <- FileInfo(fedoraFileIDs, fedoraProvider).map(_.toList)
       selectedForSecondBag = allFileInfos.selectForSecondBag(isOriginalVersioned, options.noPayload)
       selectedForFirstBag <- allFileInfos.selectForFirstBag(emdXml, selectedForSecondBag.nonEmpty, options.europeana, options.noPayload)
       tooManyFiles = !hasTooManyFiles(selectedForSecondBag, selectedForFirstBag)
       _ = trace(tooManyFiles, selectedForFirstBag.size, selectedForSecondBag.size, options.noPayload, options.cutoff)
+      (forFirstBag, forSecondBag) <- if (!tooManyFiles) checkDuplicates(selectedForFirstBag, selectedForSecondBag, isOriginalVersioned)
+                                     else Success((Seq.empty, Seq.empty))
       _ = trace("creating DDM from EMD")
       ddm <- DDM(emd, audiences, configuration.abrMapping, payloadInEasy(tooManyFiles))
       _ = trace("created DDM from EMD")
-      maybeFilterViolations <- options.datasetFilter.violations(emd, ddm, amd, fedoraIDs, allFileInfos, configuration.exportStates)
+      maybeFilterViolations <- options.datasetFilter.violations(emd, ddm, amd, allFileInfos, configuration.exportStates)
       _ = if (options.strict) maybeFilterViolations.foreach(msg => throw InvalidTransformationException(msg))
       _ = (ddm \\ "implemented").filter(_.prefix == "not").foreach(n => throw InvalidTransformationException(n.toString()))
       // so far for collecting data, now we start writing
@@ -250,9 +252,6 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       _ <- getFilesXml(foXml)
         .map(addXmlMetadataTo(bag, "original/files.xml"))
         .getOrElse(Success(()))
-      // TODO one more action to move up before creating the bag. It would break a test and we can live with it for now.
-      (forFirstBag, forSecondBag) <- if (!tooManyFiles) checkDuplicates(selectedForFirstBag, selectedForSecondBag, isOriginalVersioned)
-                                     else Success((Seq.empty, Seq.empty))
       fileItemsForFirstBag <- forFirstBag.toList.traverse(addPayloadFileTo(bag, isOriginalVersioned))
       _ <- checkNotImplementedFileMetadata(fileItemsForFirstBag, logger)
       _ <- addXmlMetadataTo(bag, "files.xml")(filesXml(fileItemsForFirstBag))

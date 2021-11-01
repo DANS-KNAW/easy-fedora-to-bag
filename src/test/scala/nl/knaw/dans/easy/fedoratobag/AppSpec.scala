@@ -239,7 +239,6 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
       """easyDatasetId,uuid1,uuid2,doi,depositor,transformationType,comment
         |easy-dataset:17,.+,,10.17026/test-Iiib-z9p-4ywa,user001,original-versioned without second bag,OK
         |""".stripMargin
-    val Array(_,line) = sw.toString.split("\n")
     testDir.listRecursively.filter(_.name == "dataset.xml").toSeq.head.contentAsString should
       include ("""<dc:title xml:lang="nld">as
                  |                        with another line</dc:title>""".stripMargin)
@@ -280,7 +279,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
         |""".stripMargin
   }
 
-  it should "report a duplicate file" in {
+  it should "no longer report a duplicate file" in {
     val app: AppWithMockedServices = new AppWithMockedServices() {
       expectAUser()
       Map(
@@ -288,7 +287,47 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
         "easy-discipline:6" -> audienceFoXML("easy-discipline:6", "D35400"),
         "easy-file:1" -> fileFoXml(id = 1, location = "original/a", name = "x.txt", digest = digests("acabadabra")),
         "easy-file:2" -> fileFoXml(id = 2, location = "a", name = "x.txt", digest = digests("acabadabra")),
-        "easy-file:3" -> fileFoXml(id = 3, name = "y.txt", digest = digests("acabadabra")),
+        "easy-file:3" -> fileFoXml(id = 3, name = "y.txt", digest = digests("barbapappa")),
+        "easy-file:4" -> fileFoXml(id = 4, location = "a", name = "z.txt", digest = digests("lalala")),
+      ).foreach { case (id, xml) =>
+        (fedoraProvider.loadFoXml(_: String)) expects id once() returning Success(xml)
+      }
+      Map(
+        "easy-file:1" -> ("acabadabra", 1),
+        "easy-file:2" -> ("acabadabra",1),
+        "easy-file:3" -> ("barbapappa",2), // this one in both bags, the others each in one of the bags
+        "easy-file:4" -> ("lalala", 1),
+      ).foreach { case (id, (content, times)) =>
+        (fedoraProvider.disseminateDatastream(_: String, _: String)) expects(id, "EASY_FILE"
+        ) returning managed(content.inputStream) repeat times
+      }
+      (fsRdb.getSubordinates(_: String)) expects "easy-dataset:13" once() returning
+        Success(Seq("easy-file:1", "easy-file:2", "easy-file:3", "easy-file:4"))
+    }
+
+    // end of mocking
+
+    val sw = new StringWriter()
+    app.createOriginalVersionedExport(
+      Iterator("easy-dataset:13"),
+      (testDir / "output").createDirectories(),
+      Options(SimpleDatasetFilter(allowOriginalAndOthers = true), ORIGINAL_VERSIONED),
+      AIP
+    )(CsvRecord.csvFormat.print(sw)) shouldBe Success("no fedora/IO errors")
+
+    // post condition
+    sw.toString.split("\n").last should fullyMatch regex
+      "easy-dataset:13,.*,.*,10.17026/mocked-Iiib-z9p-4ywa,user001,original-versioned,OK"
+  }
+
+  it should "report a SHA conflict on files with identical bag path" in {
+    val app: AppWithMockedServices = new AppWithMockedServices() {
+      Map(
+        "easy-dataset:13" -> XML.loadFile((sampleFoXML / "streaming.xml").toJava),
+        "easy-discipline:6" -> audienceFoXML("easy-discipline:6", "D35400"),
+        "easy-file:1" -> fileFoXml(id = 2, location = "original/a", name = "x.txt", digest = digests("acabadabra")),
+        "easy-file:2" -> fileFoXml(id = 2, location = "a", name = "x.txt", digest = digests("rabarbera")),
+        "easy-file:3" -> fileFoXml(id = 3, name = "y.txt", digest = digests("barbapappa")),
         "easy-file:4" -> fileFoXml(id = 4, location = "a", name = "z.txt", digest = digests("lalala")),
       ).foreach { case (id, xml) =>
         (fedoraProvider.loadFoXml(_: String)) expects id once() returning Success(xml)
@@ -308,8 +347,11 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     )(CsvRecord.csvFormat.print(sw)) shouldBe Success("no fedora/IO errors")
 
     // post condition
-    sw.toString.split("\n").last should fullyMatch regex
-      s"easy-dataset:13,.*,,,,-,FAILED: .*InvalidTransformationException: duplicates in first bag: ; duplicates in second bag: a/x.txt .isOriginalVersioned==true."
+    sw.toString.split("\n").last should (
+      fullyMatch regex """easy-dataset:13,.*,,,,-,"FAILED: .*InvalidTransformationException: Files with same bag path but different SHAs: .*"""
+      and include("FileInfo(easy-file:1,original/a/x.txt,x.txt,30.0,text/plain,RESTRICTED_REQUEST,ANONYMOUS,Some(<foxml:contentDigest ")
+      and include("FileInfo(easy-file:2,a/x.txt,x.txt,30.0,text/plain,RESTRICTED_REQUEST,ANONYMOUS,Some(<foxml:contentDigest ")
+      )
   }
 
   "createBag" should "report not strict simple violation" in {

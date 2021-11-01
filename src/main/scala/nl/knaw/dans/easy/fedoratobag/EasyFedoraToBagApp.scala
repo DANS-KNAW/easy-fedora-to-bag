@@ -162,6 +162,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       _ <- metadataOfBag1.list.toList
         .filter(_.name.toLowerCase.contains("license"))
         .traverse(file => copy(file.name))
+      _ <- copy("depositor-info/agreements.xml")
       fileItems <- fileInfos
         .traverse(addPayloadFileTo(bag2, isOriginalVersioned = true))
       _ <- checkNotImplementedFileMetadata(fileItems, logger)

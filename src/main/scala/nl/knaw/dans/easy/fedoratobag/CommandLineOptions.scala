@@ -57,7 +57,10 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   val skipDatasets: ScallopOption[File] = opt(name = "skip-list",
     descr = s"File containing a newline-separated list of easy-dataset-ids to be skipped")
   val outputDir: ScallopOption[File] = opt(name = "output-dir", short = 'o',
-    descr = "Empty directory that will be created if it doesn't exist. Successful bags (or packages) will be moved to this directory.")
+    descr = "Empty directory that will be created if it doesn't exist. " +
+      "Successful bags (or packages) will be moved to this directory. " +
+      "When omitted, the logfile will contain sequences of dataset IDs " +
+      "to be used as input for transformation type 'fedora-versioned'.")
   val outputFormat: ScallopOption[OutputFormat] = opt(name = "output-format", short = 'f',
     descr = OutputFormat.values.mkString("Output format: ", ", ", ". 'SIP' is only implemented for simple, it creates the bags one directory level deeper. easy-bag-to-deposit completes these sips with deposit.properties"))
   val logFile: ScallopOption[File] = opt(name = "log-file", short = 'l',

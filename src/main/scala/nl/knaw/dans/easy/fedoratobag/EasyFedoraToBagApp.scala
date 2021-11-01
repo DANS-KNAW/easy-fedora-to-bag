@@ -154,10 +154,6 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       .inputStream
       .map(addMetadataStreamTo(bag2, fileName))
       .get
-    def copyFromDepositorInfo(fileName: String) = (metadataOfBag1 / "depositor-info" / fileName)
-      .inputStream
-      .map(addMetadataStreamTo(bag2, "depositor-info/"+fileName))
-      .get
 
     for {
       _ <- copy("emd.xml")
@@ -166,7 +162,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       _ <- metadataOfBag1.list.toList
         .filter(_.name.toLowerCase.contains("license"))
         .traverse(file => copy(file.name))
-      _ <- copyFromDepositorInfo("agreements.xml")
+      _ <- copy("depositor-info/agreements.xml")
       fileItems <- fileInfos
         .traverse(addPayloadFileTo(bag2, isOriginalVersioned = true))
       _ <- checkNotImplementedFileMetadata(fileItems, logger)

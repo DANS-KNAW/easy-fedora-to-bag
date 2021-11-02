@@ -27,7 +27,7 @@
 
     <groupId>nl.knaw.dans.easy</groupId>
     <artifactId>easy-fedora-to-bag</artifactId>
-    <version>1.0.27-SNAPSHOT</version>
+    <version>1.0.29-SNAPSHOT</version>
 
     <name>EASY Fedora to Bag</name>
     <description>Tool for exporting datasets from Fedora and constructing Archival/Submission Information Packages.</description>

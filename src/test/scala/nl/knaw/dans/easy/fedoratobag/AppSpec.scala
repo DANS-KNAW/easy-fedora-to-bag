@@ -158,10 +158,9 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     dataDirs.head.list shouldBe empty // the bag has no payload
     val metadataDir = dataDirs.head.parent / "metadata"
     (XML.loadFile((metadataDir / "files.xml").toJava) \ "file") shouldBe empty
-    ( metadataDir / "dataset.xml").contentAsString should
-      { include("Files for this dataset can be found at") and
-        include("https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:17/tab/2")
-      }
+    (metadataDir / "dataset.xml").contentAsString should
+       include("<![CDATA[<b>Files not yet migrated to Data Station. Files for this dataset can be found at <a href=\"https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:17/tab/2\">https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:17</a>.</b>]]>")
+
   }
 
   it should "produce the second bag as first and only" in {
@@ -524,10 +523,10 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     val triedRecord = app.createBag("easy-dataset:13", bagDir, Options(app.filter).copy(cutoff = 1))
     triedRecord shouldBe a[Success[_]]
     (bagDir / "data").list shouldBe empty
-    (bagDir / "metadata" / "dataset.xml").contentAsString should
-      { include("Files for this dataset can be found at") and
-        include("https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:13/tab/2")
-      }
+    (bagDir / "metadata" / "dataset.xml").contentAsString should include(
+         "<![CDATA[<b>Files not yet migrated to Data Station. Files for this dataset can be found at <a href=\"https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:13/tab/2\">https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:13</a>.</b>]]>"
+       )
+
   }
 
   it should "report an invalid checksum" in {

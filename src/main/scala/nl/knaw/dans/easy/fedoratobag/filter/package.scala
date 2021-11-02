@@ -36,9 +36,9 @@ package object filter {
       fileInfos.exists(_.isOriginal) && fileInfos.exists(!_.isOriginal)
     }
 
-    def selectForFirstBag(emd: Node, hasSecondBag: Boolean, europeana: Boolean, noPayload: Boolean = false): Try[List[FileInfo]] = {
+    def selectForFirstBag(emd: Node, hasSecondBag: Boolean, europeana: Boolean, noPayload: Boolean = false): Try[List[FileInfo]] = Try {
 
-      def largest(preferred: FileType, alternative: FileType): Try[List[FileInfo]] = {
+      def largest(preferred: FileType, alternative: FileType): List[FileInfo] = {
         val infosByType = fileInfos
           .filter(_.accessibleTo == "ANONYMOUS")
           .groupBy(fi => if (fi.mimeType.startsWith("image/")) IMAGE
@@ -46,22 +46,13 @@ package object filter {
                               else NEITHER_PDF_NOR_IMAGE
           )
         val selected = infosByType.getOrElse(preferred, infosByType.getOrElse(alternative, List.empty))
-        maxSizeUnlessEmpty(selected)
+        if (selected.isEmpty) selected
+        else List(selected.maxBy(_.size))
       }
 
-      def maxSizeUnlessEmpty(selected: List[FileInfo]) = {
-        if (selected.isEmpty) Failure(NoPayloadFilesException())
-        else Success(List(selected.maxBy(_.size)))
-      }
-
-      def successUnlessEmpty(fileInfos: List[FileInfo]) = {
-        if (fileInfos.isEmpty) Failure(NoPayloadFilesException())
-        else Success(fileInfos)
-      }
-
-      if (noPayload) Success(List.empty)
-      else if (hasSecondBag) successUnlessEmpty(fileInfos.filter(_.isOriginal))
-           else if (!europeana) successUnlessEmpty(fileInfos) // all files
+      if (noPayload) List.empty
+      else if (hasSecondBag) fileInfos.filter(_.isOriginal)
+           else if (!europeana) fileInfos // all files
                 else if (dcmiType(emd) == "text")
                        largest(PDF, IMAGE)
                      else largest(IMAGE, PDF)

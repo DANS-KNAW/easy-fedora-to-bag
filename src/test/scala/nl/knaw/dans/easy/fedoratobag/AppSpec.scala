@@ -306,7 +306,38 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
       s"easy-dataset:13,.*,,,,-,FAILED: .*InvalidTransformationException: duplicates in first bag: ; duplicates in second bag: a/x.txt .isOriginalVersioned==true."
   }
 
-  "createBag" should "report not strict simple violation" in {
+  "createBag" should "not report NoPayloadFilesException when strict=false" in {
+    val app = new AppWithMockedServices() {
+      (fsRdb.getSubordinates(_: String)) expects "easy-dataset:17" once() returning
+        Success(Seq())
+      Seq(
+        (1, "easy-dataset:17", "ADDITIONAL_LICENSE", "lalala"),
+        (1, "easy-dataset:17", "DATASET_LICENSE", "blablabla"),
+      ).foreach { case (n, objectId, streamId, content) =>
+        (fedoraProvider.disseminateDatastream(_: String, _: String)) expects(objectId, streamId
+        ) returning managed(content.inputStream) repeat n
+      }
+      Map(
+        "easy-discipline:77" -> audienceFoXML("easy-discipline:77", "D13200"),
+        "easy-dataset:17" -> XML.loadFile((sampleFoXML / "DepositApi.xml").toJava),
+      ).foreach { case (id, xml) =>
+        (fedoraProvider.loadFoXml(_: String)) expects id once() returning Success(xml)
+      }
+    }
+
+    // end of mocking
+
+    val uuid = UUID.randomUUID
+    val bagDir = testDir / "bags" / uuid.toString
+    app.createBag("easy-dataset:17", bagDir, Options(app.filter, strict = false)) shouldBe
+      Success(DatasetInfo(None,"10.17026/test-Iiib-z9p-4ywa","urn:nbn:nl:ui:13-00-1haq","user001",List(),true))
+
+    // post conditions
+
+    (testDir / "bags") should exist
+  }
+
+  it should "report NoPayloadFilesException when strict=true" in {
     val app = new AppWithMockedServices() {
       (fsRdb.getSubordinates(_: String)) expects "easy-dataset:17" once() returning
         Success(Seq())
@@ -322,7 +353,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
     val uuid = UUID.randomUUID
     val bagDir = testDir / "bags" / uuid.toString
-    app.createBag("easy-dataset:17", bagDir, Options(app.filter, strict = false)) shouldBe
+    app.createBag("easy-dataset:17", bagDir, Options(app.filter)) shouldBe
       Failure(NoPayloadFilesException())
 
     // post conditions

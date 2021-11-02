@@ -196,12 +196,11 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     def getInfoFirstBag(allFileInfos: List[FileInfo], emd: Node, hasSecondBag: Boolean): Try[List[FileInfo]] = {
       for {
         fileInfo <- allFileInfos.selectForFirstBag(emd, hasSecondBag, options.europeana, options.noPayload)
-        result = if (fileInfo.isEmpty && options.strict) throw NoPayloadFilesException()
-        else {
-          if (fileInfo.isEmpty) logger.warn(s"No payload files in dataset $datasetId")
-          fileInfo
+        _ = if (fileInfo.isEmpty && !options.noPayload) {
+          if (options.strict) throw NoPayloadFilesException()
+          else logger.warn(s"No payload files in dataset $datasetId")
         }
-      } yield result
+      } yield fileInfo
     }
 
 

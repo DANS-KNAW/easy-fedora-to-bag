@@ -31,7 +31,7 @@ class FsRdb(fsrdb: DatabaseConnection) extends DebugEnhancedLogging {
     managed {
       val connection = DriverManager.getConnection(fsrdb.url, fsrdb.username, fsrdb.password)
       connection.setAutoCommit(false)
-      logger.info("Connected to postgres database")
+      logger.debug("Connected to postgres database")
       connection
     }
   }

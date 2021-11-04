@@ -36,7 +36,7 @@ package object filter {
       fileInfos.exists(_.isOriginal) && fileInfos.exists(!_.isOriginal)
     }
 
-    def selectForFirstBag(emd: Node, hasSecondBag: Boolean, europeana: Boolean, noPayload: Boolean = false): Try[List[FileInfo]] = Try {
+    def selectForFirstBag(emd: Node, hasSecondBag: Boolean, europeana: Boolean, noPayload: Boolean = false): List[FileInfo] = {
 
       def largest(preferred: FileType, alternative: FileType): List[FileInfo] = {
         val infosByType = fileInfos

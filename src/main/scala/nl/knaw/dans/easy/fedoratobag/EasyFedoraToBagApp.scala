@@ -43,7 +43,7 @@ import java.util.UUID
 import javax.naming.ldap.InitialLdapContext
 import scala.collection.JavaConverters._
 import scala.util.{ Failure, Success, Try }
-import scala.xml.{ Elem, Node, Text }
+import scala.xml.{ Elem, Node, PCData, Text }
 
 class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogging {
   lazy val fedoraProvider: FedoraProvider = new FedoraProvider(new FedoraClient(configuration.fedoraCredentials))
@@ -205,7 +205,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
 
     def payloadInEasy(tooManyFiles: Boolean) = {
       if (tooManyFiles)
-        <dct:description xml:lang="en">{ s"<![CDATA[<b>Files not yet migrated to Data Station. Files for this dataset can be found at ${makelink(datasetId)}.</b>]]>" }</dct:description>
+        <dct:description xml:lang="en">{ new PCData(s"<b>Files not yet migrated to Data Station. Files for this dataset can be found at ${makelink(datasetId)}.</b>") }</dct:description>
       else Text("")
     }
 

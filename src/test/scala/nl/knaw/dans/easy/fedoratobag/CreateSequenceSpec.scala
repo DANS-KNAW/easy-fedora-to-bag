@@ -81,7 +81,8 @@ class CreateSequenceSpec extends TestSupportFixture with DelegatingApp with File
     val versionOfUUIDs = bagInfos
       .flatMap(getVersionOfUUID)
       .distinct
-
+    // TODO check that bag-info's with Is-Version-Of have a sequence nr
+    //  and their creation dates are in the right order
     bagInfos should have size 5
     versionOfUUIDs should have size 2
     versionOfUUIDs.map(uuid =>

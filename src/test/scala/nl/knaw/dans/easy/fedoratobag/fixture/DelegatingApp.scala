@@ -40,18 +40,18 @@ trait DelegatingApp extends MockFactory {
 
     private val delegate = mock[MockEasyFedoraToBagApp]
     createBagExpects.foreach { case (id, result) =>
-      (delegate.createBag(_: DatasetId, _: File, _: Options, _: Option[BagVersion])
-        ) expects(id, *, *, *) returning result
+      (delegate.createBag(_: DatasetId, _: File, _: Options, _: Option[BagVersion], _: Int)
+        ) expects(id, *, *, *, *) returning result
     }
 
-    override def createBag(datasetId: DatasetId, bagDir: File, options: Options, maybeFirstBagVersion: Option[BagVersion] = None): Try[DatasetInfo] = {
+    override def createBag(datasetId: DatasetId, bagDir: File, options: Options, maybeFirstBagVersion: Option[BagVersion] = None, bagSeqNr: Int = 0): Try[DatasetInfo] = {
       // mimic a part of the real method, the tested caller wants to move the bag
       DansV0Bag.empty(bagDir).map { bag =>
-        maybeFirstBagVersion.foreach(_.addTo(bag))
+        maybeFirstBagVersion.foreach(_.addTo(bag).addBagInfo("Seq-nr", bagSeqNr.toString))
         bag.save()
       }.getOrElse(s"mock of createBag failed for $datasetId")
       // mock the outcome of the method
-      delegate.createBag(datasetId, bagDir, options, maybeFirstBagVersion)
+      delegate.createBag(datasetId, bagDir, options, maybeFirstBagVersion, bagSeqNr)
     }
   }
 }

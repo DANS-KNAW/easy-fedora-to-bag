@@ -26,7 +26,7 @@ import nl.knaw.dans.bag.v0.DansV0Bag
 import nl.knaw.dans.easy.fedoratobag.Command.FeedBackMessage
 import nl.knaw.dans.easy.fedoratobag.FileInfo.checkDuplicates
 import nl.knaw.dans.easy.fedoratobag.FileItem.{ checkNotImplementedFileMetadata, filesXml }
-import nl.knaw.dans.easy.fedoratobag.FoXml.{ getEmd, _ }
+import nl.knaw.dans.easy.fedoratobag.FoXml._
 import nl.knaw.dans.easy.fedoratobag.OutputFormat.OutputFormat
 import nl.knaw.dans.easy.fedoratobag.TransformationType._
 import nl.knaw.dans.easy.fedoratobag.filter._
@@ -56,28 +56,28 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
   def createSequences(lines: Iterator[String], outputDir: File, options: Options)(printer: CSVPrinter): Try[FeedBackMessage] = {
     logger.info(options.toString)
 
-    def exportBag(firstVersion: Option[BagVersion], datasetId: DatasetId): Try[BagVersion] = {
+    def exportBag(firstVersion: Option[BagVersion], bagSeqNr: Int, datasetId: DatasetId): Try[BagVersion] = {
       val packageUUID = UUID.randomUUID
       val packageDir = configuration.stagingDir / packageUUID.toString
       val csvUuid1 = firstVersion.map(_.packageId).getOrElse(packageUUID)
       val csvUuid2 = firstVersion.map(_ => packageUUID)
       for {
-        datasetInfo <- createBag(datasetId, packageDir / UUID.randomUUID.toString, options, firstVersion)
+        datasetInfo <- createBag(datasetId, packageDir / UUID.randomUUID.toString, options, firstVersion, bagSeqNr)
         _ <- movePackageAtomically(packageDir, outputDir)
         thisVersionInfo = BagVersion(datasetInfo, packageUUID)
         _ <- CsvRecord(datasetId, datasetInfo, csvUuid1, csvUuid2, options).print(printer)
       } yield thisVersionInfo
     }
 
-    def exportWithRecover(firstVersion: BagVersion)(datasetId: DatasetId): Try[Any] = {
-      val tried = exportBag(Some(firstVersion), datasetId)
+    def exportWithRecover(firstVersion: BagVersion, datasetId: DatasetId, bagSeqNr: Int): Try[Any] = {
+      val tried = exportBag(Some(firstVersion), bagSeqNr, datasetId)
       errorHandling(tried, printer, datasetId, firstVersion.packageId)
     }
 
-    def exportSequence(datasetIds: Array[DatasetId])(firstDatasetId: DatasetId) = for {
-      versionInfo <- exportBag(None, firstDatasetId)
+    def exportSequence(datasetIds: Map[DatasetId, Int])(firstDatasetId: DatasetId) = for {
+      versionInfo <- exportBag(None, 1, firstDatasetId)
       _ <- datasetIds
-        .map(exportWithRecover(versionInfo))
+        .map { case (id, index) => exportWithRecover(versionInfo, id, index + 2) }
         .toSeq.failFastOr(Success(()))
     } yield ()
 
@@ -85,7 +85,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       val datasetIds = line.split(",")
       val triedUnit = datasetIds
         .headOption
-        .map(exportSequence(datasetIds.drop(1)))
+        .map(exportSequence(datasetIds.drop(1).zipWithIndex.toMap))
         .getOrElse(Success(()))
       errorHandling(triedUnit, printer, datasetIds.head, null)
     }.failFastOr(Success("no fedora/IO errors"))
@@ -120,7 +120,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     }
 
     val triedCsvRecord = for {
-      datasetInfo <- createBag(datasetId, bagDir1, options)
+      datasetInfo <- createBag(datasetId, bagDir1, options, None, 0)
       maybeUuid2 <- createSecondBag(datasetInfo)
       // first bag moved after second, thus a next process can stumble over a missing first bag in case of interrupts
       _ <- movePackageAtomically(packageDir1, outputDir)
@@ -171,7 +171,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     } yield ()
   }
 
-  def createBag(datasetId: DatasetId, bagDir: File, options: Options, maybeFirstBagVersion: Option[BagVersion] = None): Try[DatasetInfo] = {
+  def createBag(datasetId: DatasetId, bagDir: File, options: Options, maybeFirstBagVersion: Option[BagVersion], bagSeqNr: Int): Try[DatasetInfo] = {
 
     def managedMetadataStream(foXml: Elem, streamId: String, bag: DansV0Bag, metadataFile: String) = {
       managedStreamLabel(foXml, streamId)
@@ -231,7 +231,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       _ = logger.info(s"Creating $bagDir from $datasetId with owner $depositor")
       bag <- DansV0Bag.empty(bagDir)
       _ = bag.withEasyUserAccount(depositor).withCreated(DateTime.now())
-      _ = maybeFirstBagVersion.map(_.addTo(bag))
+      _ = maybeFirstBagVersion.map(_.addTo(bag).addBagInfo("Seq-nr", bagSeqNr.toString))
       _ <- addXmlMetadataTo(bag, "emd.xml")(emdXml)
       _ <- addXmlMetadataTo(bag, "amd.xml")(amd)
       _ <- getDdm(foXml)

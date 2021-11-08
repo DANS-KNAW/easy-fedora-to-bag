@@ -24,9 +24,12 @@ case class BagVersion(
                        urn: String,
                        packageId: UUID,
                      ) {
-  def addTo(bag: DansV0Bag): DansV0Bag = {
-    bag.withIsVersionOf(packageId)
+  def addTo(bag: DansV0Bag, maybeSeqNr: Option[Int] = None): DansV0Bag = {
+    maybeSeqNr
       // the following keys should match easy-convert-bag-to-deposit BagInfo
+      .map(nr => bag.addBagInfo("Bag-Sequence-Number ", nr.toString))
+      .getOrElse(bag)
+      .withIsVersionOf(packageId)
       .addBagInfo("Base-DOI", doi)
       .addBagInfo("Base-URN", urn)
   }

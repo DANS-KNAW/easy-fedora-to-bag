@@ -113,7 +113,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
         bag2 <- DansV0Bag.empty(bagDir2)
         _ = bag2.withEasyUserAccount(datasetInfo.depositor).withCreated(DateTime.now())
         _ = BagVersion(datasetInfo.doi, datasetInfo.urn, packageUuid1)
-          .addTo(bag2)
+          .addTo(bag2, Some(2))
         _ <- fillSecondBag(bag2, bagDir1 / "metadata", datasetInfo.nextBagFileInfos.toList)
         _ <- movePackageAtomically(packageDir2, outputDir)
       } yield Some(packageUuid2)

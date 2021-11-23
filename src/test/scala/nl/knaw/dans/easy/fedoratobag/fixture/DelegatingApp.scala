@@ -47,7 +47,7 @@ trait DelegatingApp extends MockFactory {
     override def createBag(datasetId: DatasetId, bagDir: File, options: Options, maybeFirstBagVersion: Option[BagVersion] = None): Try[DatasetInfo] = {
       // mimic a part of the real method, the tested caller wants to move the bag
       DansV0Bag.empty(bagDir).map { bag =>
-        maybeFirstBagVersion.foreach(_.addTo(bag))
+        maybeFirstBagVersion.foreach(_.addTo(bag, Some(2)))
         bag.save()
       }.getOrElse(s"mock of createBag failed for $datasetId")
       // mock the outcome of the method

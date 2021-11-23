@@ -33,7 +33,9 @@ ARGUMENTS
      -p, --no-payload             If provided, no payload files will be exported, i.e. only the metadata is
                                   present in the bag.
      -o, --output-dir  <arg>      Empty directory that will be created if it doesn't exist. Successful bags (or 
-                                  packages) will be moved to this directory.
+                                  packages) will be moved to this directory. When omitted, the logfile will
+                                  contain sequences of dataset IDs to be used as input for transformation type
+                                  'fedora-versioned'.
      -f, --output-format  <arg>   Output format: AIP, SIP. 'SIP' is only implemented for simple, it creates the
                                   bags one directory level deeper. easy-bag-to-deposit completes these sips with
                                   deposit.properties
@@ -81,7 +83,10 @@ EXAMPLES
 RESULTING FILES
 ---------------
 
-A `<log-file>` is generated in csv format with the following headers:
+A `<log-file>` is generated in csv format.
+* When no output-dir is specified each line will contain one or more dataset IDs.
+  The IDs on a single line are versions of one dataset.
+* When an output-dir is specified the file will have the following headers:
 
     easy-dataset-id  input easy-dataset-id
     UUID             UUID created for the resulting package of the specified output format

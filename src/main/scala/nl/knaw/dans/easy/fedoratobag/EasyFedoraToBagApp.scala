@@ -193,11 +193,22 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       }
     }
 
+    def getInfoFirstBag(allFileInfos: List[FileInfo], emd: Node, hasSecondBag: Boolean): Try[List[FileInfo]] = Try {
+      val fileInfo = allFileInfos.selectForFirstBag(emd, hasSecondBag, options.europeana, options.noPayload)
+      if (fileInfo.isEmpty && !options.noPayload) {
+        if (options.strict) throw NoPayloadFilesException()
+        else logger.warn(s"No payload files in dataset $datasetId")
+      }
+      fileInfo
+    }
+
+
     def payloadInEasy(tooManyFiles: Boolean) = {
       if (tooManyFiles)
         <dct:description xml:lang="en">{ new PCData(s"<b>Files not yet migrated to Data Station. Files for this dataset can be found at ${makelink(datasetId)}.</b>") }</dct:description>
       else Text("")
     }
+
     def makelink(datasetId: DatasetId): Node = {
      <a href={ s"https://easy.dans.knaw.nl/ui/datasets/id/$datasetId/tab/2" }>{ s"https://easy.dans.knaw.nl/ui/datasets/id/$datasetId" }</a>
     }
@@ -216,7 +227,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       isOriginalVersioned = options.transformationType == ORIGINAL_VERSIONED
       allFileInfos <- FileInfo(fedoraFileIDs, fedoraProvider).map(_.toList)
       selectedForSecondBag = allFileInfos.selectForSecondBag(isOriginalVersioned, options.noPayload)
-      selectedForFirstBag <- allFileInfos.selectForFirstBag(emdXml, selectedForSecondBag.nonEmpty, options.europeana, options.noPayload)
+      selectedForFirstBag <- getInfoFirstBag(allFileInfos, emdXml, selectedForSecondBag.nonEmpty)
       tooManyFiles = !hasTooManyFiles(selectedForSecondBag, selectedForFirstBag)
       _ = trace(tooManyFiles, selectedForFirstBag.size, selectedForSecondBag.size, options.noPayload, options.cutoff)
       (forFirstBag, forSecondBag) <- if (!tooManyFiles) checkDuplicates(selectedForFirstBag, selectedForSecondBag, isOriginalVersioned)

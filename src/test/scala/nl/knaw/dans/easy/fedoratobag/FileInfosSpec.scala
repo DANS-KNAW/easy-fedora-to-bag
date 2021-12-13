@@ -34,7 +34,7 @@ class FileInfosSpec extends TestSupportFixture with FileFoXmlSupport with MockFa
     val for2nd = fileInfos.selectForSecondBag(isOriginalVersioned = true)
     val for1st = fileInfos.selectForFirstBag(<emd/>, for2nd.nonEmpty, europeana = false)
     for2nd shouldBe fileInfos
-    for1st shouldBe Success(fileInfos.slice(0, 1))
+    for1st shouldBe fileInfos.slice(0, 1)
   }
   it should "return one file for each bag" in {
     val fileInfos = List(
@@ -44,7 +44,7 @@ class FileInfosSpec extends TestSupportFixture with FileFoXmlSupport with MockFa
     val for2nd = fileInfos.selectForSecondBag(isOriginalVersioned = true)
     val for1st = fileInfos.selectForFirstBag(<emd/>, for2nd.nonEmpty, europeana = false)
     for2nd shouldBe fileInfos.slice(1, 2)
-    for1st shouldBe Success(fileInfos.slice(0, 1))
+    for1st shouldBe fileInfos.slice(0, 1)
     // identical files are filtered
   }
   it should "return files for one bag" in {
@@ -55,7 +55,7 @@ class FileInfosSpec extends TestSupportFixture with FileFoXmlSupport with MockFa
     val for2nd = fileInfos.selectForSecondBag(isOriginalVersioned = true)
     val for1st = fileInfos.selectForFirstBag(<emd/>, for2nd.nonEmpty, europeana = false)
     for2nd shouldBe empty
-    for1st shouldBe Success(fileInfos)
+    for1st shouldBe fileInfos
   }
   it should "return no files" in {
     val fileInfos = List(
@@ -67,7 +67,7 @@ class FileInfosSpec extends TestSupportFixture with FileFoXmlSupport with MockFa
     val for2nd = fileInfos.selectForSecondBag(isOriginalVersioned = true, noPayload = true)
     val for1st = fileInfos.selectForFirstBag(<emd/>, for2nd.nonEmpty, europeana = true, noPayload = true)
     for2nd shouldBe empty
-    for1st shouldBe Success(Seq.empty)
+    for1st shouldBe Seq.empty
   }
   "FileInfo" should "replace non allowed characters in name and filepath with '_'" in {
     val foxml = fileFoXml(

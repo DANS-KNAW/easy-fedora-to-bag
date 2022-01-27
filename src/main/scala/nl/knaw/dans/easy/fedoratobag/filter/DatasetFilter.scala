@@ -36,8 +36,9 @@ trait DatasetFilter extends DebugEnhancedLogging {
     val triedMaybeInTargetResponse: Try[Option[String]] = maybeDoi
       .map(targetIndex.getByDoi)
       .getOrElse(Success(None)) // no DOI => no bag found by DOI
-    val hasSurrogate = (ddm \\ "relation")
-      .exists(n => n.attribute("scheme").toSeq.flatten.text.trim == "STREAMING_SURROGATE_RELATION")
+    val withSurrogate = (ddm \\ "relation")
+      .filter(n => n.attribute("scheme").toSeq.flatten.text.trim == "STREAMING_SURROGATE_RELATION")
+      .map(_.text.trim).mkString("; ")
     val violations = Seq(
       "1: DANS DOI" -> (if (maybeDoi.isEmpty) Seq("not found")
                         else Seq[String]()),
@@ -48,7 +49,7 @@ trait DatasetFilter extends DebugEnhancedLogging {
       "7: is in the vault" -> triedMaybeInTargetResponse.getOrElse(None).toSeq,
       "8: original and other files" -> (if (mixOfOriginalAndOthers) Seq.empty
                                         else Seq("should not occur both")),
-      "9: STREAMING_SURROGATE_RELATION" -> (if (hasSurrogate) Seq("should not occur") else Seq.empty),
+      "9: STREAMING_SURROGATE_RELATION" -> (if (withSurrogate.isEmpty) {Seq.empty} else Seq(withSurrogate)),
     ).filter(_._2.nonEmpty).toMap
 
     violations.foreach { case (rule, violations) =>

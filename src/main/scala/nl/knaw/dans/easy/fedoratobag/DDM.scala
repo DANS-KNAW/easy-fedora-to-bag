@@ -318,8 +318,9 @@ object DDM extends DebugEnhancedLogging {
 
   private def toRelationXml(key: String, bs: BasicString): Node = {
     if (bs.getScheme == "STREAMING_SURROGATE_RELATION") {
-      logger.info(s"skipped ${ relationLabel("dct:", key) } ${ bs.getScheme } $bs")
-      Text("")
+      <ddm:relation scheme='STREAMING_SURROGATE_RELATION'>
+        { bs.getValue.trim }
+      </ddm:relation>
     }
     else <label xsi:type={ idType(bs) }
                 xml:lang={ bs.getLanguage }

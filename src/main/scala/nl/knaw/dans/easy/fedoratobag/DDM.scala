@@ -16,7 +16,6 @@
 package nl.knaw.dans.easy.fedoratobag
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory._
-import nl.knaw.dans.easy.fedoratobag.DDM.lang
 import nl.knaw.dans.easy.fedoratobag.DateMap.isOtherDate
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import nl.knaw.dans.lib.string._

@@ -1140,6 +1140,32 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     ))
   }
 
+  it should "convert STREAMING_SURROGATE_RELATION" in {
+    val emd = parseEmdContent(Seq(
+      emdTitle, emdCreator, emdDescription, emdDates,
+      <emd:relation>
+        <dc:relation eas:scheme="STREAMING_SURROGATE_RELATION">
+          /domain/dans/user/Batavialand/collection/videos/presentation/easy-dataset:160728
+        </dc:relation>
+      </emd:relation>,
+      emdRights,
+    ))
+    val triedDDM = DDM(emd, Seq("D35400"), abrMapping)
+    triedDDM.map(normalized) shouldBe Success(normalized(
+      <ddm:DDM xsi:schemaLocation={ schemaLocation }>
+        { ddmProfile("D35400") }
+        <ddm:dcmiMetadata>
+          <ddm:relation scheme='STREAMING_SURROGATE_RELATION'>
+            /domain/dans/user/Batavialand/collection/videos/presentation/easy-dataset:160728
+          </ddm:relation>
+          <dct:license xsi:type="dct:URI">{ DDM.cc0 }</dct:license>
+        </ddm:dcmiMetadata>
+      </ddm:DDM>
+    ))
+    assume(schemaIsAvailable)
+    triedDDM.flatMap(validate) shouldBe Success(())
+  }
+
   "temporal coverage" should "map ABR" in {
     val emd = parseEmdContent(Seq(
       emdTitle, emdCreator, emdDescription, emdDates,

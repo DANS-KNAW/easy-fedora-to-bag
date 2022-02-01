@@ -16,7 +16,6 @@
 package nl.knaw.dans.easy.fedoratobag
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory._
-import nl.knaw.dans.easy.fedoratobag.DDM.lang
 import nl.knaw.dans.easy.fedoratobag.DateMap.isOtherDate
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import nl.knaw.dans.lib.string._
@@ -318,8 +317,9 @@ object DDM extends DebugEnhancedLogging {
 
   private def toRelationXml(key: String, bs: BasicString): Node = {
     if (bs.getScheme == "STREAMING_SURROGATE_RELATION") {
-      logger.info(s"skipped ${ relationLabel("dct:", key) } ${ bs.getScheme } $bs")
-      Text("")
+      <ddm:relation scheme='STREAMING_SURROGATE_RELATION'>
+        { bs.getValue.trim }
+      </ddm:relation>
     }
     else <label xsi:type={ idType(bs) }
                 xml:lang={ bs.getLanguage }

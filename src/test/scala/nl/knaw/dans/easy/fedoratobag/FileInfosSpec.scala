@@ -15,14 +15,13 @@
  */
 package nl.knaw.dans.easy.fedoratobag
 
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLBoundOperation.ANONYMOUS
 import nl.knaw.dans.easy.fedoratobag.filter._
-import nl.knaw.dans.easy.fedoratobag.fixture.{ FileFoXmlSupport, TestSupportFixture }
+import nl.knaw.dans.easy.fedoratobag.fixture.{FileFoXmlSupport, TestSupportFixture}
 import org.scalamock.scalatest.MockFactory
 
 import java.nio.file.Paths
-import scala.util.{ Failure, Success }
-import scala.xml.{ NodeBuffer, XML }
+import scala.util.Success
+import scala.xml.XML
 
 class FileInfosSpec extends TestSupportFixture with FileFoXmlSupport with MockFactory {
   private val fileInfo = new FileInfo("easy-file:1", Paths.get("x.txt"), "x.txt", size = 2, mimeType = "text/plain", accessibleTo = "ANONYMOUS", visibleTo = "ANONYMOUS", contentDigest = None, additionalMetadata = None, None, Paths.get("x.txt"))

@@ -128,6 +128,9 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
   it should "report invalid relations" in {
     val emd = parseEmdContent(Seq(emdDoi,
       <emd:relation>
+          <dc:relation eas:scheme="STREAMING_SURROGATE_RELATION">
+            /domain/dans/user/Batavialand/collection/videos/presentation/easy-dataset:160728
+          </dc:relation>
           <dct:isVersionOf>https://doi.org/11.111/test-abc-123</dct:isVersionOf>
           <dct:isVersionOf>https://doi.org/10.17026/test-123-456</dct:isVersionOf>
           <dct:isVersionOf>http://www.persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-2ajw-cq</dct:isVersionOf>
@@ -143,8 +146,9 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
           "violated 6: DANS relations <dct:isVersionOf>https://doi.org/10.17026/test-123-456</dct:isVersionOf>",
           "violated 6: DANS relations <dct:isVersionOf>http://www.persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-2ajw-cq</dct:isVersionOf>",
           """violated 6: DANS relations <ddm:replaces scheme="id-type:URN" href="http://persistent-identifier.nl/?identifier=urn:nbn:nl:ui:13-aka-hff">Prehistorische bewoning op het World Forum gebied - Den Haag (replaces)</ddm:replaces>""",
+          "violated 9: STREAMING_SURROGATE_RELATION /domain/dans/user/Batavialand/collection/videos/presentation/easy-dataset:160728",
         )).violations(emd, emd2ddm(emd), amd("PUBLISHED"), List.empty, exportStates) shouldBe
-      Success(Some("Violates 6: DANS relations"))
+      Success(Some("Violates 6: DANS relations; 9: STREAMING_SURROGATE_RELATION"))
   }
 
   it should "report existing bag" in {

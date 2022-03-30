@@ -345,7 +345,7 @@ object DDM extends DebugEnhancedLogging {
     emdRights.getTermsLicense.asScala
       .find(_.getValue.trim.startsWith("http"))
       .getOrElse(emdRights.getAccessCategory match {
-        case ANONYMOUS_ACCESS | OPEN_ACCESS | FREELY_AVAILABLE | OPEN_ACCESS_FOR_REGISTERED_USERS => cc0
+        case ANONYMOUS_ACCESS | OPEN_ACCESS | FREELY_AVAILABLE => cc0
         case _ => dansLicense
       })
   }

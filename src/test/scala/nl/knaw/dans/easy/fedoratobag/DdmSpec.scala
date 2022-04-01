@@ -80,7 +80,8 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     val file = "streaming.xml"
     val triedDdm = getEmd(file).flatMap(DDM(_, Seq("D35400"), abrMapping))
     // Logs
-    //  INFO  skipped dct:relation STREAMING_SURROGATE_RELATION /domain/dans/user/utest/collection/ctest/presentation/private_continuous
+    //  since DD-810 the dct:relation STREAMING_SURROGATE_RELATION is kept
+    //  /domain/dans/user/utest/collection/ctest/presentation/private_continuous
     val expectedDdm = (File("src/test/resources/expected-ddm/") / file)
       .contentAsString
       .replaceAll(" +", " ")
@@ -181,7 +182,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     triedDDM.flatMap(validate) shouldBe Success(())
   }
 
-  "relations" should "all appear except STREAMING_SURROGATE_RELATION" in {
+  "relations" should "all appear including STREAMING_SURROGATE_RELATION" in {
     val emd = parseEmdContent(Seq(
       emdTitle, emdCreator, emdDescription, emdDates,
         <emd:relation>
@@ -218,11 +219,13 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
       emdRights,
     ))
     val triedDDM = DDM(emd, Seq("D35400"), abrMapping)
-    // logs INFO  skipped dct:relation STREAMING_SURROGATE_RELATION /domain/dans/user/utest/collection/ctest/presentation/private_continuous
+    // DD-810 re-included dct:relation STREAMING_SURROGATE_RELATION /domain/dans/user/utest/collection/ctest/presentation/private_continuous when run non-strict
+    // DDM mapping does not know about strict/non-strict. If this is called, it will create the mapping
     triedDDM.map(normalized) shouldBe Success(normalized(
       <ddm:DDM xsi:schemaLocation={ schemaLocation }>
         { ddmProfile("D35400") }
         <ddm:dcmiMetadata>
+          <ddm:relation scheme="STREAMING_SURROGATE_RELATION">/domain/dans/user/utest/collection/ctest/presentation/private_continuous</ddm:relation>
           <dct:isFormatOf xsi:type="id-type:NWO-PROJECTNR">my-nwo-related-identifier</dct:isFormatOf>
           <dct:isFormatOf xsi:type="id-type:ISBN">my-isbn-alternative-identifier</dct:isFormatOf>
           <dct:isFormatOf xsi:type="id-type:ISSN">my-issn-alternative-identifier</dct:isFormatOf>
@@ -247,6 +250,7 @@ class DdmSpec extends TestSupportFixture with EmdSupport with AudienceSupport wi
     assume(schemaIsAvailable)
     triedDDM.flatMap(validate) shouldBe Success(())
   }
+
   it should "add protocol if missing in href" in {
     val emd = parseEmdContent(Seq(
       emdTitle, emdCreator, emdDescription, emdDates,

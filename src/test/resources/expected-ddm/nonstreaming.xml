@@ -16,7 +16,6 @@
         <dct:identifier xsi:type="id-type:URN">urn:nbn:nl:ui:13-blablabla</dct:identifier>
         <dct:identifier xsi:type="id-type:EASY2">easy-dataset:13</dct:identifier>
         <dct:identifier xsi:type="id-type:DOI">10.17026/mocked-Iiib-z9p-4ywa</dct:identifier>
-        <ddm:relation scheme="STREAMING_SURROGATE_RELATION">/domain/dans/user/utest/collection/ctest/presentation/private_continuous</ddm:relation>
         <dct:relation/>
         <dct:type xsi:type="dct:DCMIType">Dataset</dct:type>
         <dct:format>video/mpeg</dct:format>

@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<foxml:digitalObject VERSION="1.1" PID="easy-dataset:13"
+                     xmlns:foxml="info:fedora/fedora-system:def/foxml#"
+                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                     xsi:schemaLocation="info:fedora/fedora-system:def/foxml# http://www.fedora.info/definitions/1/0/foxml1-1.xsd">
+    <foxml:objectProperties>
+        <foxml:property NAME="info:fedora/fedora-system:def/model#state" VALUE="Inactive"/>
+        <foxml:property NAME="info:fedora/fedora-system:def/model#label" VALUE="Streaming private/continuous"/>
+        <foxml:property NAME="info:fedora/fedora-system:def/model#ownerId" VALUE="user001"/>
+        <foxml:property NAME="info:fedora/fedora-system:def/model#createdDate" VALUE="2017-09-30T15:47:41.822Z"/>
+        <foxml:property NAME="info:fedora/fedora-system:def/view#lastModifiedDate" VALUE="2020-03-17T06:14:09.845Z"/>
+    </foxml:objectProperties>
+    <foxml:datastream ID="AMD" STATE="A" CONTROL_GROUP="X" VERSIONABLE="false">
+        <foxml:datastreamVersion ID="AMD.0" LABEL="Administrative metadata for this dataset" CREATED="2017-09-30T15:47:42.034Z" MIMETYPE="text/xml" SIZE="2493">
+            <foxml:contentDigest TYPE="SHA-1" DIGEST="4f5386e2061398ed5cea684b991e20287d88af02"/>
+            <foxml:xmlContent>
+                <damd:administrative-md xmlns:damd="http://easy.dans.knaw.nl/easy/dataset-administrative-metadata/" version="0.1"><datasetState>PUBLISHED</datasetState><depositorId>user001</depositorId><stateChangeDates></stateChangeDates><groupIds></groupIds><damd:workflowData version="0.1"><assigneeId>NOT_ASSIGNED</assigneeId><wfs:workflow xmlns:wfs="http://easy.dans.knaw.nl/easy/workflow/"><id>dataset</id><remarks></remarks><steps><wfs:workflow><id>dataset.sip</id><timeSpentWritable>true</timeSpentWritable><remarks></remarks><steps><wfs:workflow><id>dataset.sip.files</id><remarks></remarks><steps><wfs:workflow><id>dataset.sip.files.completeness</id><required>true</required><remarks></remarks><steps></steps></wfs:workflow><wfs:workflow><id>dataset.sip.files.accessibility</id><required>true</required><remarks></remarks><steps></steps></wfs:workflow><wfs:workflow><id>dataset.sip.files.privacy</id><required>true</required><remarks></remarks><steps></steps></wfs:workflow></steps></wfs:workflow><wfs:workflow><id>dataset.sip.file-list</id><remarks></remarks><steps><wfs:workflow><id>dataset.sip.file-list.file-metadata</id><remarks></remarks><steps></steps></wfs:workflow></steps></wfs:workflow><wfs:workflow><id>dataset.sip.descriptive-metadata</id><remarks></remarks><steps><wfs:workflow><id>dataset.sip.descriptive-metadata.completeness</id><required>true</required><remarks></remarks><steps></steps></wfs:workflow><wfs:workflow><id>dataset.sip.descriptive-metadata.identifiers</id><remarks></remarks><steps></steps></wfs:workflow></steps></wfs:workflow></steps></wfs:workflow><wfs:workflow><id>dataset.aip</id><timeSpentWritable>true</timeSpentWritable><remarks></remarks><steps><wfs:workflow><id>dataset.aip.file-conversion</id><remarks></remarks><steps></steps></wfs:workflow><wfs:workflow><id>dataset.aip.file-metadata</id><remarks></remarks><steps></steps></wfs:workflow><wfs:workflow><id>dataset.aip.structure</id><remarks></remarks><steps></steps></wfs:workflow></steps></wfs:workflow><wfs:workflow><id>dataset.dip</id><timeSpentWritable>true</timeSpentWritable><remarks></remarks><steps><wfs:workflow><id>dataset.dip.publish-files</id><required>true</required><remarks></remarks><steps></steps></wfs:workflow><wfs:workflow><id>dataset.dip.jumpoff</id><remarks></remarks><steps></steps></wfs:workflow><wfs:workflow><id>dataset.dip.relations</id><remarks></remarks><steps></steps></wfs:workflow></steps></wfs:workflow></steps></wfs:workflow></damd:workflowData></damd:administrative-md>
+                <datasetState>PUBLISHED</datasetState>
+            </foxml:xmlContent>
+        </foxml:datastreamVersion>
+    </foxml:datastream>
+    <foxml:datastream ID="PRSQL" STATE="A" CONTROL_GROUP="X" VERSIONABLE="false">
+        <foxml:datastreamVersion ID="PRSQL.0" LABEL="Permission request sequences for this dataset" CREATED="2017-09-30T15:47:42.034Z" MIMETYPE="text/xml" SIZE="150">
+            <foxml:contentDigest TYPE="SHA-1" DIGEST="dbbbe9f7d96717b9ed383b7204fd93f410baef29"/>
+            <foxml:xmlContent>
+                <psl:permissionSequenceList xmlns:psl="http://easy.dans.knaw.nl/easy/permission-sequence-list/"><sequences></sequences></psl:permissionSequenceList>
+            </foxml:xmlContent>
+        </foxml:datastreamVersion>
+    </foxml:datastream>
+    <foxml:datastream ID="DC" STATE="A" CONTROL_GROUP="X" VERSIONABLE="false">
+        <foxml:datastreamVersion ID="DC.3" LABEL="Dublin Core Record for this object" CREATED="2017-09-30T16:57:34.132Z" MIMETYPE="text/xml" FORMAT_URI="http://www.openarchives.org/OAI/2.0/oai_dc/" SIZE="641">
+            <foxml:contentDigest TYPE="SHA-1" DIGEST="246ea2b8d2f11b3ba44d041e244fc8f435499b1d"/>
+            <foxml:xmlContent>
+                <oai_dc:dc xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd">
+                    <dc:title>Streaming private/continuous</dc:title>
+                    <dc:creator>DANS</dc:creator>
+                    <dc:description>Example video</dc:description>
+                    <dc:date>2017-09-30</dc:date>
+                    <dc:date>2017-09-30</dc:date>
+                    <dc:type>Dataset</dc:type>
+                    <dc:identifier>easy-dataset:13</dc:identifier>
+                    <dc:identifier></dc:identifier>
+                    <dc:rights>OPEN_ACCESS</dc:rights>
+                </oai_dc:dc>
+            </foxml:xmlContent>
+        </foxml:datastreamVersion>
+    </foxml:datastream>
+    <foxml:datastream ID="EMD" STATE="A" CONTROL_GROUP="X" VERSIONABLE="false">
+        <foxml:datastreamVersion ID="EMD.3" LABEL="Descriptive metadata for this dataset" CREATED="2017-09-30T16:57:34.153Z" MIMETYPE="text/xml" FORMAT_URI="http://easy.dans.knaw.nl/easy/easymetadata/" SIZE="1923">
+            <foxml:contentDigest TYPE="SHA-1" DIGEST="3da15a315ed2f3da9e26910c86d59e8df4a94a99"/>
+            <foxml:xmlContent>
+                <emd:easymetadata xmlns:emd="http://easy.dans.knaw.nl/easy/easymetadata/" xmlns:eas="http://easy.dans.knaw.nl/easy/easymetadata/eas/" xmlns:dct="http://purl.org/dc/terms/" xmlns:dc="http://purl.org/dc/elements/1.1/" emd:version="0.1">
+                    <emd:title>
+                        <dc:title>Streaming private/continuous</dc:title>
+                    </emd:title>
+                    <emd:creator>
+                        <eas:creator>
+                            <eas:organization>DANS</eas:organization>
+                            <eas:entityId eas:scheme="DAI"></eas:entityId>
+                        </eas:creator>
+                    </emd:creator>
+                    <emd:subject></emd:subject>
+                    <emd:description>
+                        <dc:description>Example video</dc:description>
+                    </emd:description>
+                    <emd:contributor></emd:contributor>
+                    <emd:date>
+                        <eas:created eas:scheme="W3CDTF" eas:format="DAY">2017-09-30T00:00:00.000+02:00</eas:created>
+                        <eas:available eas:scheme="W3CDTF" eas:format="DAY">2017-09-30T17:47:36.978+02:00</eas:available>
+                    </emd:date>
+                    <emd:type>
+                        <dc:type eas:schemeId="common.dc.type" eas:scheme="DCMI">Dataset</dc:type>
+                    </emd:type>
+                    <emd:format>
+                        <dc:format>video/mpeg</dc:format>
+                    </emd:format>
+                    <emd:identifier>
+                        <dc:identifier eas:identification-system="http://www.persistent-identifier.nl" eas:scheme="PID">urn:nbn:nl:ui:13-blablabla</dc:identifier>
+                        <dc:identifier eas:scheme="DMO_ID">easy-dataset:13</dc:identifier>
+                        <dc:identifier eas:identification-system="https://doi.org" eas:scheme="DOI">10.17026/mocked-Iiib-z9p-4ywa</dc:identifier>
+                    </emd:identifier>
+                    <emd:source></emd:source>
+                    <emd:language></emd:language>
+                    <emd:coverage></emd:coverage>
+                    <emd:rights>
+                        <dct:accessRights eas:schemeId="common.dcterms.accessrights">OPEN_ACCESS</dct:accessRights>
+                    </emd:rights>
+                    <emd:audience>
+                        <dct:audience eas:schemeId="custom.disciplines">easy-discipline:6</dct:audience>
+                    </emd:audience>
+                    <emd:other>
+                        <eas:application-specific>
+                            <eas:metadataformat>ANY_DISCIPLINE</eas:metadataformat>
+                            <eas:pakbon-status>NOT_IMPORTED</eas:pakbon-status>
+                        </eas:application-specific>
+                        <eas:etc></eas:etc>
+                    </emd:other>
+                </emd:easymetadata>
+            </foxml:xmlContent>
+        </foxml:datastreamVersion>
+    </foxml:datastream>
+    <foxml:datastream ID="RELS-EXT" STATE="A" CONTROL_GROUP="X" VERSIONABLE="false">
+        <foxml:datastreamVersion ID="RELS-EXT.4" LABEL="Relationships" CREATED="2020-03-17T06:14:09.845Z" MIMETYPE="application/rdf+xml" FORMAT_URI="info:fedora/fedora-system:FedoraRELSExt-1.0" SIZE="739">
+            <foxml:xmlContent>
+                <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+
+                    <rdf:Description rdf:about="info:fedora/easy-dataset:13">
+                        <hasModel xmlns="info:fedora/fedora-system:def/model#" rdf:resource="info:fedora/easy-model:EDM1DATASET"></hasModel>
+                        <hasModel xmlns="info:fedora/fedora-system:def/model#" rdf:resource="info:fedora/dans-model:recursive-item-v1"></hasModel>
+                        <isMemberOf xmlns="http://dans.knaw.nl/ontologies/relations#" rdf:resource="info:fedora/easy-discipline:6"></isMemberOf>
+                        <hasModel xmlns="info:fedora/fedora-system:def/model#" rdf:resource="info:fedora/easy-model:oai-item1"></hasModel>
+                        <itemID xmlns="http://www.openarchives.org/OAI/2.0/">oai:easy.dans.knaw.nl:easy-dataset:A13</itemID>
+                    </rdf:Description>
+
+                </rdf:RDF>
+            </foxml:xmlContent>
+        </foxml:datastreamVersion>
+    </foxml:datastream>
+</foxml:digitalObject>

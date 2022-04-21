@@ -282,7 +282,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     val app: AppWithMockedServices = new AppWithMockedServices() {
       expectAUser()
       Map(
-        "easy-dataset:13" -> XML.loadFile((sampleFoXML / "streaming.xml").toJava),
+        "easy-dataset:13" -> XML.loadFile((sampleFoXML / "nonstreaming.xml").toJava),
         "easy-discipline:6" -> audienceFoXML("easy-discipline:6", "D35400"),
         "easy-file:1" -> fileFoXml(id = 1, location = "original/a", name = "x.txt", digest = digests("acabadabra")),
         "easy-file:2" -> fileFoXml(id = 2, location = "a", name = "x.txt", digest = digests("acabadabra")),
@@ -434,7 +434,29 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     (testDir / "bags") shouldNot exist
   }
 
-  it should "process streaming" in {
+  it should "process streaming and result in a FAIL in strict mode" in {
+    val app = new AppWithMockedServices() {
+      Map(
+        "easy-discipline:6" -> audienceFoXML("easy-discipline:6", "D35400"),
+        "easy-dataset:13" -> XML.loadFile((sampleFoXML / "streaming.xml").toJava),
+        "easy-file:35" -> fileFoXml(digest = digests("barbapappa")),
+      ).foreach { case (id, xml) =>
+        (fedoraProvider.loadFoXml(_: String)) expects id once() returning Success(xml)
+      }
+      (fsRdb.getSubordinates(_: String)) expects "easy-dataset:13" once() returning
+        Success(Seq("easy-file:35"))
+    }
+    // end of mocking
+
+    val uuid = UUID.randomUUID
+    val bagDir = testDir / "bags" / uuid.toString
+    app.createBag("easy-dataset:13", bagDir, Options(app.filter, strict=true))  should matchPattern {
+      case Failure(_: InvalidTransformationException) =>
+    }
+    (testDir / "bags") shouldNot exist
+  }
+
+  it should "process streaming in non-strict mode" in {
     val app = new AppWithMockedServices() {
       expectAUser()
       Map(
@@ -455,8 +477,8 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
     val uuid = UUID.randomUUID
     val bagDir = testDir / "bags" / uuid.toString
-    app.createBag("easy-dataset:13", bagDir, Options(app.filter)) shouldBe
-      Success(DatasetInfo(None, "10.17026/mocked-Iiib-z9p-4ywa", "urn:nbn:nl:ui:13-blablabla", "user001", Seq.empty, withPayload = true))
+    app.createBag("easy-dataset:13", bagDir, Options(app.filter, strict=false)) shouldBe
+      Success(DatasetInfo(Some("Violates 9: STREAMING_SURROGATE_RELATION"), "10.17026/mocked-Iiib-z9p-4ywa", "urn:nbn:nl:ui:13-blablabla", "user001", Seq.empty, withPayload = true))
 
     // post conditions
 
@@ -468,6 +490,9 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     (metadata / "depositor-info").list.toSeq.map(_.name).sortBy(identity) shouldBe
       Seq("agreements.xml")
 
+    // DD-810
+    (metadata / "dataset.xml").lines.map(_.trim).mkString("\n") should
+      include("STREAMING_SURROGATE_RELATION")
     // the rest of the content is tested in FileItemSpec
     (metadata / "files.xml").lines.map(_.trim).mkString("\n") should
       include("<dct:identifier>easy-file:35</dct:identifier>")
@@ -507,7 +532,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
       (fsRdb.getSubordinates(_: String)) expects "easy-dataset:13" once() returning
         Success(Seq("easy-file:1", "easy-file:2", "easy-file:3"))
       val foXMLs = Map(
-        "easy-dataset:13" -> XML.loadFile((sampleFoXML / "streaming.xml").toJava),
+        "easy-dataset:13" -> XML.loadFile((sampleFoXML / "nonstreaming.xml").toJava),
         "easy-discipline:6" -> audienceFoXML("easy-discipline:6", "D35400"),
         "easy-file:1" -> fileFoXml(id = 1, name = "a.txt", digest = digests("lalala")),
         "easy-file:2" -> fileFoXml(id = 2, name = "b.txt", digest = digests("lalala")),
@@ -537,7 +562,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
       (fsRdb.getSubordinates(_: String)) expects "easy-dataset:13" once() returning
         Success(Seq("easy-file:1", "easy-file:2", "easy-file:3"))
       val foXMLs = Map(
-        "easy-dataset:13" -> XML.loadFile((sampleFoXML / "streaming.xml").toJava),
+        "easy-dataset:13" -> XML.loadFile((sampleFoXML / "nonstreaming.xml").toJava),
         "easy-discipline:6" -> audienceFoXML("easy-discipline:6", "D35400"),
         "easy-file:1" -> fileFoXml(id = 1, name = "a.txt", digest = digests("lalala")),
         "easy-file:2" -> fileFoXml(id = 2, name = "b.txt", digest = digests("lalala")),
@@ -566,7 +591,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
       (fsRdb.getSubordinates(_: String)) expects "easy-dataset:13" once() returning
         Success(Seq("easy-file:1"))
       val foXMLs = Map(
-        "easy-dataset:13" -> XML.loadFile((sampleFoXML / "streaming.xml").toJava),
+        "easy-dataset:13" -> XML.loadFile((sampleFoXML / "nonstreaming.xml").toJava),
         "easy-discipline:6" -> audienceFoXML("easy-discipline:6", "D35400"),
         "easy-file:1" -> fileFoXml(id = 1, name = "a.txt", digest = digests("acabadabra")),
       )
@@ -589,7 +614,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
   }
 
   it should "report not:implemented node" in {
-    val foXml = XML.loadFile((sampleFoXML / "streaming.xml").toJava).toString().replace("<emd:coverage/>", "<emd:coverage><eas:spatial><eas:box eas:scheme=\"RD\"></eas:box></eas:spatial></emd:coverage>")
+    val foXml = XML.loadFile((sampleFoXML / "nonstreaming.xml").toJava).toString().replace("<emd:coverage/>", "<emd:coverage><eas:spatial><eas:box eas:scheme=\"RD\"></eas:box></eas:spatial></emd:coverage>")
     val app: AppWithMockedServices = new AppWithMockedServices() {
       (fsRdb.getSubordinates(_: String)) expects "easy-dataset:13" once() returning
         Success(Seq("easy-file:1"))
@@ -615,7 +640,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
       (fsRdb.getSubordinates(_: String)) expects "easy-dataset:13" once() returning
         Success(Seq("easy-file:1", "easy-file:2", "easy-file:3", "easy-file:4", "easy-file:5"))
       val foXMLs = Map(
-        "easy-dataset:13" -> XML.loadFile((sampleFoXML / "streaming.xml").toJava),
+        "easy-dataset:13" -> XML.loadFile((sampleFoXML / "nonstreaming.xml").toJava),
         "easy-discipline:6" -> audienceFoXML("easy-discipline:6", "D35400"),
         "easy-file:1" -> fileFoXml(id = 1, name = "b.png", mimeType = "image/png", size = 10, accessibleTo = "ANONYMOUS", digest = digests("lalala")),
         "easy-file:2" -> fileFoXml(id = 2, name = "c.png", mimeType = "image/png", size = 20, accessibleTo = "ANONYMOUS", digest = digests("lalala")),
@@ -643,7 +668,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
       (fsRdb.getSubordinates(_: String)) expects "easy-dataset:13" once() returning
         Success(Seq("easy-file:1", "easy-file:2", "easy-file:3", "easy-file:4", "easy-file:5"))
       val foXMLs = Map(
-        "easy-dataset:13" -> XML.loadFile((sampleFoXML / "streaming.xml").toJava),
+        "easy-dataset:13" -> XML.loadFile((sampleFoXML / "nonstreaming.xml").toJava),
         "easy-discipline:6" -> audienceFoXML("easy-discipline:6", "D35400"),
         "easy-file:1" -> fileFoXml(id = 1, name = "a.txt"),
         "easy-file:2" -> fileFoXml(id = 2, name = "b.pdf", mimeType = "application/pdf", size = 10, accessibleTo = "ANONYMOUS", digest = digests("lalala")),
@@ -671,7 +696,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
       (fsRdb.getSubordinates(_: String)) expects "easy-dataset:13" once() returning
         Success(Seq("easy-file:1", "easy-file:2", "easy-file:3", "easy-file:4", "easy-file:5"))
       val foXMLs = Map(
-        "easy-dataset:13" -> XML.loadFile((sampleFoXML / "streaming.xml").toJava),
+        "easy-dataset:13" -> XML.loadFile((sampleFoXML / "nonstreaming.xml").toJava),
         "easy-discipline:6" -> audienceFoXML("easy-discipline:6", "D35400"),
         "easy-file:1" -> fileFoXml(id = 1, name = "a.txt", location = "x", digest = digests("lalala")), // default: original
         "easy-file:2" -> fileFoXml(id = 2, name = "b.pdf", mimeType = "application/pdf", size = 10, accessibleTo = "ANONYMOUS", digest = digests("lalala")),

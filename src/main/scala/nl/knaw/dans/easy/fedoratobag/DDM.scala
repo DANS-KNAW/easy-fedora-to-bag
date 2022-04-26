@@ -309,7 +309,7 @@ object DDM extends DebugEnhancedLogging {
       case _ => ??? // recover with Try{...}.getOrElse of caller to fail slow
     }.getOrElse {
       if (uri.toString.startsWith("10.17026/")) s"https://doi.org/$uri"
-      else if (uri.toString.isBlank) null
+      else if (uri.toString.trim.isEmpty) null
       else if (uri.toString.startsWith("www.")) "http://" + uri
            else uri.toString
     }

@@ -127,7 +127,7 @@ class CreateSequenceSpec extends TestSupportFixture with DelegatingApp with File
       // mocking allows to demonstrate the difference between a strict and non-strict run in a single test
       """easyDatasetId,uuid1,uuid2,doi,depositor,transformationType,comment
         |easy-dataset:10,,,,,-,FAILED: .*InvalidTransformationException: Violates whatever
-        |easy-dataset:1,.+,,mocked-doi,user001,not strict fedora-versioned,Violates something
+        |easy-dataset:1,.+,,mocked-doi,user001,not strict fedora-versioned,OK though it Violates something
         |easy-dataset:2,.+,.+,mocked-doi,user001,fedora-versioned,OK
         |easy-dataset:3,.+,,mocked-doi,user001,fedora-versioned,OK
         |easy-dataset:4,.+,,,,-,FAILED: .*FedoraClientException: mocked not found

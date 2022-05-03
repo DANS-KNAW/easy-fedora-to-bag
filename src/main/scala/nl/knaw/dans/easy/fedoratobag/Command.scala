@@ -46,7 +46,7 @@ object Command extends App with DebugEnhancedLogging {
     .doIfFailure { case NonFatal(e) => println(s"FAILED: ${ e.getMessage }") }
 
   private def runSubcommand(app: EasyFedoraToBagApp): Try[FeedBackMessage] = {
-    lazy val isAip = commandLine.outputFormat.isSupplied && commandLine.outputFormat() == AIP
+    val isAip = commandLine.outputFormat.isSupplied && commandLine.outputFormat() == AIP
     Try(transformationType match {
       case FEDORA_VERSIONED if !europeana && !isAip => FedoraVersionedFilter()
       case ORIGINAL_VERSIONED if !isAip => SimpleDatasetFilter(allowOriginalAndOthers = true)
@@ -73,8 +73,8 @@ object Command extends App with DebugEnhancedLogging {
     val options = Options(datasetFilter, transformationType, commandLine.strictMode(), europeana, commandLine.noPayload(), commandLine.cutoff())
     val printer = CsvRecord.printer(csvLogFile)
     if (transformationType == FEDORA_VERSIONED)
-      printer.apply(app.createSequences(datasetIds, commandLine.outputDir(), options))
-    else printer.apply(app.createOriginalVersionedExport(datasetIds, commandLine.outputDir(), options, commandLine.outputFormat()))
+      printer(app.createSequences(datasetIds, commandLine.outputDir(), options))
+    else printer(app.createOriginalVersionedExport(datasetIds, commandLine.outputDir(), options, commandLine.outputFormat()))
   }
 
   private def datasetIds: Iterator[DatasetId] = {

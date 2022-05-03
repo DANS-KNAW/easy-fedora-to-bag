@@ -25,7 +25,7 @@ import java.util.UUID
 import scala.util.Try
 
 case class CsvRecord(easyDatasetId: DatasetId,
-                     packageUuid1: UUID,
+                     packageUuid1: Option[UUID],
                      packageUuid2: Option[UUID],
                      doi: String,
                      depositor: Depositor,
@@ -33,7 +33,7 @@ case class CsvRecord(easyDatasetId: DatasetId,
                      comment: String,
                     ) {
   def print(implicit printer: CSVPrinter): Try[FeedBackMessage] = Try {
-    printer.printRecord(easyDatasetId, packageUuid1, packageUuid2.getOrElse(""), doi, depositor, transformationType, comment)
+    printer.printRecord(easyDatasetId, packageUuid1.getOrElse(""), packageUuid2.getOrElse(""), doi, depositor, transformationType, comment)
     comment
   }
 }
@@ -66,7 +66,7 @@ object CsvRecord {
       )
     new CsvRecord(
       datasetId,
-      uuid1,
+      Option(uuid1),
       uuid2,
       datasetInfo.doi,
       datasetInfo.depositor,

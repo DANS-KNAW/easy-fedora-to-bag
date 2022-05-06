@@ -26,7 +26,7 @@ import nl.knaw.dans.bag.v0.DansV0Bag
 import nl.knaw.dans.easy.fedoratobag.Command.FeedBackMessage
 import nl.knaw.dans.easy.fedoratobag.FileInfo.checkDuplicates
 import nl.knaw.dans.easy.fedoratobag.FileItem.{ checkNotImplementedFileMetadata, filesXml }
-import nl.knaw.dans.easy.fedoratobag.FoXml.{ getEmd, _ }
+import nl.knaw.dans.easy.fedoratobag.FoXml._
 import nl.knaw.dans.easy.fedoratobag.OutputFormat.OutputFormat
 import nl.knaw.dans.easy.fedoratobag.TransformationType._
 import nl.knaw.dans.easy.fedoratobag.filter._
@@ -53,81 +53,53 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
   private lazy val ldap = new Ldap(ldapContext)
   private val emdUnmarshaller = new EmdUnmarshaller(classOf[EasyMetadataImpl])
 
-  def createSequences(lines: Iterator[String], outputDir: File, options: Options)(printer: CSVPrinter): Try[FeedBackMessage] = {
-    logger.info(options.toString)
-
-    def exportBag(firstVersion: Option[BagVersion], datasetId: DatasetId): Try[BagVersion] = {
-      val packageUUID = UUID.randomUUID
-      val packageDir = configuration.stagingDir / packageUUID.toString
-      val csvUuid1 = firstVersion.map(_.packageId).getOrElse(packageUUID)
-      val csvUuid2 = firstVersion.map(_ => packageUUID)
-      for {
-        datasetInfo <- createBag(datasetId, packageDir / UUID.randomUUID.toString, options, firstVersion)
-        _ <- movePackageAtomically(packageDir, outputDir)
-        thisVersionInfo = BagVersion(datasetInfo, packageUUID)
-        _ <- CsvRecord(datasetId, datasetInfo, csvUuid1, csvUuid2, options).print(printer)
-      } yield thisVersionInfo
-    }
-
-    def exportWithRecover(firstVersion: BagVersion)(datasetId: DatasetId): Try[Any] = {
-      val tried = exportBag(Some(firstVersion), datasetId)
-      errorHandling(tried, printer, datasetId, firstVersion.packageId)
-    }
-
-    def exportSequence(datasetIds: Array[DatasetId])(firstDatasetId: DatasetId) = for {
-      versionInfo <- exportBag(None, firstDatasetId)
-      _ <- datasetIds
-        .map(exportWithRecover(versionInfo))
-        .toSeq.failFastOr(Success(()))
-    } yield ()
-
-    lines.map { line =>
-      val datasetIds = line.split(",")
-      val triedUnit = datasetIds
-        .headOption
-        .map(exportSequence(datasetIds.drop(1)))
-        .getOrElse(Success(()))
-      errorHandling(triedUnit, printer, datasetIds.head, null)
-    }.failFastOr(Success("no fedora/IO errors"))
+  private def logSkipped(datasetId: DatasetId, printer: CSVPrinter) = {
+    new CsvRecord(datasetId, None, None, "", "", "","ignored").print(printer)
   }
 
-  def createOriginalVersionedExport(input: Iterator[DatasetId], outputDir: File, options: Options, outputFormat: OutputFormat)
-                                   (printer: CSVPrinter): Try[FeedBackMessage] = input.map { datasetId =>
+  def createExport(input: Iterator[DatasetId], skip: Seq[String], outputDir: File, options: Options, outputFormat: OutputFormat)
+                  (printer: CSVPrinter): Try[FeedBackMessage] = {
     logger.info(options.toString)
+    input.map { datasetId =>
+      if (skip.contains(datasetId))
+        Success(logSkipped(datasetId, printer))
+      else {
+        def bagDir(packageDir: File) = outputFormat match {
+          case OutputFormat.AIP => packageDir
+          case OutputFormat.SIP => packageDir / UUID.randomUUID.toString
+        }
 
-    def bagDir(packageDir: File) = outputFormat match {
-      case OutputFormat.AIP => packageDir
-      case OutputFormat.SIP => packageDir / UUID.randomUUID.toString
-    }
+        val packageUuid1 = UUID.randomUUID
+        val packageUuid2 = UUID.randomUUID
+        val packageDir1 = configuration.stagingDir / packageUuid1.toString
+        val packageDir2 = configuration.stagingDir / packageUuid2.toString
+        val bagDir1 = bagDir(packageDir1)
+        val bagDir2 = bagDir(packageDir2)
+        def createSecondBag(datasetInfo: DatasetInfo) = {
+          if (datasetInfo.nextBagFileInfos.isEmpty) Success(None)
+          else for {
+            bag2 <- DansV0Bag.empty(bagDir2)
+            _ = logger.info (s"exporting $datasetId to second bag $bagDir2")
+            _ = bag2.withEasyUserAccount(datasetInfo.depositor).withCreated(DateTime.now())
+            _ = BagVersion(datasetInfo.doi, datasetInfo.urn, packageUuid1)
+              .addTo(bag2, Some(2))
+            _ <- fillSecondBag(bag2, bagDir1 / "metadata", datasetInfo.nextBagFileInfos.toList)
+            _ <- movePackageAtomically(packageDir2, outputDir)
+          } yield Some(packageUuid2)
+        }
 
-    val packageUuid1 = UUID.randomUUID
-    val packageUuid2 = UUID.randomUUID
-    val packageDir1 = configuration.stagingDir / packageUuid1.toString
-    val packageDir2 = configuration.stagingDir / packageUuid2.toString
-    val bagDir1 = bagDir(packageDir1)
-    val bagDir2 = bagDir(packageDir2)
-
-    def createSecondBag(datasetInfo: DatasetInfo) = {
-      if (datasetInfo.nextBagFileInfos.isEmpty) Success(None)
-      else for {
-        bag2 <- DansV0Bag.empty(bagDir2)
-        _ = bag2.withEasyUserAccount(datasetInfo.depositor).withCreated(DateTime.now())
-        _ = BagVersion(datasetInfo.doi, datasetInfo.urn, packageUuid1)
-          .addTo(bag2, Some(2))
-        _ <- fillSecondBag(bag2, bagDir1 / "metadata", datasetInfo.nextBagFileInfos.toList)
-        _ <- movePackageAtomically(packageDir2, outputDir)
-      } yield Some(packageUuid2)
-    }
-
-    val triedCsvRecord = for {
-      datasetInfo <- createBag(datasetId, bagDir1, options)
-      maybeUuid2 <- createSecondBag(datasetInfo)
-      // first bag moved after second, thus a next process can stumble over a missing first bag in case of interrupts
-      _ <- movePackageAtomically(packageDir1, outputDir)
-      _ <- CsvRecord(datasetId, datasetInfo, packageUuid1, maybeUuid2, options).print(printer)
-    } yield ()
-    errorHandling(triedCsvRecord, printer, datasetId, packageUuid1)
-  }.failFastOr(Success("no fedora/IO errors"))
+        logger.info (s"exporting $datasetId to $bagDir1")
+        val triedCsvRecord = for {
+          datasetInfo <- createBag(datasetId, bagDir1, options)
+          maybeUuid2 <- createSecondBag(datasetInfo)
+          // first bag moved after second, thus a next process can stumble over a missing first bag in case of interrupts
+          _ <- movePackageAtomically(packageDir1, outputDir)
+          _ <- CsvRecord(datasetId, datasetInfo, packageUuid1, maybeUuid2, options).print(printer)
+        } yield ()
+        errorHandling(triedCsvRecord, printer, datasetId, packageUuid1)
+      }
+    }.failFastOr(Success("no fedora/IO errors"))
+  }
 
   private def movePackageAtomically(packageDir: File, outputDir: File) = {
     val target = outputDir / packageDir.name
@@ -276,7 +248,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     emd.getEmdIdentifier.getDcIdentifier.asScala
       .find(_.getScheme == "PID")
       .map(_.getValue)
-      .getOrElse(throw new Exception(s"no URN in EMD of $datasetId "))
+      .getOrElse(throw new Exception(s"no URN in EMD of $datasetId ")) // TODO causes a stack trace without added value
   }
 
   private def getAudience(id: String) = {

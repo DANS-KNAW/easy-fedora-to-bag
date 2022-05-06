@@ -53,8 +53,11 @@ object CsvRecord {
 
   def apply(datasetId: DatasetId, datasetInfo: DatasetInfo, uuid1: UUID, uuid2: Option[UUID], options: Options): CsvRecord = {
     val violations = datasetInfo.maybeFilterViolations
-    val commentSuffix = if (datasetInfo.withPayload && !options.noPayload) ""
-                        else s"; no payload, nr of files exceeds ${ options.cutoff }"
+    val commentSuffix = (datasetInfo.withPayload , options.noPayload) match {
+      case (true, _) => ""
+      case (false, false) => s"; no payload, nr of files exceeds ${ options.cutoff }"
+      case (false, true) => s"; no payload specified"
+    }
     val commentPrefix = violations.map(_ => "OK though it ").getOrElse("OK")
     val typePrefix = violations.map(_ => "not strict ").getOrElse("")
     val typeSuffix = uuid2.map(_ => "")

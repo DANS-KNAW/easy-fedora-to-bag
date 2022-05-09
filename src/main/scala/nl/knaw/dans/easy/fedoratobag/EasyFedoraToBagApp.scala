@@ -248,7 +248,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     emd.getEmdIdentifier.getDcIdentifier.asScala
       .find(_.getScheme == "PID")
       .map(_.getValue)
-      .getOrElse(throw new Exception(s"no URN in EMD of $datasetId ")) // TODO causes a stack trace without added value
+      .getOrElse(throw InvalidTransformationException(s"no URN in EMD of $datasetId "))
   }
 
   private def getAudience(id: String) = {

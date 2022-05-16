@@ -41,9 +41,9 @@ class CreateExportSpec extends TestSupportFixture with DelegatingApp with FileFo
 
     // end of mocking
 
-    delegatingApp(stagingDir, createBagExpects).createOriginalVersionedExport(
+    delegatingApp(stagingDir, createBagExpects).createExport(
       Iterator("easy-dataset:1", "easy-dataset:2", "easy-dataset:3", "easy-dataset:4"),
-      outputDir, Options(SimpleDatasetFilter()), SIP
+      Seq.empty, outputDir, Options(SimpleDatasetFilter()), SIP
     )(CsvRecord.csvFormat.print(sw)) shouldBe
       Success("no fedora/IO errors")
 
@@ -77,9 +77,9 @@ class CreateExportSpec extends TestSupportFixture with DelegatingApp with FileFo
     // end of mocking
 
     val app = delegatingApp(stagingDir, createBagExpects)
-    app.createOriginalVersionedExport(
+    app.createExport(
       Iterator("easy-dataset:1", "easy-dataset:2"),
-      outputDir, Options(SimpleDatasetFilter(targetIndex = app.bagIndex)), AIP
+      Seq.empty, outputDir, Options(SimpleDatasetFilter(targetIndex = app.bagIndex)), AIP
     )(CsvRecord.csvFormat.print(sw)) shouldBe Success("no fedora/IO errors")
 
     // post conditions
@@ -111,9 +111,9 @@ class CreateExportSpec extends TestSupportFixture with DelegatingApp with FileFo
     // end of mocking
 
     val app = delegatingApp(stagingDir, createBagExpects)
-    app.createOriginalVersionedExport(
+    app.createExport(
       Iterator("easy-dataset:1", "easy-dataset:2", "easy-dataset:3", "easy-dataset:4", "easy-dataset:5", "easy-dataset:6"),
-      outputDir, Options(SimpleDatasetFilter(targetIndex = app.bagIndex)), AIP
+      Seq.empty, outputDir, Options(SimpleDatasetFilter(targetIndex = app.bagIndex)), AIP
     )(CsvRecord.csvFormat.print(sw)) should matchPattern {
       case Failure(t) if t.getMessage == "mocked exception" =>
     }

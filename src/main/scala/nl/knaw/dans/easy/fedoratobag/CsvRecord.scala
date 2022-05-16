@@ -25,7 +25,7 @@ import java.util.UUID
 import scala.util.Try
 
 case class CsvRecord(easyDatasetId: DatasetId,
-                     packageUuid1: UUID,
+                     packageUuid1: Option[UUID],
                      packageUuid2: Option[UUID],
                      doi: String,
                      depositor: Depositor,
@@ -33,7 +33,7 @@ case class CsvRecord(easyDatasetId: DatasetId,
                      comment: String,
                     ) {
   def print(implicit printer: CSVPrinter): Try[FeedBackMessage] = Try {
-    printer.printRecord(easyDatasetId, packageUuid1, packageUuid2.getOrElse(""), doi, depositor, transformationType, comment)
+    printer.printRecord(easyDatasetId, packageUuid1.getOrElse(""), packageUuid2.getOrElse(""), doi, depositor, transformationType, comment)
     comment
   }
 }
@@ -53,10 +53,12 @@ object CsvRecord {
 
   def apply(datasetId: DatasetId, datasetInfo: DatasetInfo, uuid1: UUID, uuid2: Option[UUID], options: Options): CsvRecord = {
     val violations = datasetInfo.maybeFilterViolations
-    val comment = if (violations.isEmpty) "OK"
-                  else violations.mkString("")
-    val commentSuffix = if (datasetInfo.withPayload && !options.noPayload) ""
-                        else s"; no payload, nr of files exceeds ${ options.cutoff }"
+    val commentSuffix = (datasetInfo.withPayload , options.noPayload) match {
+      case (true, _) => ""
+      case (false, false) => s"; no payload, nr of files exceeds ${ options.cutoff }"
+      case (false, true) => s"; no payload specified"
+    }
+    val commentPrefix = violations.map(_ => "OK though it ").getOrElse("OK")
     val typePrefix = violations.map(_ => "not strict ").getOrElse("")
     val typeSuffix = uuid2.map(_ => "")
       .getOrElse(
@@ -66,12 +68,13 @@ object CsvRecord {
       )
     new CsvRecord(
       datasetId,
-      uuid1,
+      Option(uuid1),
       uuid2,
       datasetInfo.doi,
       datasetInfo.depositor,
       typePrefix + options.transformationType + typeSuffix,
-      comment + commentSuffix,
+      // N.B: called after movePackageAtomically hence OK
+      commentPrefix + violations.mkString("") + commentSuffix,
     )
   }
 }

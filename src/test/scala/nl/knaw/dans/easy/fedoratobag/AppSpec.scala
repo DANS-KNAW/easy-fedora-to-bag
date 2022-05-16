@@ -87,8 +87,9 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     // end of mocking
 
     val sw = new StringWriter()
-    app.createOriginalVersionedExport(
+    app.createExport(
       Iterator("easy-dataset:17"),
+      Seq.empty,
       (testDir / "output").createDirectories,
       Options(SimpleDatasetFilter(allowOriginalAndOthers = true), ORIGINAL_VERSIONED),
       SIP
@@ -140,8 +141,9 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     // end of mocking
 
     val sw = new StringWriter()
-    app.createOriginalVersionedExport(
+    app.createExport(
       Iterator("easy-dataset:17"),
+      Seq.empty,
       (testDir / "output").createDirectories,
       Options(SimpleDatasetFilter(allowOriginalAndOthers = true), ORIGINAL_VERSIONED, cutoff = 1),
       SIP
@@ -187,8 +189,9 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     // end of mocking
 
     val sw = new StringWriter()
-    app.createOriginalVersionedExport(
+    app.createExport(
       Iterator("easy-dataset:17"),
+      Seq.empty,
       (testDir / "output").createDirectories,
       Options(SimpleDatasetFilter(allowOriginalAndOthers = true), ORIGINAL_VERSIONED),
       SIP
@@ -228,8 +231,9 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     // end of mocking
 
     val sw = new StringWriter()
-    app.createOriginalVersionedExport(
+    app.createExport(
       Iterator("easy-dataset:17"),
+      Seq.empty,
       (testDir / "output").createDirectories,
       Options(new SimpleDatasetFilter(), ORIGINAL_VERSIONED),
       SIP
@@ -266,8 +270,9 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     // end of mocking
 
     val sw = new StringWriter()
-    app.createOriginalVersionedExport(
+    app.createExport(
       Iterator("easy-dataset:17"),
+      Seq.empty,
       (testDir / "output").createDirectories,
       Options(SimpleDatasetFilter()),
       SIP
@@ -307,8 +312,9 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     // end of mocking
 
     val sw = new StringWriter()
-    app.createOriginalVersionedExport(
+    app.createExport(
       Iterator("easy-dataset:13"),
+      Seq.empty,
       (testDir / "output").createDirectories(),
       Options(SimpleDatasetFilter(allowOriginalAndOthers = true), ORIGINAL_VERSIONED),
       AIP
@@ -338,8 +344,9 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     // end of mocking
 
     val sw = new StringWriter()
-    app.createOriginalVersionedExport(
+    app.createExport(
       Iterator("easy-dataset:13"),
+      Seq.empty,
       (testDir / "output").createDirectories(),
       Options(SimpleDatasetFilter(allowOriginalAndOthers = true), ORIGINAL_VERSIONED),
       AIP

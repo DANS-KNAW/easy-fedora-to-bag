@@ -17,7 +17,7 @@ package nl.knaw.dans.easy.fedoratobag
 
 import better.files.File
 import nl.knaw.dans.easy.fedoratobag.OutputFormat.OutputFormat
-import nl.knaw.dans.easy.fedoratobag.TransformationType.{ FEDORA_VERSIONED, ORIGINAL_VERSIONED, TransformationType }
+import nl.knaw.dans.easy.fedoratobag.TransformationType.{ ORIGINAL_VERSIONED, TransformationType }
 import org.rogach.scallop.{ ScallopConf, ScallopOption, ValueConverter, singleArgConverter }
 
 import java.nio.file.Paths
@@ -56,11 +56,9 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
     descr = "File containing a newline-separated list of easy-dataset-ids to be transformed. Use either this or the dataset-id argument. Lines starting with '#' are ignored.")
   val skipDatasets: ScallopOption[File] = opt(name = "skip-list",
     descr = s"File containing a newline-separated list of easy-dataset-ids to be skipped")
-  val outputDir: ScallopOption[File] = opt(name = "output-dir", short = 'o',
+  val outputDir: ScallopOption[File] = opt(name = "output-dir", short = 'o', required = true,
     descr = "Empty directory that will be created if it doesn't exist. " +
-      "Successful bags (or packages) will be moved to this directory. " +
-      "When omitted, the logfile will contain sequences of dataset IDs " +
-      "to be used as input for transformation type 'fedora-versioned'.")
+      "Successful bags (or packages) will be moved to this directory.")
   val outputFormat: ScallopOption[OutputFormat] = opt(name = "output-format", short = 'f',
     descr = OutputFormat.values.mkString("Output format: ", ", ", ". 'SIP' is only implemented for simple, it creates the bags one directory level deeper. easy-bag-to-deposit completes these sips with deposit.properties"))
   val logFile: ScallopOption[File] = opt(name = "log-file", short = 'l',
@@ -90,8 +88,6 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   codependent(outputFormat, outputDir)
   validateOpt(transformation, outputDir) {
     case (None, _) => Left(s"trailing argument 'transformation' is mandatory") // required so won't happen
-    case (Some(FEDORA_VERSIONED), _) if inputFile.isEmpty => Left(s"argument 'input-file' is mandatory for $FEDORA_VERSIONED")
-    case (Some(FEDORA_VERSIONED), _) => Right(())
     case (Some(ORIGINAL_VERSIONED), _) if noPayload() => Left(s"no-payload conflicts with original-versioned")
     case (Some(t), None) => Left(s"argument 'output-dir' is mandatory for $t")
     case (_, Some(dir)) =>

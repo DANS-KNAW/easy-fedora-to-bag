@@ -19,9 +19,9 @@ import better.files.File
 import nl.knaw.dans.easy.fedoratobag.OutputFormat._
 import nl.knaw.dans.easy.fedoratobag.TransformationType._
 import nl.knaw.dans.easy.fedoratobag.filter._
-import nl.knaw.dans.easy.fedoratobag.versions.FedoraVersions
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
+import org.rogach.scallop.ScallopOption
 
 import scala.language.reflectiveCalls
 import scala.util.Try
@@ -37,7 +37,6 @@ object Command extends App with DebugEnhancedLogging {
   }
 
   private val europeana = commandLine.europeana()
-  private val transformationType = commandLine.transformation()
   private val csvLogFile = commandLine.logFile()
 
   runSubcommand(app)
@@ -46,46 +45,28 @@ object Command extends App with DebugEnhancedLogging {
     .doIfFailure { case NonFatal(e) => println(s"FAILED: ${ e.getMessage }") }
 
   private def runSubcommand(app: EasyFedoraToBagApp): Try[FeedBackMessage] = {
-    lazy val isAip = commandLine.outputFormat.isSupplied && commandLine.outputFormat() == AIP
-    Try(transformationType match {
-      case FEDORA_VERSIONED if !europeana && !isAip => FedoraVersionedFilter()
+    val isAip = commandLine.outputFormat.isSupplied && commandLine.outputFormat() == AIP
+    Try(commandLine.transformation() match {
       case ORIGINAL_VERSIONED if !isAip => SimpleDatasetFilter(allowOriginalAndOthers = true)
       case THEMA if isAip => ThemaDatasetFilter(allowOriginalAndOthers = europeana, targetIndex = app.bagIndex)
       case SIMPLE if isAip => SimpleDatasetFilter(allowOriginalAndOthers = europeana, targetIndex = app.bagIndex)
       case SIMPLE => SimpleDatasetFilter(allowOriginalAndOthers = europeana)
       case _ => throw new NotImplementedError(s"${ commandLine.args } not implemented")
     }).flatMap { datasetFilter =>
-      if (!commandLine.outputDir.isSupplied)
-        dryRunFedoraVersioned(app)
-      else runExport(app, datasetFilter)
+      val printer = CsvRecord.printer(csvLogFile)
+      printer(app.createExport(
+        commandLine.datasetId.map(Iterator(_)).getOrElse(readDatasetIds(commandLine.inputFile())),
+        readDatasetIds(commandLine.skipDatasets()).toSeq,
+        commandLine.outputDir(),
+        Options(datasetFilter, commandLine.transformation(), commandLine.strictMode(), europeana, commandLine.noPayload(), commandLine.cutoff()),
+        commandLine.outputFormat(),
+      ))
     }
   }.map(msg => s"$msg, for details see ${ csvLogFile.toJava.getAbsolutePath }")
 
-  private def dryRunFedoraVersioned(app: EasyFedoraToBagApp) = {
-    FedoraVersions(app.fedoraProvider)
-      .findChains(datasetIds).map { families =>
-      csvLogFile.printLines(families.map(_.mkString(",")))
-      s"DRY RUN --- produced IDs of bag sequences per CSV line"
-    }
-  }
-
-  private def runExport(app: EasyFedoraToBagApp, datasetFilter: SimpleDatasetFilter) = {
-    val options = Options(datasetFilter, transformationType, commandLine.strictMode(), europeana, commandLine.noPayload(), commandLine.cutoff())
-    val printer = CsvRecord.printer(csvLogFile)
-    if (transformationType == FEDORA_VERSIONED)
-      printer.apply(app.createSequences(datasetIds, commandLine.outputDir(), options))
-    else printer.apply(app.createOriginalVersionedExport(datasetIds, commandLine.outputDir(), options, commandLine.outputFormat()))
-  }
-
-  private def datasetIds: Iterator[DatasetId] = {
-    val skip = commandLine.skipDatasets.toOption.toList.flatMap(_.lines).filterNot(_.trim.isEmpty)
-    commandLine
-      .datasetId.map(Iterator(_))
-      .getOrElse(commandLine
-        .inputFile()
-        .lineIterator
-        .filterNot(line => line.startsWith("#") || line.trim.isEmpty)
-        .filterNot(skip.contains(_))
-      )
+  private def readDatasetIds(file: File) = {
+    file
+      .lineIterator
+      .filterNot(line => line.startsWith("#") || line.trim.isEmpty)
   }
 }

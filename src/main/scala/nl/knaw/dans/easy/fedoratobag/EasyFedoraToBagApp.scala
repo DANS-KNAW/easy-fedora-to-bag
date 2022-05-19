@@ -101,6 +101,52 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     }.failFastOr(Success("no fedora/IO errors"))
   }
 
+  def createExport2(input: Iterator[InputFileRecord], skip: Seq[String], outputDir: File, options: Options, outputFormat: OutputFormat)
+                  (printer: CSVPrinter): Try[FeedBackMessage] = {
+    logger.info(options.toString)
+    input.map { case InputFileRecord(datasetId: DatasetId, optUuid1, optUuid2) =>
+      if (optUuid1.isEmpty && optUuid2.isDefined) throw new IllegalArgumentException("If uuid1 may not be empty if uuid2 is provided")
+      if (skip.contains(datasetId))
+        Success(logSkipped(datasetId, printer))
+      else {
+        def bagDir(packageDir: File) = outputFormat match {
+          case OutputFormat.AIP => packageDir
+          case OutputFormat.SIP => packageDir / UUID.randomUUID.toString
+        }
+
+        val packageUuid1 = optUuid1.getOrElse(UUID.randomUUID)
+        val packageUuid2 = optUuid2.getOrElse(UUID.randomUUID)
+        val packageDir1 = configuration.stagingDir / packageUuid1.toString
+        val packageDir2 = configuration.stagingDir / packageUuid2.toString
+        val bagDir1 = bagDir(packageDir1)
+        val bagDir2 = bagDir(packageDir2)
+        def createSecondBag(datasetInfo: DatasetInfo) = {
+          if (datasetInfo.nextBagFileInfos.isEmpty) Success(None)
+          else for {
+            bag2 <- DansV0Bag.empty(bagDir2)
+            _ = logger.info (s"exporting $datasetId to second bag $bagDir2")
+            _ = bag2.withEasyUserAccount(datasetInfo.depositor).withCreated(DateTime.now())
+            _ = BagVersion(datasetInfo.doi, datasetInfo.urn, packageUuid1)
+              .addTo(bag2, Some(2))
+            _ <- fillSecondBag(bag2, bagDir1 / "metadata", datasetInfo.nextBagFileInfos.toList)
+            _ <- movePackageAtomically(packageDir2, outputDir)
+          } yield Some(packageUuid2)
+        }
+
+        logger.info (s"exporting $datasetId to $bagDir1")
+        val triedCsvRecord = for {
+          datasetInfo <- createBag(datasetId, bagDir1, options)
+          maybeUuid2 <- createSecondBag(datasetInfo)
+          // first bag moved after second, thus a next process can stumble over a missing first bag in case of interrupts
+          _ <- movePackageAtomically(packageDir1, outputDir)
+          _ <- CsvRecord(datasetId, datasetInfo, packageUuid1, maybeUuid2, options).print(printer)
+        } yield ()
+        errorHandling(triedCsvRecord, printer, datasetId, packageUuid1)
+      }
+    }.failFastOr(Success("no fedora/IO errors"))
+  }
+
+
   private def movePackageAtomically(packageDir: File, outputDir: File) = {
     val target = outputDir / packageDir.name
     debug(s"Moving $packageDir to output dir: $target")

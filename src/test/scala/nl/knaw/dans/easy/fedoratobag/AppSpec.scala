@@ -313,7 +313,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
     val sw = new StringWriter()
     app.createExport2(
-      Iterator(InputFileRecord("easy-dataset:17")),
+      Iterator(InputFileRecord("easy-dataset:13")),
       Seq.empty,
       (testDir / "output").createDirectories(),
       Options(SimpleDatasetFilter(allowOriginalAndOthers = true), ORIGINAL_VERSIONED),
@@ -345,7 +345,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
     val sw = new StringWriter()
     app.createExport2(
-      Iterator(InputFileRecord("easy-dataset:17")),
+      Iterator(InputFileRecord("easy-dataset:13")),
       Seq.empty,
       (testDir / "output").createDirectories(),
       Options(SimpleDatasetFilter(allowOriginalAndOthers = true), ORIGINAL_VERSIONED),

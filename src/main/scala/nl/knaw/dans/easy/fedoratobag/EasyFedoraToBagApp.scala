@@ -61,7 +61,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
                   (printer: CSVPrinter): Try[FeedBackMessage] = {
     logger.info(options.toString)
     input.map { case InputFileRecord(datasetId: DatasetId, optUuid1, optUuid2) =>
-      if (optUuid1.isEmpty && optUuid2.isDefined) throw new IllegalArgumentException("If uuid1 may not be empty if uuid2 is provided")
+      if (optUuid1.isEmpty && optUuid2.isDefined) throw new IllegalArgumentException("uuid1 may not be empty if uuid2 is provided")
       if (skip.contains(datasetId))
         Success(logSkipped(datasetId, printer))
       else {
@@ -77,7 +77,10 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
         val bagDir1 = bagDir(packageDir1)
         val bagDir2 = bagDir(packageDir2)
         def createSecondBag(datasetInfo: DatasetInfo) = {
-          if (datasetInfo.nextBagFileInfos.isEmpty) Success(None)
+          if (datasetInfo.nextBagFileInfos.isEmpty)  {
+            if (optUuid1.isDefined && optUuid2.isDefined) Failure(new IllegalArgumentException("Input contained two version UUIDs, but generating only one version"))
+            else Success(None)
+          }
           else for {
             bag2 <- DansV0Bag.empty(bagDir2)
             _ = logger.info (s"exporting $datasetId to second bag $bagDir2")

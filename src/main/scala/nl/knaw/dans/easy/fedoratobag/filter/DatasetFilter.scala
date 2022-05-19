@@ -45,7 +45,6 @@ trait DatasetFilter extends DebugEnhancedLogging {
       "3: invalid title" -> Option(emd.getEmdTitle.getPreferredTitle)
         .filter(title => forbiddenTitle(title)).toSeq,
       invalidStateKey -> findInvalidState(amd, exportStates),
-      "6: DANS relations" -> findDansRelations(ddm).map(_.toOneLiner),
       "7: is in the vault" -> triedMaybeInTargetResponse.getOrElse(None).toSeq,
       "8: original and other files" -> (if (mixOfOriginalAndOthers) Seq.empty
                                         else Seq("should not occur both")),

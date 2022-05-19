@@ -81,7 +81,7 @@ package object fedoratobag {
     }
   }
 
-  def loadInputFile(csvFile: File): Try[Iterator[InputFileRecord]] = {
+  def loadInputFile(csvFile: File): Try[List[InputFileRecord]] = {
     import resource.managed
 
     def csvParse(csvParser: CSVParser): Iterator[InputFileRecord] = {
@@ -99,6 +99,6 @@ package object fedoratobag {
     managed(CSVParser.parse(
       csvFile.toJava,
       StandardCharsets.UTF_8,
-      CSVFormat.RFC4180.withFirstRecordAsHeader())).map(csvParse).tried
+      CSVFormat.RFC4180.withFirstRecordAsHeader())).map(csvParse).map(_.toList).tried
   }
 }

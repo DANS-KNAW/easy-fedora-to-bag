@@ -15,10 +15,16 @@
  */
 package nl.knaw.dans.easy
 
+import better.files.File
+import org.apache.commons.csv.{ CSVFormat, CSVParser }
+import org.apache.commons.lang.StringUtils
 import org.joda.time.format.{ DateTimeFormatter, ISODateTimeFormat }
 import org.joda.time.{ DateTime, DateTimeZone }
 
+import java.nio.charset.StandardCharsets
 import java.nio.file.Path
+import java.util.UUID
+import scala.collection.JavaConverters.asScalaIteratorConverter
 import scala.util.{ Failure, Try }
 import scala.xml.{ Node, PrettyPrinter, Utility }
 
@@ -73,5 +79,26 @@ package object fedoratobag {
         path.subpath(1, path.getNameCount)
       else path
     }
+  }
+
+  def loadInputFile(csvFile: File): Try[List[InputFileRecord]] = {
+    import resource.managed
+
+    def csvParse(csvParser: CSVParser): Iterator[InputFileRecord] = {
+      csvParser.iterator().asScala
+        .map(r => {
+          val datasetId = r.get("dataset_id")
+          val optUuid1 = if (StringUtils.isBlank(r.get("uuid1"))) None
+                         else Option(UUID.fromString(r.get("uuid1")))
+          val optUuid2 = if (StringUtils.isBlank(r.get("uuid2"))) None
+                         else Option(UUID.fromString(r.get("uuid2")))
+          InputFileRecord(datasetId, optUuid1, optUuid2)
+        })
+    }
+
+    managed(CSVParser.parse(
+      csvFile.toJava,
+      StandardCharsets.UTF_8,
+      CSVFormat.RFC4180.withFirstRecordAsHeader().withIgnoreEmptyLines())).map(csvParse).map(_.toList).tried
   }
 }

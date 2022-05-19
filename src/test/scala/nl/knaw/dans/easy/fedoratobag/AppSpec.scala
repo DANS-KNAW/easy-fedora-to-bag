@@ -88,7 +88,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
     val sw = new StringWriter()
     app.createExport(
-      Iterator("easy-dataset:17"),
+      List(InputFileRecord("easy-dataset:17")),
       Seq.empty,
       (testDir / "output").createDirectories,
       Options(SimpleDatasetFilter(allowOriginalAndOthers = true), ORIGINAL_VERSIONED),
@@ -142,7 +142,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
     val sw = new StringWriter()
     app.createExport(
-      Iterator("easy-dataset:17"),
+      List(InputFileRecord("easy-dataset:17")),
       Seq.empty,
       (testDir / "output").createDirectories,
       Options(SimpleDatasetFilter(allowOriginalAndOthers = true), ORIGINAL_VERSIONED, cutoff = 1),
@@ -190,7 +190,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
     val sw = new StringWriter()
     app.createExport(
-      Iterator("easy-dataset:17"),
+      List(InputFileRecord("easy-dataset:17")),
       Seq.empty,
       (testDir / "output").createDirectories,
       Options(SimpleDatasetFilter(allowOriginalAndOthers = true), ORIGINAL_VERSIONED),
@@ -232,7 +232,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
     val sw = new StringWriter()
     app.createExport(
-      Iterator("easy-dataset:17"),
+      List(InputFileRecord("easy-dataset:17")),
       Seq.empty,
       (testDir / "output").createDirectories,
       Options(new SimpleDatasetFilter(), ORIGINAL_VERSIONED),
@@ -271,7 +271,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
     val sw = new StringWriter()
     app.createExport(
-      Iterator("easy-dataset:17"),
+      List(InputFileRecord("easy-dataset:17")),
       Seq.empty,
       (testDir / "output").createDirectories,
       Options(SimpleDatasetFilter()),
@@ -313,7 +313,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
     val sw = new StringWriter()
     app.createExport(
-      Iterator("easy-dataset:13"),
+      List(InputFileRecord("easy-dataset:13")),
       Seq.empty,
       (testDir / "output").createDirectories(),
       Options(SimpleDatasetFilter(allowOriginalAndOthers = true), ORIGINAL_VERSIONED),
@@ -345,7 +345,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
     val sw = new StringWriter()
     app.createExport(
-      Iterator("easy-dataset:13"),
+      List(InputFileRecord("easy-dataset:13")),
       Seq.empty,
       (testDir / "output").createDirectories(),
       Options(SimpleDatasetFilter(allowOriginalAndOthers = true), ORIGINAL_VERSIONED),

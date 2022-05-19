@@ -57,10 +57,11 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     new CsvRecord(datasetId, None, None, "", "", "","ignored").print(printer)
   }
 
-  def createExport(input: Iterator[DatasetId], skip: Seq[String], outputDir: File, options: Options, outputFormat: OutputFormat)
+  def createExport(input: List[InputFileRecord], skip: Seq[String], outputDir: File, options: Options, outputFormat: OutputFormat)
                   (printer: CSVPrinter): Try[FeedBackMessage] = {
     logger.info(options.toString)
-    input.map { datasetId =>
+    input.map { case InputFileRecord(datasetId: DatasetId, optUuid1, optUuid2) =>
+      if (optUuid1.isEmpty && optUuid2.isDefined) throw new IllegalArgumentException("uuid1 may not be empty if uuid2 is provided")
       if (skip.contains(datasetId))
         Success(logSkipped(datasetId, printer))
       else {
@@ -69,14 +70,17 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
           case OutputFormat.SIP => packageDir / UUID.randomUUID.toString
         }
 
-        val packageUuid1 = UUID.randomUUID
-        val packageUuid2 = UUID.randomUUID
+        val packageUuid1 = optUuid1.getOrElse(UUID.randomUUID)
+        val packageUuid2 = optUuid2.getOrElse(UUID.randomUUID)
         val packageDir1 = configuration.stagingDir / packageUuid1.toString
         val packageDir2 = configuration.stagingDir / packageUuid2.toString
         val bagDir1 = bagDir(packageDir1)
         val bagDir2 = bagDir(packageDir2)
         def createSecondBag(datasetInfo: DatasetInfo) = {
-          if (datasetInfo.nextBagFileInfos.isEmpty) Success(None)
+          if (datasetInfo.nextBagFileInfos.isEmpty)  {
+            if (optUuid1.isDefined && optUuid2.isDefined) Failure(new IllegalArgumentException("Input contained two version UUIDs, but generating only one version"))
+            else Success(None)
+          }
           else for {
             bag2 <- DansV0Bag.empty(bagDir2)
             _ = logger.info (s"exporting $datasetId to second bag $bagDir2")
@@ -100,6 +104,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       }
     }.failFastOr(Success("no fedora/IO errors"))
   }
+
 
   private def movePackageAtomically(packageDir: File, outputDir: File) = {
     val target = outputDir / packageDir.name

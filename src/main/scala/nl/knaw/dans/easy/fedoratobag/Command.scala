@@ -55,8 +55,8 @@ object Command extends App with DebugEnhancedLogging {
     }).flatMap { datasetFilter =>
       val printer = CsvRecord.printer(csvLogFile)
       printer(app.createExport(
-        commandLine.datasetId.map(Iterator(_)).getOrElse(readDatasetIds(commandLine.inputFile())),
-        readDatasetIds(commandLine.skipDatasets()).toSeq,
+        commandLine.datasetId.map(di => List(InputFileRecord(di))).getOrElse(loadInputFile(commandLine.inputFile()).get),
+        commandLine.skipDatasets.toOption.map(skipDatasets => readDatasetIds(skipDatasets).toSeq).getOrElse(Seq.empty),
         commandLine.outputDir(),
         Options(datasetFilter, commandLine.transformation(), commandLine.strictMode(), europeana, commandLine.noPayload(), commandLine.cutoff()),
         commandLine.outputFormat(),

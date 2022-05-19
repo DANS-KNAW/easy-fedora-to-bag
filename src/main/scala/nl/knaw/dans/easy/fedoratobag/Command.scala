@@ -54,7 +54,7 @@ object Command extends App with DebugEnhancedLogging {
       case _ => throw new NotImplementedError(s"${ commandLine.args } not implemented")
     }).flatMap { datasetFilter =>
       val printer = CsvRecord.printer(csvLogFile)
-      printer(app.createExport2(
+      printer(app.createExport(
         commandLine.datasetId.map(di => List(InputFileRecord(di))).getOrElse(loadInputFile(commandLine.inputFile()).get),
         commandLine.skipDatasets.toOption.map(skipDatasets => readDatasetIds(skipDatasets).toSeq).getOrElse(Seq.empty),
         commandLine.outputDir(),

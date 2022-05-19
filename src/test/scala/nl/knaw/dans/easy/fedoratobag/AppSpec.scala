@@ -87,7 +87,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     // end of mocking
 
     val sw = new StringWriter()
-    app.createExport2(
+    app.createExport(
       List(InputFileRecord("easy-dataset:17")),
       Seq.empty,
       (testDir / "output").createDirectories,
@@ -141,7 +141,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     // end of mocking
 
     val sw = new StringWriter()
-    app.createExport2(
+    app.createExport(
       List(InputFileRecord("easy-dataset:17")),
       Seq.empty,
       (testDir / "output").createDirectories,
@@ -189,7 +189,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     // end of mocking
 
     val sw = new StringWriter()
-    app.createExport2(
+    app.createExport(
       List(InputFileRecord("easy-dataset:17")),
       Seq.empty,
       (testDir / "output").createDirectories,
@@ -231,7 +231,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     // end of mocking
 
     val sw = new StringWriter()
-    app.createExport2(
+    app.createExport(
       List(InputFileRecord("easy-dataset:17")),
       Seq.empty,
       (testDir / "output").createDirectories,
@@ -270,7 +270,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     // end of mocking
 
     val sw = new StringWriter()
-    app.createExport2(
+    app.createExport(
       List(InputFileRecord("easy-dataset:17")),
       Seq.empty,
       (testDir / "output").createDirectories,
@@ -312,7 +312,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     // end of mocking
 
     val sw = new StringWriter()
-    app.createExport2(
+    app.createExport(
       List(InputFileRecord("easy-dataset:13")),
       Seq.empty,
       (testDir / "output").createDirectories(),
@@ -344,7 +344,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     // end of mocking
 
     val sw = new StringWriter()
-    app.createExport2(
+    app.createExport(
       List(InputFileRecord("easy-dataset:13")),
       Seq.empty,
       (testDir / "output").createDirectories(),

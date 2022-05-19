@@ -57,7 +57,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     new CsvRecord(datasetId, None, None, "", "", "","ignored").print(printer)
   }
 
-  def createExport2(input: List[InputFileRecord], skip: Seq[String], outputDir: File, options: Options, outputFormat: OutputFormat)
+  def createExport(input: List[InputFileRecord], skip: Seq[String], outputDir: File, options: Options, outputFormat: OutputFormat)
                   (printer: CSVPrinter): Try[FeedBackMessage] = {
     logger.info(options.toString)
     input.map { case InputFileRecord(datasetId: DatasetId, optUuid1, optUuid2) =>

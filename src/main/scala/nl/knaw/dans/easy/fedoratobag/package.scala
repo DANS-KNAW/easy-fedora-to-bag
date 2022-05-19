@@ -99,6 +99,6 @@ package object fedoratobag {
     managed(CSVParser.parse(
       csvFile.toJava,
       StandardCharsets.UTF_8,
-      CSVFormat.RFC4180.withFirstRecordAsHeader())).map(csvParse).map(_.toList).tried
+      CSVFormat.RFC4180.withFirstRecordAsHeader().withIgnoreEmptyLines())).map(csvParse).map(_.toList).tried
   }
 }

@@ -73,24 +73,4 @@ trait DatasetFilter extends DebugEnhancedLogging {
       .withFilter(node => !exportStates.contains(node.text))
       .map(_.text)
   }
-
-  def findDansRelations(ddm: Node): Seq[Node] = {
-    val dcmi = ddm \ "dcmiMetadata"
-    Seq(
-      (dcmi \ "isVersionOf").theSeq,
-      (dcmi \ "hasVersion").theSeq,
-      (dcmi \ "replaces").theSeq,
-      (dcmi \ "isReplacedBy").theSeq,
-    ).flatten
-      .filter(hasDansId)
-  }
-
-  private def hasDansId(node: Node): Boolean = {
-    // see both DDM.toRelationXml methods for what might occur
-    (node \@ "href", node.text) match {
-      case (href, _) if EmdVersionInfo.isDansId(href) => true
-      case (_, text) if EmdVersionInfo.isDansId(text) => true
-      case _ => false
-    }
-  }
 }

@@ -16,7 +16,7 @@
 package nl.knaw.dans.easy.fedoratobag
 
 import com.typesafe.scalalogging.Logger
-import nl.knaw.dans.easy.fedoratobag.filter.{ BagIndex, FedoraVersionedFilter, SimpleDatasetFilter, ThemaDatasetFilter }
+import nl.knaw.dans.easy.fedoratobag.filter.{ BagIndex, SimpleDatasetFilter, ThemaDatasetFilter }
 import nl.knaw.dans.easy.fedoratobag.fixture.{ BagIndexSupport, EmdSupport, TestSupportFixture }
 import org.scalamock.scalatest.MockFactory
 import org.slf4j.{ Logger => UnderlyingLogger }
@@ -84,8 +84,6 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
       "x.txt",
     ).map(p => new FileInfo("easy-file:2", Paths.get(p), "x.txt", 2, "text/plain", "ANONYMOUS", "ANONYMOUS", None, None, None, Paths.get(p)))
 
-    FedoraVersionedFilter().violations(emd, ddm, amd("PUBLISHED"), fileInfos, exportStates) shouldBe
-      Success(None)
     SimpleDatasetFilter(allowOriginalAndOthers = true)
           .violations(emd, ddm, amd("PUBLISHED"), fileInfos, exportStates) shouldBe
       Success(None)

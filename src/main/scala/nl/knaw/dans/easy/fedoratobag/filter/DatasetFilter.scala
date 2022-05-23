@@ -45,7 +45,6 @@ trait DatasetFilter extends DebugEnhancedLogging {
       "3: invalid title" -> Option(emd.getEmdTitle.getPreferredTitle)
         .filter(title => forbiddenTitle(title)).toSeq,
       invalidStateKey -> findInvalidState(amd, exportStates),
-      "6: DANS relations" -> findDansRelations(ddm).map(_.toOneLiner),
       "7: is in the vault" -> triedMaybeInTargetResponse.getOrElse(None).toSeq,
       "8: original and other files" -> (if (mixOfOriginalAndOthers) Seq.empty
                                         else Seq("should not occur both")),
@@ -73,25 +72,5 @@ trait DatasetFilter extends DebugEnhancedLogging {
     else seq
       .withFilter(node => !exportStates.contains(node.text))
       .map(_.text)
-  }
-
-  def findDansRelations(ddm: Node): Seq[Node] = {
-    val dcmi = ddm \ "dcmiMetadata"
-    Seq(
-      (dcmi \ "isVersionOf").theSeq,
-      (dcmi \ "hasVersion").theSeq,
-      (dcmi \ "replaces").theSeq,
-      (dcmi \ "isReplacedBy").theSeq,
-    ).flatten
-      .filter(hasDansId)
-  }
-
-  private def hasDansId(node: Node): Boolean = {
-    // see both DDM.toRelationXml methods for what might occur
-    (node \@ "href", node.text) match {
-      case (href, _) if EmdVersionInfo.isDansId(href) => true
-      case (_, text) if EmdVersionInfo.isDansId(text) => true
-      case _ => false
-    }
   }
 }

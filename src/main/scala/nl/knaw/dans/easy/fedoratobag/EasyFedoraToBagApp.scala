@@ -161,7 +161,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
         }
     }
 
-    def hasTooManyFiles(selectedForSecondBag: List[FileInfo], selectedForFirstBag: List[FileInfo]) = {
+    def numberOfFilesBelowCutoff(selectedForSecondBag: List[FileInfo], selectedForFirstBag: List[FileInfo]) = {
       if (!(selectedForFirstBag.size > options.cutoff) && !(selectedForSecondBag.size > options.cutoff))
         !options.noPayload
       else {
@@ -205,7 +205,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       allFileInfos <- FileInfo(fedoraFileIDs, fedoraProvider).map(_.toList)
       selectedForSecondBag = allFileInfos.selectForSecondBag(isOriginalVersioned, options.noPayload)
       selectedForFirstBag <- getInfoFirstBag(allFileInfos, emdXml, selectedForSecondBag.nonEmpty)
-      tooManyFiles = !hasTooManyFiles(selectedForSecondBag, selectedForFirstBag)
+      tooManyFiles = !numberOfFilesBelowCutoff(selectedForSecondBag, selectedForFirstBag)
       _ = trace(tooManyFiles, selectedForFirstBag.size, selectedForSecondBag.size, options.noPayload, options.cutoff)
       (forFirstBag, forSecondBag) <- if (!tooManyFiles) checkDuplicates(selectedForFirstBag, selectedForSecondBag, isOriginalVersioned)
                                      else Success((Seq.empty, Seq.empty))

@@ -161,7 +161,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
         }
     }
 
-    def moreFilesThanCutOff(selectedForSecondBag: List[FileInfo], selectedForFirstBag: List[FileInfo]): Boolean = {
+    def noPayload(selectedForSecondBag: List[FileInfo], selectedForFirstBag: List[FileInfo]): Boolean = {
       if (selectedForFirstBag.size > options.cutoff || selectedForSecondBag.size > options.cutoff) {
         logger.warn(s"too many files ${ selectedForFirstBag.size }, ${ selectedForSecondBag.size }")
         true
@@ -204,7 +204,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       allFileInfos <- FileInfo(fedoraFileIDs, fedoraProvider).map(_.toList)
       selectedForSecondBag = allFileInfos.selectForSecondBag(isOriginalVersioned, options.noPayload)
       selectedForFirstBag <- getInfoFirstBag(allFileInfos, emdXml, selectedForSecondBag.nonEmpty)
-      skipPayload = moreFilesThanCutOff(selectedForSecondBag, selectedForFirstBag)
+      skipPayload = noPayload(selectedForSecondBag, selectedForFirstBag)
       _ = trace(skipPayload, selectedForFirstBag.size, selectedForSecondBag.size, options.noPayload, options.cutoff)
       (forFirstBag, forSecondBag) <- if (!skipPayload) checkDuplicates(selectedForFirstBag, selectedForSecondBag, isOriginalVersioned)
                                      else Success((Seq.empty, Seq.empty))

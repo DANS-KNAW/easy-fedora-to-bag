@@ -161,13 +161,12 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
         }
     }
 
-    def hasTooManyFiles(selectedForSecondBag: List[FileInfo], selectedForFirstBag: List[FileInfo]) = {
-      if (!(selectedForFirstBag.size > options.cutoff) && !(selectedForSecondBag.size > options.cutoff))
-        !options.noPayload
-      else {
-        logger.warn(s"too many files ${selectedForFirstBag.size}, ${selectedForSecondBag.size}")
-        false
+    def noPayload(selectedForSecondBag: List[FileInfo], selectedForFirstBag: List[FileInfo]): Boolean = {
+      if (selectedForFirstBag.size > options.cutoff || selectedForSecondBag.size > options.cutoff) {
+        logger.warn(s"too many files ${ selectedForFirstBag.size }, ${ selectedForSecondBag.size }")
+        true
       }
+      else options.noPayload
     }
 
     def getInfoFirstBag(allFileInfos: List[FileInfo], emd: Node, hasSecondBag: Boolean): Try[List[FileInfo]] = Try {
@@ -180,8 +179,8 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     }
 
 
-    def payloadInEasy(tooManyFiles: Boolean) = {
-      if (tooManyFiles)
+    def payloadInEasy(skipPayload: Boolean) = {
+      if (skipPayload)
         <dct:description xml:lang="en">{ new PCData(s"<b>Files not yet migrated to Data Station. Files for this dataset can be found at ${makelink(datasetId)}.</b>") }</dct:description>
       else Text("")
     }
@@ -205,12 +204,12 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       allFileInfos <- FileInfo(fedoraFileIDs, fedoraProvider).map(_.toList)
       selectedForSecondBag = allFileInfos.selectForSecondBag(isOriginalVersioned, options.noPayload)
       selectedForFirstBag <- getInfoFirstBag(allFileInfos, emdXml, selectedForSecondBag.nonEmpty)
-      tooManyFiles = !hasTooManyFiles(selectedForSecondBag, selectedForFirstBag)
-      _ = trace(tooManyFiles, selectedForFirstBag.size, selectedForSecondBag.size, options.noPayload, options.cutoff)
-      (forFirstBag, forSecondBag) <- if (!tooManyFiles) checkDuplicates(selectedForFirstBag, selectedForSecondBag, isOriginalVersioned)
+      skipPayload = noPayload(selectedForSecondBag, selectedForFirstBag)
+      _ = trace(skipPayload, selectedForFirstBag.size, selectedForSecondBag.size, options.noPayload, options.cutoff)
+      (forFirstBag, forSecondBag) <- if (!skipPayload) checkDuplicates(selectedForFirstBag, selectedForSecondBag, isOriginalVersioned)
                                      else Success((Seq.empty, Seq.empty))
       _ = trace("creating DDM from EMD")
-      ddm <- DDM(emd, audiences, configuration.abrMapping, payloadInEasy(tooManyFiles))
+      ddm <- DDM(emd, audiences, configuration.abrMapping, payloadInEasy(skipPayload))
       _ = trace("created DDM from EMD")
       maybeFilterViolations <- options.datasetFilter.violations(emd, ddm, amd, allFileInfos, configuration.exportStates)
       _ = if (options.strict) maybeFilterViolations.foreach(msg => throw InvalidTransformationException(msg))
@@ -246,7 +245,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       _ <- bag.save
       doi = emd.getEmdIdentifier.getDansManagedDoi
       urn = getUrn(datasetId, emd)
-    } yield DatasetInfo(maybeFilterViolations, doi, urn, depositor, forSecondBag, !tooManyFiles)
+    } yield DatasetInfo(maybeFilterViolations, doi, urn, depositor, forSecondBag, !skipPayload)
   }
 
   private def getUrn(datasetId: DatasetId, emd: EasyMetadataImpl) = {

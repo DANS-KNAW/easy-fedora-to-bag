@@ -170,12 +170,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     }
 
     def getInfoFirstBag(allFileInfos: List[FileInfo], emd: Node, hasSecondBag: Boolean): Try[List[FileInfo]] = Try {
-      val fileInfo = allFileInfos.selectForFirstBag(emd, hasSecondBag, options.europeana, options.noPayload)
-      if (fileInfo.isEmpty && !options.noPayload) {
-        if (options.strict) throw NoPayloadFilesException()
-        else logger.warn(s"Running with original-versioned and no payload found in dataset $datasetId")
-      }
-      fileInfo
+      allFileInfos.selectForFirstBag(emd, hasSecondBag, options.europeana, options.noPayload)
     }
 
 

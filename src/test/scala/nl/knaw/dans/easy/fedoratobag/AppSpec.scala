@@ -384,7 +384,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     val uuid = UUID.randomUUID
     val bagDir = testDir / "bags" / uuid.toString
     app.createBag("easy-dataset:17", bagDir, Options(app.filter, strict = false)) shouldBe
-      Success(DatasetInfo(Some("Violates 10: no payload"),"10.17026/test-Iiib-z9p-4ywa","urn:nbn:nl:ui:13-00-1haq","user001",List(),true))
+      Success(DatasetInfo(Some("Violates 10: no payload"),"10.17026/test-Iiib-z9p-4ywa","urn:nbn:nl:ui:13-00-1haq","user001",List(),withPayload = true))
 
     // post conditions
 

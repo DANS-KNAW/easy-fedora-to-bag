@@ -384,7 +384,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     val uuid = UUID.randomUUID
     val bagDir = testDir / "bags" / uuid.toString
     app.createBag("easy-dataset:17", bagDir, Options(app.filter, strict = false)) shouldBe
-      Success(DatasetInfo(None,"10.17026/test-Iiib-z9p-4ywa","urn:nbn:nl:ui:13-00-1haq","user001",List(),true))
+      Success(DatasetInfo(Some("Violates 10: no payload"),"10.17026/test-Iiib-z9p-4ywa","urn:nbn:nl:ui:13-00-1haq","user001",List(),withPayload = true))
 
     // post conditions
 
@@ -408,7 +408,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     val uuid = UUID.randomUUID
     val bagDir = testDir / "bags" / uuid.toString
     app.createBag("easy-dataset:17", bagDir, Options(app.filter)) shouldBe
-      Failure(NoPayloadFilesException())
+      Failure(InvalidTransformationException("Violates 10: no payload"))
 
     // post conditions
 
@@ -435,9 +435,8 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
     val uuid = UUID.randomUUID
     val bagDir = testDir / "bags" / uuid.toString
-    app.createBag("easy-dataset:17", bagDir, Options(app.filter)) should matchPattern {
-      case Failure(_: InvalidTransformationException) =>
-    }
+    app.createBag("easy-dataset:17", bagDir, Options(app.filter)) shouldBe
+      Failure(InvalidTransformationException("Violates 1: DANS DOI"))
     (testDir / "bags") shouldNot exist
   }
 
@@ -457,7 +456,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
     val uuid = UUID.randomUUID
     val bagDir = testDir / "bags" / uuid.toString
-    app.createBag("easy-dataset:13", bagDir, Options(app.filter, strict=true))  should matchPattern {
+    app.createBag("easy-dataset:13", bagDir, Options(app.filter))  should matchPattern {
       case Failure(_: InvalidTransformationException) =>
     }
     (testDir / "bags") shouldNot exist
@@ -730,7 +729,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
       contain theSameElementsAs List("c.pdf", "b.pdf", "d.pdf")
   }
 
-  it should "cause NoPayloadFilesException" in {
+  it should "report No Payload" in {
     val app: AppWithMockedServices = new AppWithMockedServices() {
       (fsRdb.getSubordinates(_: String)) expects "easy-dataset:13" once() returning
         Success(Seq("easy-file:1", "easy-file:5"))
@@ -748,6 +747,6 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
 
     val bagDir = testDir / "bags" / UUID.randomUUID.toString
     app.createBag("easy-dataset:13", bagDir, Options(app.filter, europeana = true)) shouldBe
-      Failure(NoPayloadFilesException())
+      Failure(InvalidTransformationException("Violates 9: STREAMING_SURROGATE_RELATION; 10: no payload"))
   }
 }

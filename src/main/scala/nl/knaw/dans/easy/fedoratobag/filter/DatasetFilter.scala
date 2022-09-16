@@ -30,7 +30,7 @@ trait DatasetFilter extends DebugEnhancedLogging {
   val allowOriginalAndOthers: Boolean = false
   private val invalidStateKey = "5: invalid state"
 
-  def violations(emd: EasyMetadataImpl, ddm: Node, amd: Node, fileInfos: List[FileInfo] = List.empty, exportStates: List[String]): Try[Option[String]] = {
+  def violations(emd: EasyMetadataImpl, ddm: Node, amd: Node, fileInfosForFirstBag: List[FileInfo] = List.empty, fileInfos: List[FileInfo] = List.empty, exportStates: List[String]): Try[Option[String]] = {
     val maybeDoi = Option(emd.getEmdIdentifier.getDansManagedDoi)
     val mixOfOriginalAndOthers = allowOriginalAndOthers || !fileInfos.hasOriginalAndOthers
     val triedMaybeInTargetResponse: Try[Option[String]] = maybeDoi
@@ -49,6 +49,7 @@ trait DatasetFilter extends DebugEnhancedLogging {
       "8: original and other files" -> (if (mixOfOriginalAndOthers) Seq.empty
                                         else Seq("should not occur both")),
       "9: STREAMING_SURROGATE_RELATION" -> (if (withSurrogate.isEmpty) {Seq.empty} else Seq(withSurrogate)),
+      "10: no payload" -> (if (fileInfosForFirstBag.isEmpty) {Seq("")} else Seq.empty),
     ).filter(_._2.nonEmpty).toMap
 
     violations.foreach { case (rule, violations) =>

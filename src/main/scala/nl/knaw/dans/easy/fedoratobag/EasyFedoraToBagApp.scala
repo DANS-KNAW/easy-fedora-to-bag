@@ -170,12 +170,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     }
 
     def getInfoFirstBag(allFileInfos: List[FileInfo], emd: Node, hasSecondBag: Boolean): Try[List[FileInfo]] = Try {
-      val fileInfo = allFileInfos.selectForFirstBag(emd, hasSecondBag, options.europeana, options.noPayload)
-      if (fileInfo.isEmpty && !options.noPayload) {
-        if (options.strict) throw NoPayloadFilesException()
-        else logger.warn(s"Running with original-versioned and no payload found in dataset $datasetId")
-      }
-      fileInfo
+      allFileInfos.selectForFirstBag(emd, hasSecondBag, options.europeana, options.noPayload)
     }
 
 
@@ -211,7 +206,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       _ = trace("creating DDM from EMD")
       ddm <- DDM(emd, audiences, configuration.abrMapping, payloadInEasy(skipPayload))
       _ = trace("created DDM from EMD")
-      maybeFilterViolations <- options.datasetFilter.violations(emd, ddm, amd, allFileInfos, configuration.exportStates)
+      maybeFilterViolations <- options.datasetFilter.violations(emd, ddm, amd, selectedForFirstBag, allFileInfos, configuration.exportStates)
       _ = if (options.strict) maybeFilterViolations.foreach(msg => throw InvalidTransformationException(msg))
       _ = (ddm \\ "implemented").filter(_.prefix == "not").foreach(n => throw InvalidTransformationException(n.toString()))
       // so far for collecting data, now we start writing

@@ -42,12 +42,14 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
                          >10.17026/test-Iiib-z9p-4ywa</dc:identifier>
                        </emd:identifier>
 
+  private val fileInfo = new FileInfo("", Paths.get("-"),"",0,"","","", None, None,None,Paths.get("-"))
+
   "ThemaChecker.simpleViolations" should "accept thematische collectie" in {
     val emdTitle = <emd:title><dc:title xml:lang="nld">some thematische collectie</dc:title></emd:title>
-    val emd = parseEmdContent(Seq(emdTitle, emdDoi, emdRights))
 
+    val emd = parseEmdContent(Seq(emdTitle, emdDoi, emdRights))
     themaChecker(loggerExpectsWarnings = Seq.empty)
-          .violations(emd, emd2ddm(emd), amd("PUBLISHED"), List.empty, exportStates) shouldBe
+          .violations(emd, emd2ddm(emd), amd("PUBLISHED"), List(fileInfo), List.empty, exportStates) shouldBe
       Success(None)
   }
 
@@ -57,7 +59,7 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
 
     themaChecker(loggerExpectsWarnings = Seq(
           "violated 3: invalid title some collection",
-        )).violations(emd, emd2ddm(emd), amd("PUBLISHED"), List.empty, exportStates) shouldBe
+        )).violations(emd, emd2ddm(emd), amd("PUBLISHED"), List(fileInfo), List.empty, exportStates) shouldBe
       Success(Some("Violates 3: invalid title"))
   }
 
@@ -71,7 +73,7 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
 
     simpleChecker(loggerExpectsWarnings = Seq(
           "violated 8: original and other files should not occur both",
-        )).violations(emd, emd2ddm(emd), amd("PUBLISHED"), fileInfos, exportStates) shouldBe
+        )).violations(emd, emd2ddm(emd), amd("PUBLISHED"), List(fileInfo), fileInfos, exportStates) shouldBe
       Success(Some("Violates 8: original and other files"))
   }
 
@@ -85,14 +87,14 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
     ).map(p => new FileInfo("easy-file:2", Paths.get(p), "x.txt", 2, "text/plain", "ANONYMOUS", "ANONYMOUS", None, None, None, Paths.get(p)))
 
     SimpleDatasetFilter(allowOriginalAndOthers = true)
-          .violations(emd, ddm, amd("PUBLISHED"), fileInfos, exportStates) shouldBe
+          .violations(emd, ddm, amd("PUBLISHED"), List(fileInfo), fileInfos, exportStates) shouldBe
       Success(None)
   }
 
   "SimpleChecker.simpleViolations" should "succeed" in {
     val emdTitle = <emd:title><dc:title xml:lang="nld">no theme</dc:title></emd:title>
     val emd = parseEmdContent(Seq(emdTitle, emdDoi, emdRights))
-    simpleChecker(loggerExpectsWarnings = Seq(), mockBagIndexRespondsWith(body = "", code = 404)).violations(emd, emd2ddm(emd), amd("PUBLISHED"), List.empty, exportStates) shouldBe
+    simpleChecker(loggerExpectsWarnings = Seq(), mockBagIndexRespondsWith(body = "", code = 404)).violations(emd, emd2ddm(emd), amd("PUBLISHED"), List(fileInfo), List.empty, exportStates) shouldBe
       Success(None)
   }
 
@@ -100,7 +102,7 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
     val emd = parseEmdContent(emdRights)
     simpleChecker(loggerExpectsWarnings = Seq(
           "violated 1: DANS DOI not found",
-        ), bagIndex = null).violations(emd, emd2ddm(emd), amd("SUBMITTED"), List.empty, exportStates) shouldBe
+        ), bagIndex = null).violations(emd, emd2ddm(emd), amd("SUBMITTED"), List(fileInfo), List.empty, exportStates) shouldBe
       Success(Some("Violates 1: DANS DOI"))
   }
 
@@ -110,7 +112,7 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
 
     simpleChecker(loggerExpectsWarnings = Seq(
           "violated 3: invalid title thematische collectie",
-        )).violations(emd, emd2ddm(emd), amd("PUBLISHED"), List.empty, exportStates) shouldBe
+        )).violations(emd, emd2ddm(emd), amd("PUBLISHED"), List(fileInfo), List.empty, exportStates) shouldBe
       Success(Some("Violates 3: invalid title"))
   }
 
@@ -119,7 +121,7 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
     val exportStates = List("PUBLISHED")
     simpleChecker(loggerExpectsWarnings = Seq(
           "violated 5: invalid state SUBMITTED",
-        )).violations(emd, emd2ddm(emd), amd("SUBMITTED"), List.empty, exportStates) shouldBe
+        )).violations(emd, emd2ddm(emd), amd("SUBMITTED"), List(fileInfo), List.empty, exportStates) shouldBe
       Success(Some("Violates 5: invalid state (SUBMITTED)"))
   }
 
@@ -129,7 +131,7 @@ class DatasetFilterSpec extends TestSupportFixture with BagIndexSupport with Moc
     simpleChecker(
           loggerExpectsWarnings = Seq(s"violated 7: is in the vault $result"),
           mockBagIndexRespondsWith(body = s"<result>$result</result>", code = 200),
-        ).violations(emd, emd2ddm(emd), amd("PUBLISHED"), List.empty, exportStates) shouldBe
+        ).violations(emd, emd2ddm(emd), amd("PUBLISHED"), List(fileInfo), List.empty, exportStates) shouldBe
       Success(Some("Violates 7: is in the vault"))
   }
 

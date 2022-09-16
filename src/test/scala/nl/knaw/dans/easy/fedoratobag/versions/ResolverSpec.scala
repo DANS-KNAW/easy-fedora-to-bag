@@ -28,8 +28,9 @@ class ResolverSpec extends TestSupportFixture {
       Success("easy-dataset:123")
   }
   it should "find doi" in {
-    Resolver().getDatasetId("10.17026/dans-zjf-522e") match {
-      case Success(s) => s shouldBe "easy-dataset:34340"
+    // might break again when this dataset is migrated to a data-station too
+    Resolver().getDatasetId("10.17026/dans-xgt-zubz") match {
+      case Success(s) => s shouldBe "easy-dataset:246172"
       case Failure(e) => assume(serviceAvailable(e))
     }
   }

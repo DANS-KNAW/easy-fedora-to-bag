@@ -161,7 +161,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     val metadataDir = dataDirs.head.parent / "metadata"
     (XML.loadFile((metadataDir / "files.xml").toJava) \ "file") shouldBe empty
     (metadataDir / "dataset.xml").contentAsString should
-       include("<![CDATA[<b>Files not yet migrated to Data Station. Files for this dataset can be found at <a href=\"https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:17/tab/2\">https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:17</a>.</b>]]>")
+       include("<![CDATA[<b>Files not yet migrated to Data Station. Files for this dataset can be found at <a href=\"https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:17\">https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:17</a>.</b>]]>")
 
   }
 
@@ -586,7 +586,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     triedRecord shouldBe a[Success[_]]
     (bagDir / "data").list shouldBe empty
     (bagDir / "metadata" / "dataset.xml").contentAsString should include(
-         "<![CDATA[<b>Files not yet migrated to Data Station. Files for this dataset can be found at <a href=\"https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:13/tab/2\">https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:13</a>.</b>]]>"
+         "<![CDATA[<b>Files not yet migrated to Data Station. Files for this dataset can be found at <a href=\"https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:13\">https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:13</a>.</b>]]>"
        )
 
   }

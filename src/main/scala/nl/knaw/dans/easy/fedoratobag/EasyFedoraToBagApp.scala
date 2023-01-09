@@ -181,7 +181,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
     }
 
     def makelink(datasetId: DatasetId): Node = {
-     <a href={ s"https://easy.dans.knaw.nl/ui/datasets/id/$datasetId/tab/2" }>{ s"https://easy.dans.knaw.nl/ui/datasets/id/$datasetId" }</a>
+     <a href={ s"https://easy.dans.knaw.nl/ui/datasets/id/$datasetId" }>{ s"https://easy.dans.knaw.nl/ui/datasets/id/$datasetId" }</a>
     }
 
     for {

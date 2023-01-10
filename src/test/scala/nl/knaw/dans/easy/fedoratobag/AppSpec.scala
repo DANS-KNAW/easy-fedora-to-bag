@@ -586,7 +586,7 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
     triedRecord shouldBe a[Success[_]]
     (bagDir / "data").list shouldBe empty
     (bagDir / "metadata" / "dataset.xml").contentAsString should include(
-         "<![CDATA[<b>Files not yet migrated to Data Station. Files for this dataset can be found at <a href=\"https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:13\">https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:13</a>.</b>]]>"
+         """<![CDATA[<b>Files not yet migrated to Data Station. Files for this dataset can be found at <a href="https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:13">https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:13</a>.</b>]]>"""
        )
 
   }

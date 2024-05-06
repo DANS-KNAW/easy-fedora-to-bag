@@ -73,6 +73,7 @@ object FileItem extends DebugEnhancedLogging {
         { fileInfo.additionalMetadata.map(convert).getOrElse( Seq[Node]()) }
         <accessibleToRights>{ fileInfo.accessibleTo }</accessibleToRights>
         <visibleToRights>{ fileInfo.visibleTo }</visibleToRights>
+        { fileInfo.locationUrl.map(url => <dct:source>{ url }</dct:source>).getOrElse(Seq[Node]()) }
         { originalPath }
         { src }
       </file>

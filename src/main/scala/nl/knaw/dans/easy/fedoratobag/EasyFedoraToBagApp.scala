@@ -36,8 +36,10 @@ import nl.knaw.dans.pf.language.emd.EasyMetadataImpl
 import nl.knaw.dans.pf.language.emd.binding.EmdUnmarshaller
 import org.apache.commons.csv.CSVPrinter
 import org.joda.time.DateTime
+import sun.net.util.URLUtil
 
-import java.io.{ IOException, InputStream }
+import java.io.{ ByteArrayInputStream, IOException, InputStream }
+import java.net.URL
 import java.nio.file.Paths
 import java.util.UUID
 import javax.naming.ldap.InitialLdapContext
@@ -272,15 +274,27 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
   private def addPayloadFileTo(bag: DansV0Bag, isOriginalVersioned: Boolean)(fileInfo: FileInfo): Try[Node] = {
     trace(fileInfo)
     val target = fileInfo.path.bagPath(isOriginalVersioned)
-    val file = bag.baseDir / "data" / target.toString
+
+    def saveEmpty = {
+      val emptyStream = new ByteArrayInputStream(Array[Byte]())
+      bag.addPayloadFile(emptyStream, target)
+    }
+
+    def disseminate = {
+      val file = bag.baseDir / "data" / target.toString
+      for {
+        _ <- fedoraProvider
+          .disseminateDatastream(fileInfo.fedoraFileId, streamId = "EASY_FILE")
+          .map(bag.addPayloadFile(_, target))
+          .tried.flatten
+        maybeBagChecksum = fileInfo.maybeDigestType.flatMap(getChecksum(file, bag))
+        _ <- verifyChecksums(file, fileInfo.maybeDigestValue, maybeBagChecksum)
+      } yield ()
+    }
+
     for {
       fileItem <- FileItem(fileInfo, isOriginalVersioned)
-      _ <- fedoraProvider
-        .disseminateDatastream(fileInfo.fedoraFileId, streamId = "EASY_FILE")
-        .map(bag.addPayloadFile(_, target))
-        .tried.flatten
-      maybeBagChecksum = fileInfo.maybeDigestType.flatMap(getChecksum(file, bag))
-      _ <- verifyChecksums(file, fileInfo.maybeDigestValue, maybeBagChecksum)
+      _ <- fileInfo.locationUrl.map(_ => Success(saveEmpty)).getOrElse(disseminate)
     } yield fileItem
   }
 

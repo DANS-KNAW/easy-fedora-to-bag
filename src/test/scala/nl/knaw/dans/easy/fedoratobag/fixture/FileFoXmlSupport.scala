@@ -36,7 +36,12 @@ trait FileFoXmlSupport {
                 digest: String = "dd466d19481a28ba8577e7b3f029e496027a3309",
                 creatorRole: String = "DEPOSITOR",
                 derivedFrom: Option[Int] = None,
+                contentUrl: Option[String] = None
                ): Elem = {
+    val contentLocation = contentUrl
+      .map(url => <foxml:contentLocation TYPE="URL" REF={ url }/>)
+      .getOrElse(<foxml:contentLocation TYPE="INTERNAL_ID" REF={ s"easy-file:$id+EASY_FILE+EASY_FILE.0" }/>)
+
     <foxml:digitalObject VERSION="1.1" PID={s"easy-file:$id"}
                      xmlns:foxml="info:fedora/fedora-system:def/foxml#"
                      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -51,7 +56,7 @@ trait FileFoXmlSupport {
       <foxml:datastream ID="EASY_FILE" STATE="A" CONTROL_GROUP="M" VERSIONABLE="false">
           <foxml:datastreamVersion ID="EASY_FILE.0" LABEL="" CREATED="2020-03-17T10:24:17.542Z" MIMETYPE={ mimeType } SIZE={ size.toString }>
               <foxml:contentDigest TYPE="SHA-1" DIGEST={ digest }/>
-              <foxml:contentLocation TYPE="INTERNAL_ID" REF={ s"easy-file:$id+EASY_FILE+EASY_FILE.0" }/>
+              { contentLocation }
           </foxml:datastreamVersion>
       </foxml:datastream>
       <foxml:datastream ID="EASY_FILE_METADATA" STATE="A" CONTROL_GROUP="X" VERSIONABLE="false">

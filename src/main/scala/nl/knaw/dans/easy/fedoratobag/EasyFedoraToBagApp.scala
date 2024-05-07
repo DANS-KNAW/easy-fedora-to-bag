@@ -306,8 +306,9 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       case (Some(_), Some(_)) => Failure(new Exception(
         s"Different checksums in fedora $fedoraValue and exported bag $bagValue for $file"
       ))
-      case _ => logger.warn(s"No checksum in fedora for $file")
+      case (_, None) => logger.warn(s"No checksum in fedora for $file")
         Success(())
+      case _ => Failure(new Exception(s"No checksum in bag (or not the same type as in fedora) for $file"))
     }
   }
 

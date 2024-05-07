@@ -287,7 +287,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
           .disseminateDatastream(fileInfo.fedoraFileId, streamId = "EASY_FILE")
           .map(bag.addPayloadFile(_, target))
           .tried.flatten
-        // get checksum from manifest (calculated by addPayload) only if fileInfo has a checksum
+        // if fileInfo has a checksum, try to get the same type of checksum from manifest as calculated by addPayload
         maybeBagChecksum = fileInfo.maybeDigestType.flatMap(getChecksum(file, bag))
         _ <- verifyChecksums(file, fileInfo.maybeDigestValue, maybeBagChecksum)
       } yield ()

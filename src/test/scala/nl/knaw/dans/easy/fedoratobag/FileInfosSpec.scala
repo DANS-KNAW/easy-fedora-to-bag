@@ -92,7 +92,22 @@ class FileInfosSpec extends TestSupportFixture with FileFoXmlSupport with MockFa
       case Success(List(fileInfo: FileInfo)) if
         fileInfo.name == "a_cקq_e_g_i_k_m_o_.txt" &&
         fileInfo.path.toString == "pשr_e_t_/t_/s_m_w_e_e_f/a_cקq_e_g_i_k_m_o_.pdf" &&
-        fileInfo.originalPath.toString == "pשr(e:t*/t?/s>m|w;e#e'f/a:cקq*e?g>i|k;m#o\".pdf"
+        fileInfo.originalPath.toString == "pשr(e:t*/t?/s>m|w;e#e'f/a:cקq*e?g>i|k;m#o\".pdf" &&
+        fileInfo.locationUrl.isEmpty
+      =>
+    }
+  }
+
+  "FileInfo" should "get a provided content location" in {
+    val foxml = XML.loadFile("src/test/resources/sample-foxml/invalidUrl.xml")
+    val fedoraProvider = mock[FedoraProvider]
+    (fedoraProvider.loadFoXml(_: String)) expects "easy-file:35" once() returning Success(foxml)
+
+    val triedInfoes = FileInfo(List("easy-file:35"), fedoraProvider)
+    triedInfoes should matchPattern {
+      case Success(List(fileInfo: FileInfo)) if
+        fileInfo.name == "konijn.mp4" &&
+        fileInfo.locationUrl.contains("http://legacy-storage.dans.knaw.nl/data/Getuigenverhalen/Project_Het Vergeten_Bombardement/GV_GAR_bombardement_05.mp4")
       =>
     }
   }

@@ -1,0 +1,53 @@
+<foxml:digitalObject xsi:schemaLocation="info:fedora/fedora-system:def/foxml# http://www.fedora.info/definitions/1/0/foxml1-1.xsd"
+                     PID="easy-file:35"
+                     VERSION="1.1"
+                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                     xmlns:foxml="info:fedora/fedora-system:def/foxml#">
+<foxml:objectProperties>
+        <foxml:property VALUE="Active" NAME="info:fedora/fedora-system:def/model#state"/>
+        <foxml:property VALUE="konijn.mp4" NAME="info:fedora/fedora-system:def/model#label"/>
+        <foxml:property VALUE="easyadmin" NAME="info:fedora/fedora-system:def/model#ownerId"/>
+        <foxml:property VALUE="2016-09-23T15:22:10.477Z" NAME="info:fedora/fedora-system:def/model#createdDate"/>
+        <foxml:property VALUE="2016-09-23T15:22:10.907Z" NAME="info:fedora/fedora-system:def/view#lastModifiedDate"/>
+    </foxml:objectProperties>
+    <foxml:datastream VERSIONABLE="false" CONTROL_GROUP="X" STATE="A" ID="AUDIT">
+        <foxml:datastreamVersion FORMAT_URI="info:fedora/fedora-system:format/xml.fedora.audit" MIMETYPE="text/xml" CREATED="2016-09-23T15:22:10.477Z" LABEL="Audit Trail for this object" ID="AUDIT.0">
+            <foxml:xmlContent>
+                <audit:auditTrail xmlns:audit="info:fedora/fedora-system:def/audit#">
+                </audit:auditTrail>
+            </foxml:xmlContent>
+        </foxml:datastreamVersion>
+    </foxml:datastream>
+    <foxml:datastream VERSIONABLE="true" CONTROL_GROUP="X" STATE="A" ID="DC">
+        <foxml:datastreamVersion SIZE="433" FORMAT_URI="http://www.openarchives.org/OAI/2.0/oai_dc/" MIMETYPE="text/xml" CREATED="2016-09-23T15:22:10.502Z" LABEL="Dublin Core Record" ID="DC1.0">
+            <foxml:xmlContent>
+                <oai_dc:dc xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/">
+                    <dc:title>konijn.mp4</dc:title>
+                    <dc:type>video/mp4</dc:type>
+                    <dc:identifier/>
+                </oai_dc:dc>
+            </foxml:xmlContent>
+        </foxml:datastreamVersion>
+    </foxml:datastream>
+    <foxml:datastream VERSIONABLE="true" CONTROL_GROUP="R" STATE="A" ID="EASY_FILE">
+        <foxml:datastreamVersion MIMETYPE="video/mp4" CREATED="2016-09-23T15:22:10.613Z" LABEL="" ID="EASY_FILE.0">
+            <foxml:contentLocation REF="http://legacy-storage.dans.knaw.nl/data/Getuigenverhalen/Project_Het Vergeten_Bombardement/GV_GAR_bombardement_05.mp4" TYPE="URL"/>
+        </foxml:datastreamVersion>
+    </foxml:datastream>
+    <foxml:datastream VERSIONABLE="true" CONTROL_GROUP="X" STATE="A" ID="EASY_FILE_METADATA">
+        <foxml:datastreamVersion SIZE="388" MIMETYPE="text/xml" CREATED="2016-09-23T15:22:10.629Z" LABEL="" ID="EASY_FILE_METADATA.0">
+            <foxml:xmlContent>
+                <fimd:file-item-md version="0.1" xmlns:fimd="http://easy.dans.knaw.nl/easy/file-item-md/">
+                    <name>konijn.mp4</name>
+                    <path>audio-video/konijn.mp4</path>
+                    <mimeType>video/mp4</mimeType>
+                    <size>1055736</size>
+                    <creatorRole>ARCHIVIST</creatorRole>
+                    <visibleTo>NONE</visibleTo>
+                    <accessibleTo>ANONYMOUS</accessibleTo>
+                </fimd:file-item-md>
+            </foxml:xmlContent>
+        </foxml:datastreamVersion>
+    </foxml:datastream>
+
+</foxml:digitalObject>

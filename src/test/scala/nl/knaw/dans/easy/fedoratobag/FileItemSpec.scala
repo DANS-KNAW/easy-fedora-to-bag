@@ -170,6 +170,26 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
     }
   }
 
+  it should "add location url" in {
+    val fileInfo = callFileInfo(Map(
+      "easy-file:35" -> XML.loadFile("src/test/resources/sample-foxml/invalidUrl.xml",
+      ))).getOrElse(fail).head
+
+    val triedFileItem = FileItem(fileInfo, isOriginalVersioned = false)
+    triedFileItem.map(trim) shouldBe Success(trim(
+      <file filepath="data/audio-video/konijn.mp4">
+        <dct:identifier>easy-file:35</dct:identifier>
+        <dct:title>konijn.mp4</dct:title>
+        <dct:format>video/mp4</dct:format>
+        <dct:extent>1.0MB</dct:extent>
+        <accessibleToRights>NONE</accessibleToRights>
+        <visibleToRights>NONE</visibleToRights>
+        <dct:source>http://legacy-storage.dans.knaw.nl/data/Getuigenverhalen/Project_Het Vergeten_Bombardement/GV_GAR_bombardement_05.mp4</dct:source>
+      </file>
+    ))
+
+  }
+
   it should "map key-value pairs" in {
     val fileMetadata = {
       <sid>easy-file:3165833</sid>

@@ -562,6 +562,37 @@ class AppSpec extends TestSupportFixture with FileFoXmlSupport with BagIndexSupp
       contain theSameElementsAs List("original", "c.txt", "b.txt", "a.txt")
   }
 
+  it should "no dissemination when contentLocation type is URL" in {
+    val app: AppWithMockedServices = new AppWithMockedServices() {
+      expectAUser()
+      (fsRdb.getSubordinates(_: String)) expects "easy-dataset:13" once() returning
+        Success(Seq("easy-file:1", "easy-file:2", "easy-file:3"))
+      val foXMLs = Map(
+        "easy-dataset:13" -> XML.loadFile((sampleFoXML / "nonstreaming.xml").toJava),
+        "easy-discipline:6" -> audienceFoXML("easy-discipline:6", "D35400"),
+        "easy-file:1" -> fileFoXml(id = 1, name = "a.txt", digest = digests("lalala"), contentUrl = Some("http://legacy-storage.dans.knaw.nl/with spaces.mp4")),
+        "easy-file:2" -> fileFoXml(id = 2, name = "b.txt", digest = digests("lalala")),
+        "easy-file:3" -> fileFoXml(id = 3, name = "c.txt", digest = digests("lalala")),
+      )
+      foXMLs.foreach { case (id, xml) =>
+        (fedoraProvider.loadFoXml(_: String)) expects id once() returning Success(xml)
+      }
+      // note that we skip file:1
+      Seq("easy-file:2", "easy-file:3").foreach { id =>
+        (fedoraProvider.disseminateDatastream(_: String, _: String)
+          ) expects(id, "EASY_FILE") once() returning managed("lalala".inputStream)
+      }
+    }
+
+    // end of mocking
+
+    val bagDir = testDir / "bags" / UUID.randomUUID.toString
+    val triedRecord = app.createBag("easy-dataset:13", bagDir, Options(app.filter))
+    triedRecord shouldBe a[Success[_]]
+    (bagDir / "data").listRecursively.toList.map(_.name) should
+      contain theSameElementsAs List("original", "c.txt", "b.txt", "a.txt")
+  }
+
   it should "export referring to payload in EASY" in {
     val app: AppWithMockedServices = new AppWithMockedServices() {
       expectAUser()

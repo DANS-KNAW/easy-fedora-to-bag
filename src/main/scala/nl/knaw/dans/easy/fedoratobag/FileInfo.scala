@@ -36,6 +36,7 @@ case class FileInfo(fedoraFileId: String,
                     additionalMetadata: Option[Node],
                     wasDerivedFrom: Option[Path] = None,
                     originalPath: Path,
+                    locationUrl: Option[String] = None,
                    ) {
   private val isAccessible: Boolean = accessibleTo.toUpperCase() != "NONE"
   val isOriginal: Boolean = path.startsWithOriginalFolder()
@@ -76,6 +77,14 @@ object FileInfo extends DebugEnhancedLogging {
     def digestValue(foXmlStream: Option[Node]): Option[Node] = foXmlStream
       .map(_ \\ "contentDigest").flatMap(_.headOption)
 
+    def locationUrl(data: Option[Node]) = {
+      val maybeNode = data.map(_ \\ "contentLocation").flatMap(_.headOption)
+      val maybeLocationType = maybeNode.flatMap(_.attribute("TYPE").map(_.text))
+      if (maybeLocationType.contains("URL"))
+        maybeNode.flatMap(_.attribute("REF").map(_.text))
+      else None
+    }
+
     def derivedFrom(foXmlStream: Option[Node]): Option[String] = {
       foXmlStream
         .flatMap(n => (n \\ "wasDerivedFrom").headOption).toSeq
@@ -93,17 +102,19 @@ object FileInfo extends DebugEnhancedLogging {
           foXml <- fedoraProvider.loadFoXml(fileId)
           fileMetadata <- FoXml.getFileMD(foXml)
           derivedFromId = derivedFrom(FoXml.getStreamRoot("RELS-EXT", foXml))
-          digest = digestValue(FoXml.getStreamRoot("EASY_FILE", foXml))
+          data = FoXml.getStreamRoot("EASY_FILE", foXml)
+          digest = digestValue(data)
           path = (fileMetadata \\ "path").map(_.text).headOption.map(toValidChars)
-        } yield (fileId, derivedFromId, digest, fileMetadata, path)
+          contentLocation = locationUrl(data)
+        } yield (fileId, derivedFromId, digest, fileMetadata, path, contentLocation)
       }.map { files =>
       val pathMap = files.map {
-        case (fileId, _, _, _, maybePath) => fileId -> maybePath
+        case (fileId, _, _, _, maybePath, _) => fileId -> maybePath
       }.toMap
       files.map {
-        case (fileId, _, _, _, None) =>
+        case (fileId, _, _, _, None, _) =>
           throw new Exception(s"<path> not found for $fileId")
-        case (fileId, derivedFrom, digest, fileMetadata, Some(path)) =>
+        case (fileId, derivedFrom, digest, fileMetadata, Some(path), location) =>
           def get(tag: String) = (fileMetadata \\ tag)
             .map(_.text)
             .headOption
@@ -123,6 +134,7 @@ object FileInfo extends DebugEnhancedLogging {
             (fileMetadata \ "additional-metadata" \ "additional" \ "content").headOption,
             derivedFrom.flatMap(pathMap), // TODO error handling
             (fileMetadata \\ "path").map(_.text).headOption.map(p => Paths.get(p)).get, //when 'path' is a Some, so is this
+            location,
           )
       }
     }

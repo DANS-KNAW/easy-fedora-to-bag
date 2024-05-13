@@ -39,6 +39,8 @@
         <easy.emd.version>3.9.2</easy.emd.version>
         <snapshot-repository>https://nexus.dans.knaw.nl/repository/maven-snapshots</snapshot-repository>
         <release-repository>https://nexus.dans.knaw.nl/repository/maven-releases</release-repository>
+        <rpm-snapshot-repository>https://nexus.dans.knaw.nl/repository/rpm-snapshots</rpm-snapshot-repository>
+        <rpm-release-repository>https://nexus.dans.knaw.nl/repository/rpm-releases</rpm-release-repository>
     </properties>
     <build>
         <plugins>

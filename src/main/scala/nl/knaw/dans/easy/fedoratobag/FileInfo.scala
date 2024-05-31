@@ -72,7 +72,7 @@ object FileInfo extends DebugEnhancedLogging {
     Paths.get(s)
   }
 
-  def apply(fedoraIDs: Seq[String], fedoraProvider: FedoraProvider): Try[Seq[FileInfo]] = {
+  def apply(fedoraIDs: Seq[String], fedoraProvider: FedoraProvider, withAv: Boolean): Try[Seq[FileInfo]] = {
 
     def digestValue(foXmlStream: Option[Node]): Option[Node] = foXmlStream
       .map(_ \\ "contentDigest").flatMap(_.headOption)
@@ -121,7 +121,7 @@ object FileInfo extends DebugEnhancedLogging {
             .getOrElse(throw new Exception(s"$fileId <$tag> not found"))
 
           val visibleTo = get("visibleTo")
-          val accessibleTo = if ("NONE" == visibleTo.toUpperCase) "NONE"
+          val accessibleTo = if ("NONE" == visibleTo.toUpperCase && !withAv) "NONE"
                              else get("accessibleTo")
           new FileInfo(
             fileId, path,

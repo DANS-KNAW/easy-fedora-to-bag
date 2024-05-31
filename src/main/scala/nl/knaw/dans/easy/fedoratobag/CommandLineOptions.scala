@@ -51,7 +51,7 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   implicit val fileConverter: ValueConverter[File] = singleArgConverter(File(_))
 
   val withAv: ScallopOption[Boolean] = opt(name = "with-AV",
-    descr = "accsssible to value is not changed")
+    descr = "accessible_to value is not changed when visible_to is NONE")
   val datasetId: ScallopOption[DatasetId] = opt(name = "datasetId", short = 'd',
     descr = "A single easy-dataset-id to be transformed. Use either this or the input-file argument")
   val inputFile: ScallopOption[File] = opt(name = "input-file", short = 'i',

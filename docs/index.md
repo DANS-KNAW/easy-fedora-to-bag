@@ -40,7 +40,7 @@ ARGUMENTS
          --skip-list  <arg>       File containing a newline-separated list of easy-dataset-ids to be skipped
      -s, --strict                 If provided, the transformation will check whether the datasets adhere to the
                                   requirements of the chosen transformation.
-     -w, --with-AV                accsssible to value is not changed
+     -w, --with-AV                accessible_to value is not changed when visible_to is NONE
      -h, --help                   Show help message
      -v, --version                Show version of this program
     

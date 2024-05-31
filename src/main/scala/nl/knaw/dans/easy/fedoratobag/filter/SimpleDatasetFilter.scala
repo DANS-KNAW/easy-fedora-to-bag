@@ -24,6 +24,7 @@ class SimpleDatasetFilter(override val allowOriginalAndOthers: Boolean = false,
 }
 object SimpleDatasetFilter {
   def apply(allowOriginalAndOthers: Boolean = false,
+            withAV: Boolean = false,
             targetIndex: TargetIndex = new TargetIndex(),
            ) =
     new SimpleDatasetFilter(allowOriginalAndOthers, targetIndex)

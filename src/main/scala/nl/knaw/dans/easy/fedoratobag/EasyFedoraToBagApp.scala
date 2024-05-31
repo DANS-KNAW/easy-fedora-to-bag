@@ -198,7 +198,7 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
       fedoraFileIDs <- if (options.noPayload) Success(Seq.empty)
                        else fsRdb.getSubordinates(datasetId)
       isOriginalVersioned = options.transformationType == ORIGINAL_VERSIONED
-      allFileInfos <- FileInfo(fedoraFileIDs, fedoraProvider).map(_.toList)
+      allFileInfos <- FileInfo(fedoraFileIDs, fedoraProvider, options.withAv).map(_.toList)
       selectedForSecondBag = allFileInfos.selectForSecondBag(isOriginalVersioned, options.noPayload)
       selectedForFirstBag <- getInfoFirstBag(allFileInfos, emdXml, selectedForSecondBag.nonEmpty)
       skipPayload = noPayload(selectedForSecondBag, selectedForFirstBag)

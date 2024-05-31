@@ -488,7 +488,7 @@ class FileItemSpec extends TestSupportFixture with MockFactory with SchemaSuppor
     foXMLs.foreach { case (id, xml) =>
       (fedoraProvider.loadFoXml(_: String)) expects id once() returning Success(xml)
     }
-    val triedFileInfos = FileInfo(foXMLs.keys.toList, fedoraProvider)
+    val triedFileInfos = FileInfo(foXMLs.keys.toList, fedoraProvider, false)
     triedFileInfos
   }
 

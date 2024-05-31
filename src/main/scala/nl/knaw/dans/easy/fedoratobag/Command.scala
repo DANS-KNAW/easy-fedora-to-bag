@@ -36,6 +36,7 @@ object Command extends App with DebugEnhancedLogging {
     verify()
   }
 
+  private val withAV = commandLine.withAv()
   private val europeana = commandLine.europeana()
   private val csvLogFile = commandLine.logFile()
 
@@ -49,7 +50,7 @@ object Command extends App with DebugEnhancedLogging {
     Try(commandLine.transformation() match {
       case ORIGINAL_VERSIONED if !isAip => SimpleDatasetFilter(allowOriginalAndOthers = true)
       case THEMA if isAip => ThemaDatasetFilter(allowOriginalAndOthers = europeana, targetIndex = app.bagIndex)
-      case SIMPLE if isAip => SimpleDatasetFilter(allowOriginalAndOthers = europeana, targetIndex = app.bagIndex)
+      case SIMPLE if isAip => SimpleDatasetFilter(allowOriginalAndOthers = europeana, withAV = withAV, targetIndex = app.bagIndex)
       case SIMPLE => SimpleDatasetFilter(allowOriginalAndOthers = europeana)
       case _ => throw new NotImplementedError(s"${ commandLine.args } not implemented")
     }).flatMap { datasetFilter =>
@@ -58,7 +59,7 @@ object Command extends App with DebugEnhancedLogging {
         commandLine.datasetId.map(di => List(InputFileRecord(di))).getOrElse(loadInputFile(commandLine.inputFile()).get),
         commandLine.skipDatasets.toOption.map(skipDatasets => readDatasetIds(skipDatasets).toSeq).getOrElse(Seq.empty),
         commandLine.outputDir(),
-        Options(datasetFilter, commandLine.transformation(), commandLine.strictMode(), europeana, commandLine.noPayload(), commandLine.cutoff()),
+        Options(datasetFilter, commandLine.transformation(), commandLine.strictMode(), europeana, commandLine.noPayload(), commandLine.cutoff(), commandLine.withAv()),
         commandLine.outputFormat(),
       ))
     }

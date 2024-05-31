@@ -76,10 +76,36 @@ class FileInfosSpec extends TestSupportFixture with FileFoXmlSupport with MockFa
     val fedoraProvider = mock[FedoraProvider]
     (fedoraProvider.loadFoXml(_: String)) expects "easy-file:35" once() returning Success(foxml)
 
-    val fileInfo = FileInfo(List("easy-file:35"), fedoraProvider)
+    val fileInfo = FileInfo(List("easy-file:35"), fedoraProvider, withAv = false)
       .getOrElse(fail("could not load test data")).head
     fileInfo.name shouldBe "a_cקq_e_g_i_k_m_o_.txt"
     fileInfo.path shouldBe Paths.get("pשr_e_t_/t_/s_m_w_e_e_f/a_cקq_e_g_i_k_m_o_.txt")
+  }
+  "FileInfo" should "keep original rights" in {
+    val foxml = fileFoXml(
+      visibleTo = "NONE",
+      accessibleTo = "ANONYMOUS",
+    )
+    val fedoraProvider = mock[FedoraProvider]
+    (fedoraProvider.loadFoXml(_: String)) expects "easy-file:35" once() returning Success(foxml)
+
+    val fileInfo = FileInfo(List("easy-file:35"), fedoraProvider, withAv = true)
+      .getOrElse(fail("could not load test data")).head
+    fileInfo.visibleTo shouldBe "NONE"
+    fileInfo.accessibleTo shouldBe "ANONYMOUS"
+  }
+  "FileInfo" should "override rights" in {
+    val foxml = fileFoXml(
+      visibleTo = "NONE",
+      accessibleTo = "ANONYMOUS",
+    )
+    val fedoraProvider = mock[FedoraProvider]
+    (fedoraProvider.loadFoXml(_: String)) expects "easy-file:35" once() returning Success(foxml)
+
+    val fileInfo = FileInfo(List("easy-file:35"), fedoraProvider, withAv = false)
+      .getOrElse(fail("could not load test data")).head
+    fileInfo.visibleTo shouldBe "NONE"
+    fileInfo.accessibleTo shouldBe "NONE"
   }
 
   "FileInfo" should "not stumble over an inconsistent file name" in {
@@ -87,7 +113,7 @@ class FileInfosSpec extends TestSupportFixture with FileFoXmlSupport with MockFa
     val fedoraProvider = mock[FedoraProvider]
     (fedoraProvider.loadFoXml(_: String)) expects "easy-file:35" once() returning Success(foxml)
 
-    val triedInfoes = FileInfo(List("easy-file:35"), fedoraProvider)
+    val triedInfoes = FileInfo(List("easy-file:35"), fedoraProvider, withAv = false)
     triedInfoes should matchPattern {
       case Success(List(fileInfo: FileInfo)) if
         fileInfo.name == "a_cקq_e_g_i_k_m_o_.txt" &&
@@ -103,7 +129,7 @@ class FileInfosSpec extends TestSupportFixture with FileFoXmlSupport with MockFa
     val fedoraProvider = mock[FedoraProvider]
     (fedoraProvider.loadFoXml(_: String)) expects "easy-file:35" once() returning Success(foxml)
 
-    val triedInfoes = FileInfo(List("easy-file:35"), fedoraProvider)
+    val triedInfoes = FileInfo(List("easy-file:35"), fedoraProvider, withAv = false)
     triedInfoes should matchPattern {
       case Success(List(fileInfo: FileInfo)) if
         fileInfo.name == "konijn.mp4" &&
@@ -122,7 +148,7 @@ class FileInfosSpec extends TestSupportFixture with FileFoXmlSupport with MockFa
     val fedoraProvider = mock[FedoraProvider]
     (fedoraProvider.loadFoXml(_: String)) expects "easy-file:35" once() returning Success(foxml)
 
-    val fileInfo = FileInfo(List("easy-file:35"), fedoraProvider)
+    val fileInfo = FileInfo(List("easy-file:35"), fedoraProvider, withAv = false)
       .getOrElse(fail("could not load test data")).head
     fileInfo.name shouldBe "a(b)c,d'e[f]g&h+i.txt"
     fileInfo.path shouldBe Paths.get("k_l_m_n_o_p_q_r_s/a(b)c,d'e[f]g&h+i.txt")

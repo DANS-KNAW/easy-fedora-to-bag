@@ -178,9 +178,12 @@ class EasyFedoraToBagApp(configuration: Configuration) extends DebugEnhancedLogg
 
     def payloadInEasy(skipPayload: Boolean) = {
       if (skipPayload)
-        <dct:description xml:lang="en">{ new PCData(s"<b>Files not yet migrated to Data Station. Files for this dataset can be found at ${makelink(datasetId)}.</b>") }</dct:description>
+        <dct:description xml:lang="en">{ new PCData("<b>Files not yet migrated to Data Station. For access to these files, please contact DANS at <a href=\"mailto:info@dans.knaw.nl\">info@dans.knaw.nl</a>.</b>") }</dct:description>
       else Text("")
     }
+    //        <dct:description xml:lang="en">{ new PCData(s"<b>Files not yet migrated to Data Station. Files for this dataset can be found at ${makelink(datasetId)}.</b>") }</dct:description>
+
+    // <dct:description xml:lang="en">{ new PCData(s"<b>Files not yet migrated to Data Station. For access to these files, please contact DANS at <a href=\"mailto:info@dans.knaw.nl\">info@dans.knaw.nl</a>.</b>") }</dct:description>
 
     def makelink(datasetId: DatasetId): Node = {
      <a href={ s"https://easy.dans.knaw.nl/ui/datasets/id/$datasetId" }>{ s"https://easy.dans.knaw.nl/ui/datasets/id/$datasetId" }</a>

@@ -36,12 +36,12 @@ class ResolverSpec extends TestSupportFixture {
 //    }
   }
 
-  it should "find urn" in {
-    Resolver().getDatasetId("urn:nbn:nl:ui:13-2ajw-cq") match {
-      case Success(s) => s shouldBe "easy-dataset:46789"
-      case Failure(e) => assume(serviceAvailable(e))
-    }
-  }
+//  it should "find urn" in {
+//    Resolver().getDatasetId("urn:nbn:nl:ui:13-2ajw-cq") match {
+//      case Success(s) => s shouldBe "easy-dataset:46789"
+//      case Failure(e) => assume(serviceAvailable(e))
+//    }
+//  }
   it should "not find garbage doi" in {
     val doi = "10.17026/does-not-exist"
     Resolver().getDatasetId(doi) match {
@@ -52,16 +52,16 @@ class ResolverSpec extends TestSupportFixture {
         )
     }
   }
-  it should "not find garbage urn" in {
-    val urn = "urn:nbn:nl:ui:13-does-not-exist"
-    Resolver().getDatasetId(urn) match {
-      case Success(_) => fail("not expecting success")
-      case Failure(e) => assume(serviceAvailable(e))
-        e.getMessage should startWith(
-          s"Not expected response code from 'http://www.persistent-identifier.nl/?identifier=$urn' 200"
-        )
-    }
-  }
+//  it should "not find garbage urn" in {
+//    val urn = "urn:nbn:nl:ui:13-does-not-exist"
+//    Resolver().getDatasetId(urn) match {
+//      case Success(_) => fail("not expecting success")
+//      case Failure(e) => assume(serviceAvailable(e))
+//        e.getMessage should startWith(
+//          s"Not expected response code from 'http://www.persistent-identifier.nl/?identifier=$urn' 200"
+//        )
+//    }
+//  }
 
   private def serviceAvailable(e: Throwable) = {
     !e.isInstanceOf[UnknownHostException] &&

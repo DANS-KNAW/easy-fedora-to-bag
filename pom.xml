@@ -52,6 +52,25 @@
                     <target>7</target>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>nl.knaw.dans</groupId>
+                <artifactId>dans-nexus-maven-plugin</artifactId>
+                <version>0.4.0</version>
+                <configuration>
+                    <nexusUserName>${env.NEXUS_USER}</nexusUserName>
+                    <nexusPassword>${env.NEXUS_PASSWORD}</nexusPassword>
+                    <rpmRepositoryUrl>https://nexus.dans.knaw.nl/repository/rpm-releases</rpmRepositoryUrl>
+                    <snapshotRpmRepositoryUrl>https://nexus.dans.knaw.nl/repository/rpm-snapshots</snapshotRpmRepositoryUrl>
+                </configuration>
+                <executions>
+                    <execution>
+                        <!-- Use default phase: deploy -->
+                        <goals>
+                            <goal>deploy-rpm</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
@@ -162,6 +181,29 @@
             <url>https://maven.dans.knaw.nl/snapshots/</url>
         </repository>
     </repositories>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>dans-releases</id>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <url>https://maven.dans.knaw.nl/releases/</url>
+        </pluginRepository>
+        <pluginRepository>
+            <id>dans-snapshots</id>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <url>https://maven.dans.knaw.nl/snapshots/</url>
+        </pluginRepository>
+    </pluginRepositories>
 
     <profiles>
         <profile>
